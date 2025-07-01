@@ -342,7 +342,7 @@ void goto_line_posx(long lineno, Ulong x) {
 void not_found_msg(const char *const restrict str) {
   char *disp     = display_string(str, 0, ((COLS / 2) + 1), FALSE, FALSE);
   Ulong numchars = actual_x(disp, wideness(disp, (COLS / 2)));
-  statusline(AHEM, _("\"%.*s%s\" not found"), (int)numchars, disp, (disp[numchars] == '\0') ? "" : "...");
+  statusline(AHEM, _("\"%.*s%s\" not found"), (int)numchars, disp, (!disp[numchars] ? "" : "..."));
   free(disp);
 }
 

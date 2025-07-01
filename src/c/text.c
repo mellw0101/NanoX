@@ -109,7 +109,7 @@ static void redo_cut_for(CTX_ARGS, undostruct *const u) {
   cutbuffer = was_cutbuffer;
 }
 
-/* ----------------------------- Undo move line ----------------------------- */
+/* ----------------------------- Handle move line action ----------------------------- */
 
 /* Undo a move_line(s)_(up/down). */
 _UNUSED
@@ -154,8 +154,6 @@ static void undo_move_line_for(openfilestruct *const file, undostruct *const u) 
   }
   refresh_needed = TRUE;
 }
-
-/* ----------------------------- Redo move line ----------------------------- */
 
 /* Redo a move_line(s)_(up/down). */
 _UNUSED
@@ -491,6 +489,103 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
   *to = '\0';
 }
 
+/* ----------------------------- Fix spello ----------------------------- */
+
+/* Let the user edit the misspelled word.  Returns `FALSE` if user cancels. */
+/* static */ bool fix_spello_for(CTX_ARGS, const char *const restrict word) {
+  ASSERT(file);
+  ASSERT(word);
+  linestruct *was_edittop = file->edittop;
+  linestruct *was_current = file->current;
+  linestruct *was_mark;
+  linestruct *top;
+  linestruct *bot;
+  Ulong top_x;
+  Ulong bot_x;
+  Ulong was_firstcolumn = file->firstcolumn;
+  Ulong was_x           = file->current_x;
+  bool proceed       = FALSE;
+  bool right_side_up = (file->mark && mark_is_before_cursor_for(file));
+  int result;
+  /* TODO: For now we only allow curses-mode operation.  And later we sould add a a replacement parameter for the gui. */
+  if (IN_CURSES_CTX) {
+    /* If the mark is on, start at the beginning of the marked region. */
+    if (file->mark) {
+      get_region_for(file, &top, &top_x, &bot, &bot_x);
+      /* If the region is marked normaly, swap the end points, so that (current, current_x) (where searching starts) is at the top. */
+      if (right_side_up) {
+        file->current   = top;
+        file->current_x = top_x;
+        file->mark      = bot;
+        file->mark_x    = bot_x;
+      }
+    }
+    /* Otherwise, start from the top of the file. */
+    else {
+      file->current   = file->filetop;
+      file->current_x = 0;
+    }
+    /* Find the first whole occurence of word. */
+    result = findnextstr_for(file, word, TRUE, INREGION, NULL, FALSE, NULL, 0);
+    /* If the word isn't found, alert the user; if it is, allow correction. */
+    if (!result) {
+      statusline(ALERT, _("Unfindable word: %s"), word);
+      lastmessage = VACUUM;
+      proceed     = TRUE;
+      napms(2800);
+    }
+    else if (result == 1) {
+      spotlighted    = TRUE;
+      light_from_col = XPLUSTABS(file);
+      light_to_col   = (light_from_col + breadth(word));
+      was_mark       = file->mark;
+      file->mark     = NULL;
+      edit_refresh_for(STACK_CTX);
+      /* TODO: Ensure this is gui-safe. */
+      put_cursor_at_end_of_answer();
+      /* Let the user supply a correctly spelled alternative. */
+      proceed     = (do_prompt(MSPELL, word, NULL, edit_refresh, /* TRANSPLATORS: This is a prompt. */ _("Edit a replacement")) != -1);
+      spotlighted = FALSE;
+      file->mark  = was_mark;
+      /* If a replacement was given go through all occurrences. */
+      if (proceed && strcmp(word, answer) != 0) {
+        do_replace_loop_for(STACK_CTX, word, TRUE, was_current, &was_x);
+        /* TRANSLATORS: Shown after fixing missppellings in one word...? -- What does this even mean. */
+        statusbar_all(_("Next word..."));
+        napms(400);
+      }
+    }
+    /* If there was a marked region. */
+    if (file->mark) {
+      /* Restore the (compensated) end points of the marked region. */
+      if (right_side_up) {
+        file->current   = file->mark;
+        file->current_x = file->mark_x;
+        file->mark      = top;
+        file->mark_x    = top_x;
+      }
+      else {
+        file->current   = top;
+        file->current_x = top_x;
+      }
+    }
+    else {
+      /* Restore the (compensated) cursor position. */
+      file->current   = was_current;
+      file->current_x = was_x;
+    }
+    /* Restore the viewtop to where it was. */
+    file->edittop     = was_edittop;
+    file->firstcolumn = was_firstcolumn;
+  }
+  return proceed;
+}
+
+/* Let the user edit the misspelled word.  Returns `FALSE` if user cancels.  Note that this is `context-safe`. */
+/* static */ bool fix_spello(const char *const restrict word) {
+  RET_CTX_CALL_WARGS(fix_spello_for, word);
+}
+
 /* ----------------------------- Concat paragraph ----------------------------- */
 
 /* Concatenate into a single line all the lines of the paragraph that starts at `line` and
@@ -520,29 +615,194 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
   concat_paragraph_for(CTX_OF, line, count);
 }
 
+/* ----------------------------- Rewrap paragraph ----------------------------- */
+
+/* Rewrap the given line (that starts with the given lead string which is of
+ * the given length), into lines that fit within the target width (wrap_at). */
+/* static */ void rewrap_paragraph_for(openfilestruct *const file, int rows,
+  linestruct **const line, const char *const restrict lead_str, Ulong lead_len)
+{
+  ASSERT(file);
+  ASSERT(line);
+  ASSERT(lead_str);
+  /* The x-cordinate where the current line is to be broken. */
+  long break_pos;
+  Ulong line_len;
+  /* Do the loop... */
+  while (breadth((*line)->data) > wrap_at) {
+    line_len = strlen((*line)->data);
+    /* Find a point in the line where it can be broken. */
+    break_pos = break_line(((*line)->data + lead_len), (wrap_at - wideness((*line)->data, lead_len)), FALSE);
+    /* If we can't break the line, or don't need to, we're done. */
+    if (break_pos < 0 || (lead_len + break_pos) == lead_len) {
+      break;
+    }
+    /* Adjust the breaking position for the leading part and move it beyond the found whitespace character. */
+    break_pos += (lead_len + 1);
+    /* Insert a new line after the current one, and copy the leading part plus the text after the breaking point into it. */
+    splice_node_for(file, *line, make_new_node(*line));
+    /* Construct the new line. */
+    (*line)->next->data = xmalloc(lead_len + line_len - break_pos + 1);
+    memcpy((*line)->next->data, lead_str, lead_len);
+    strcpy(((*line)->next->data + lead_len), ((*line)->data + break_pos));
+    /* When requested, snip all trailing spaces. */
+    if (ISSET(TRIM_BLANKS)) {
+      while (break_pos > 0 && (*line)->data[break_pos - 1] == ' ') {
+        --break_pos;
+      }
+    }
+    /* Now actualy break the current line, and go to the next. */
+    (*line)->data[break_pos] = '\0';
+    DLIST_ADV_NEXT(*line);
+  }
+  /* If the new paragraph exceeds the viewport, recalculate the multidata. */
+  if ((*line)->lineno >= rows) {
+    recook = TRUE;
+  }
+  /* When possible, go to the line after the rewrapped paragraph. */
+  if ((*line)->next) {
+    DLIST_ADV_NEXT(*line);
+  }
+}
+
+/* Rewrap the given line (that starts with the given lead string which is of the given length),
+ * into lines that fit within the target width (wrap_at).  Note that this is `context-safe`. */
+/* static */ void rewrap_paragraph(linestruct **const line, const char *const restrict lead_str, Ulong lead_len) {
+  if (IN_GUI_CTX) {
+    rewrap_paragraph_for(GUI_OF, GUI_ROWS, line, lead_str, lead_len);
+  }
+  else {
+    rewrap_paragraph_for(TUI_OF, TUI_ROWS, line, lead_str, lead_len);
+  }
+}
+
+/* ----------------------------- Justify paragraph ----------------------------- */
+
+/* Justify the lines of the given paragraph (that starts at `*line`, and consitis of `count` lines)
+ * so they all fit within the target width (`wrap at`) and have their whitespaces normalized. */
+/* static */ void justify_paragraph_for(openfilestruct *const file, int rows, linestruct **const line, Ulong count) {
+  ASSERT(file);
+  ASSERT(line);
+  /* The line from which the indentation is copied. */
+  linestruct *sample;
+  /* Length of the quote part. */
+  Ulong quot_len;
+  /* Length of the quote part plus the indentation part. */
+  Ulong lead_len;
+  /* The quote+indent struff that is copied from the sample line. */
+  char *lead_str;
+  /* The sample line is either the only line or the second line. */
+  sample = ((count == 1) ? *line : (*line)->next);
+  /* Copy the leading part (quoting + indentation) of the sample line. */
+  quot_len = quote_length(sample->data);
+  lead_len = (quot_len + indent_length(sample->data + quot_len));
+  lead_str = measured_copy(sample->data, lead_len);
+  /* Concatenate all lines of the paragraph into a single line. */
+  concat_paragraph_for(file, *line, count);
+  /* Change all blank characters to spaces and remove excess spaces. */
+  squeeze(*line, (quot_len + indent_length((*line)->data + quot_len)));
+  /* Rewrap the line into multiple lines, accounting for the leading part. */
+  rewrap_paragraph_for(file, rows, line, lead_str, lead_len);
+  free(lead_str);
+}
+
+/* Justify the lines of the given paragraph (that starts at `*line`, and consitis of `count` lines) so they all
+ * fit within the target width (`wrap at`) and have their whitespaces normalized.  Note that this is `context-safe`. */
+/* static */ void justify_paragraph(linestruct **const line, Ulong count) {
+  if (IN_GUI_CTX) {
+    justify_paragraph_for(GUI_OF, GUI_ROWS, line, count);
+  }
+  else {
+    justify_paragraph_for(TUI_OF, TUI_ROWS, line, count);
+  }
+}
+
+/* ----------------------------- Construct argument list ----------------------------- */
+
+/* Set up an argument list for executing the given command. */
+/* static */ void construct_argument_list(char ***arguments, char *command, char *filename) {
+  ASSERT(arguments);
+  char *copy_of_command = copy_of(command);
+  char *element = strtok(copy_of_command, " ");
+  int count = 2;
+  while (element) {
+    *arguments = xrealloc(*arguments, (++count * _PTRSIZE));
+    (*arguments)[count - 3] = element;
+    element = strtok(NULL, " ");
+  }
+  (*arguments)[count - 2] = filename;
+  (*arguments)[count - 1] = NULL;
+}
+
+/* ----------------------------- Replace buffer ----------------------------- */
+
+/* Open the specified file, and if that succeeds, remove the text of the marked
+ * region or of the entire buffer and read the file contents into it's place.
+ * TODO: Split this up, or make subfuctionality from this available, so that
+ * we can implement replace marked region in a mush better way and also more things. */
+/* static */ bool replace_buffer_for(CTX_ARGS, const char *const restrict filename, undo_type action, const char *const restrict operation) {
+  ASSERT(file);
+  ASSERT(filename);
+  linestruct *was_cutbuffer = cutbuffer;
+  int fd;
+  FILE *stream;
+  /* Open the file-descriptor. */
+  if ((fd = open_file(filename, FALSE, &stream)) < 0) {
+    return FALSE;
+  }
+  add_undo_for(file, COUPLE_BEGIN, operation);
+  /* When replacing the whole buffer, start cutting at the top. */
+  if (action == CUT_TO_EOF) {
+    file->current   = file->filetop;
+    file->current_x = 0;
+  }
+  cutbuffer = NULL;
+  /* Cut either the marked region or the whole buffer. */
+  add_undo_for(file, action, NULL);
+  do_snip_for(STACK_CTX, file->mark, !file->mark, FALSE);
+  update_undo_for(file, action);
+  /* Discard what was cut and restore the cutbuffer. */
+  free_lines(cutbuffer);
+  cutbuffer = was_cutbuffer;
+  /* Insert the spell-checked file into the cleared area...? */
+  read_file_into(STACK_CTX, stream, fd, filename, TRUE);
+  add_undo_for(file, COUPLE_END, operation);
+  return TRUE;
+}
+
+/* Open the specified file, and if that succeeds, remove the text of the marked
+ * region or of the entire buffer and read the file contents into it's place.
+ * TODO: Split this up, or make subfuctionality from this available, so that
+ * we can implement replace marked region in a mush better way and also more things. */
+/* static */ bool replace_buffer(const char *const restrict filename, undo_type action, const char *const restrict operation) {
+  RET_CTX_CALL_WARGS(replace_buffer_for, filename, action, operation);
+}
+
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
 /* ----------------------------- Line indent plus tab ----------------------------- */
 
+/* Return the given indent of data, plus either (when `TABS_TO_SPACES` is
+ * set) a string containg spaces to the next tabstop, or one tabulator. */
 char *line_indent_plus_tab(const char *const restrict data, Ulong *const len) {
   ASSERT(data);
   ASSERT(len);
   char *ret;
   int tablen;
   *len = indent_length(data);
-  /* Copy the indent from data. */
-  ret = measured_copy(data, *len);
+  /* When tabs are represented by a number of spaces. */
   if (ISSET(TABS_TO_SPACES)) {
-    tablen = tabstop_length(ret, *len);
-    ret = fmtstrncat(ret, *len, "%*s", tablen, " ");
-    *len += tablen;
+    tablen = tabstop_length(data, *len);
+    ret = fmtstr("%.*s%*s", (int)(*len), data, tablen, " ");
   }
+  /* Otherwise, just use a single tabulator. */
   else {
-    ret = xnstrncat(ret, *len, S__LEN("\t"));
-    ++(*len);
+    tablen = 1;
+    ret = fmtstr("%.*s\t", (int)(*len), data);
   }
+  *len += tablen;
   return ret;
 }
 
@@ -2207,14 +2467,19 @@ void do_enter_for(openfilestruct *const file) {
   bool allblanks = FALSE;
   linestruct *newnode;
   linestruct *sampleline = file->current;
+  linestruct *another_indent_line;
   Ulong extra = 0;
-  /* Check if cursor is between two brackets. */
+  /* Check if cursor is between two brackets.  TODO: Create get_next_char() to perform the
+   * same operation as get_previous_char() and then remake this to perform a mush better check. */
   if (cursor_is_between_brackets_for(file)) {
     do_auto_bracket_for(file);
     return;
   }
-  /* If the prev char is one of the usual section start chars, or a lable, we should indent once more. */
-  do_another_indent = is_prev_cursor_char_one_of_for(file, "{:");
+  /* If the previous char is an opening bracket, or a lable, and we are not on the same line, we should indent once more. */
+  do_another_indent = (
+    is_previous_char_one_of(file->current, file->current_x, "{[(:", &another_indent_line, NULL)
+    && another_indent_line != file->current
+  );
   newnode = make_new_node(file->current);
   if (ISSET(AUTOINDENT)) {
     /* When doing automatic long-line wrapping and the next line is in this same paragraph, use its indentation as the model. */
@@ -2255,20 +2520,23 @@ void do_enter_for(openfilestruct *const file) {
   file->current     = newnode;
   file->current_x   = extra;
   ++file->totsize;
-  set_pww_for(file);
   set_modified_for(file);
   if (ISSET(AUTOINDENT) && !allblanks) {
     file->totsize += extra;
   }
   /* When approptiet, add another indent. */
   if (do_another_indent) {
+    file->current->data = free_and_assign(file->current->data, line_indent_plus_tab(another_indent_line->data, &file->current_x));
+    /* Add only the diffrence between the current cursor position minus where the cursor was at. */
+    file->totsize += (file->current_x - extra);
     /* If the indent of the new line is the same as the line we came from.  I.E: Autoindent is turned on. */
-    if (line_indent(file->current) == line_indent(file->current->prev)) {
-      file->current->data = fmtstrcat(file->current->data, "%*s", (int)TAB_BYTE_LEN, (ISSET(TABS_TO_SPACES) ? " " : "\t"));
-      file->current_x    += TAB_BYTE_LEN;
-      file->totsize      += TAB_BYTE_LEN;
-    }
+    // if (line_indent(file->current) == line_indent(file->current->prev)) {
+    //   file->current->data = fmtstrcat(file->current->data, "%*s", (int)TAB_BYTE_LEN, (ISSET(TABS_TO_SPACES) ? " " : "\t"));
+    //   file->current_x    += TAB_BYTE_LEN;
+    //   file->totsize      += TAB_BYTE_LEN;
+    // }
   }
+  SET_PWW(file);
   update_undo_for(file, ENTER);
   refresh_needed = TRUE;
   focusing       = FALSE;
@@ -2863,8 +3131,10 @@ char *get_previous_char(linestruct *line, Ulong xpos, linestruct **const outline
   }
 }
 
-/* ----------------------------- Is previous char open bracket ----------------------------- */
+/* ----------------------------- Is previous char one of ----------------------------- */
 
+/* Returns `TRUE` when the previous char before the current line, pos is one of `mathces`, this retrieves the
+ * true previous char, skipping over all blanks and zerowidth chars, and then compares that char to `matches`. */
 bool is_previous_char_one_of(linestruct *const line, Ulong xpos,
   const char *const restrict matches, linestruct **const outline, Ulong *const outxpos)
 {

@@ -391,17 +391,39 @@ int  nanox_socket_client(void);
 
 /* static */ void copy_character(char **const from, char **const to);
 /* static */ void squeeze(linestruct *const line, Ulong skip);
+
+/* static */ bool fix_spello_for(CTX_ARGS, const char *const restrict word);
+/* static */ bool fix_spello(const char *const restrict word);
+
 /* static */ void concat_paragraph_for(openfilestruct *const file, linestruct *const line, Ulong count);
 /* static */ void concat_paragraph(linestruct *const line, Ulong count);
 
+/* static */ void rewrap_paragraph_for(openfilestruct *const file, int rows,
+  linestruct **const line, const char *const restrict lead_str, Ulong lead_len);
+/* static */ void rewrap_paragraph(linestruct **const line, const char *const restrict lead_str, Ulong lead_len);
+
+/* static */ void justify_paragraph_for(openfilestruct *const file, int rows, linestruct **const line, Ulong count);
+/* static */ void justify_paragraph(linestruct **const line, Ulong count);
+
+/* static */ void construct_argument_list(char ***arguments, char *command, char *filename);
+
+/* static */ bool replace_buffer_for(CTX_ARGS, const char *const restrict filename, undo_type action, const char *const restrict operation);
+/* static */ bool replace_buffer(const char *const restrict filename, undo_type action, const char *const restrict operation);
+
+/* ----------------------------- Line indent plus tab ----------------------------- */
 char *line_indent_plus_tab(const char *const restrict data, Ulong *const len);
+/* ----------------------------- Set marked region ----------------------------- */
 void set_marked_region_for(openfilestruct *const file, linestruct *const top, Ulong top_x, linestruct *const bot, Ulong bot_x, bool cursor_at_head);
-void  do_tab_for(CTX_ARGS);
-void  do_tab(void);
+/* ----------------------------- Do tab ----------------------------- */
+void do_tab_for(CTX_ARGS);
+void do_tab(void);
+/* ----------------------------- Indentlen ----------------------------- */
 Ulong indentlen(const char *const restrict string) __THROW _NODISCARD _CONST _NONNULL(1);
+/* ----------------------------- Quote length ----------------------------- */
 Ulong quote_length(const char *const restrict line);
-void  add_undo_for(openfilestruct *const file, undo_type action, const char *const restrict message);
-void  add_undo(undo_type action, const char *const restrict message);
+/* ----------------------------- Add undo ----------------------------- */
+void add_undo_for(openfilestruct *const file, undo_type action, const char *const restrict message);
+void add_undo(undo_type action, const char *const restrict message);
 void  update_undo_for(openfilestruct *const restrict file, undo_type action);
 void  update_undo(undo_type action);
 void  update_multiline_undo_for(openfilestruct *const file, long lineno, const char *const restrict indentation);

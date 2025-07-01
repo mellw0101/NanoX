@@ -594,6 +594,10 @@ static const short bg_vs_code_color_array[] = {
 
 /* ----------------------------- utils.c ----------------------------- */
 
+#define XPLUSTABS(file)                                         \
+  /* A simple wrapper for `xplustabs()` for a file context. */  \
+  wideness((file)->current->data, (file)->current_x)
+
 #define SET_PWW(file)                                          \
   /* A simple way to correctly set placewewant for `file`. */  \
   DO_WHILE((file)->placewewant = xplustabs_for(file);)
@@ -792,12 +796,12 @@ typedef enum {
   STATUSBAR_CHOP_NEXT_WORD,
   STATUSBAR_CHOP_PREV_WORD,
   STATUSBAR_OTHER,
-  #define STATUSBAR_ADD             STATUSBAR_ADD
-  #define STATUSBAR_BACK            STATUSBAR_BACK
-  #define STATUSBAR_DEL             STATUSBAR_DEL
-  #define STATUSBAR_CHOP_NEXT_WORD  STATUSBAR_CHOP_NEXT_WORD
-  #define STATUSBAR_CHOP_PREV_WORD  STATUSBAR_CHOP_PREV_WORD
-  #define STATUSBAR_OTHER           STATUSBAR_OTHER
+# define STATUSBAR_ADD             STATUSBAR_ADD
+# define STATUSBAR_BACK            STATUSBAR_BACK
+# define STATUSBAR_DEL             STATUSBAR_DEL
+# define STATUSBAR_CHOP_NEXT_WORD  STATUSBAR_CHOP_NEXT_WORD
+# define STATUSBAR_CHOP_PREV_WORD  STATUSBAR_CHOP_PREV_WORD
+# define STATUSBAR_OTHER           STATUSBAR_OTHER
 } statusbar_undo_type;
 
 /* Some extra flags for the undo function(s). */
@@ -810,14 +814,14 @@ typedef enum {
   HAD_ANCHOR_AT_START  = (1 << 6),
   SHOULD_NOT_KEEP_MARK = (1 << 7),
   INSERT_WAS_ABOVE     = (1 << 8)
-  #define WAS_BACKSPACE_AT_EOF  WAS_BACKSPACE_AT_EOF
-  #define WAS_WHOLE_LINE        WAS_WHOLE_LINE
-  #define INCLUDED_LAST_LINE    INCLUDED_LAST_LINE
-  #define MARK_WAS_SET          MARK_WAS_SET
-  #define CURSOR_WAS_AT_HEAD    CURSOR_WAS_AT_HEAD
-  #define HAD_ANCHOR_AT_START   HAD_ANCHOR_AT_START
-  #define SHOULD_NOT_KEEP_MARK  SHOULD_NOT_KEEP_MARK
-  #define INSERT_WAS_ABOVE      INSERT_WAS_ABOVE
+# define WAS_BACKSPACE_AT_EOF  WAS_BACKSPACE_AT_EOF
+# define WAS_WHOLE_LINE        WAS_WHOLE_LINE
+# define INCLUDED_LAST_LINE    INCLUDED_LAST_LINE
+# define MARK_WAS_SET          MARK_WAS_SET
+# define CURSOR_WAS_AT_HEAD    CURSOR_WAS_AT_HEAD
+# define HAD_ANCHOR_AT_START   HAD_ANCHOR_AT_START
+# define SHOULD_NOT_KEEP_MARK  SHOULD_NOT_KEEP_MARK
+# define INSERT_WAS_ABOVE      INSERT_WAS_ABOVE
 } undo_modifier_type;
 
 typedef enum {
@@ -825,10 +829,10 @@ typedef enum {
   NIX_FILE,
   DOS_FILE,
   MAC_FILE
-  #define UNSPECIFIED  UNSPECIFIED
-  #define NIX_FILE     NIX_FILE
-  #define DOS_FILE     DOS_FILE
-  #define MAC_FILE     MAC_FILE
+# define UNSPECIFIED  UNSPECIFIED
+# define NIX_FILE     NIX_FILE
+# define DOS_FILE     DOS_FILE
+# define MAC_FILE     MAC_FILE
 } format_type;
 
 typedef enum {
@@ -852,42 +856,42 @@ typedef enum {
 
 /* Identifiers for the different menus. */
 typedef enum {
-  MMAIN = (1 << 0),
-  #define MMAIN MMAIN
-  MWHEREIS = (1 << 1),
-  #define MWHEREIS MWHEREIS
-  MREPLACE = (1 << 2),
-  #define MREPLACE MREPLACE
+  MMAIN        = (1 << 0),
+  MWHEREIS     = (1 << 1),
+  MREPLACE     = (1 << 2),
   MREPLACEWITH = (1 << 3),
-  #define MREPLACEWITH MREPLACEWITH
-  MGOTOLINE = (1 << 4),
-  #define MGOTOLINE MGOTOLINE
-  MWRITEFILE = (1 << 5),
-  #define MWRITEFILE MWRITEFILE
-  MINSERTFILE = (1 << 6),
-  #define MINSERTFILE MINSERTFILE
-  MEXECUTE = (1 << 7),
-  #define MEXECUTE MEXECUTE
-  MHELP = (1 << 8),
-  #define MHELP MHELP
-  MSPELL = (1 << 9),
-  #define MSPELL MSPELL
-  MBROWSER = (1 << 10),
-  #define MBROWSER MBROWSER
+  MGOTOLINE    = (1 << 4),
+  MWRITEFILE   = (1 << 5),
+  MINSERTFILE  = (1 << 6),
+  MEXECUTE     = (1 << 7),
+  MHELP        = (1 << 8),
+  MSPELL       = (1 << 9),
+  MBROWSER     = (1 << 10),
   MWHEREISFILE = (1 << 11),
-  #define MWHEREISFILE MWHEREISFILE
-  MGOTODIR = (1 << 12),
-  #define MGOTODIR MGOTODIR
-  MYESNO = (1 << 13),
-  #define MYESNO MYESNO
-  MLINTER = (1 << 14),
-  #define MLINTER MLINTER
-  MFINDINHELP = (1 << 15),
-  #define MFINDINHELP MFINDINHELP
-  MMOST = (MMAIN | MWHEREIS | MREPLACE | MREPLACEWITH | MGOTOLINE | MWRITEFILE | MINSERTFILE | MEXECUTE | MWHEREISFILE | MGOTODIR | MFINDINHELP | MSPELL | MLINTER),
-  #define MMOST MMOST
-  MSOME = (MMOST | MBROWSER)
-  #define MSOME MSOME
+  MGOTODIR     = (1 << 12),
+  MYESNO       = (1 << 13),
+  MLINTER      = (1 << 14),
+  MFINDINHELP  = (1 << 15),
+  MMOST        = (MMAIN | MWHEREIS | MREPLACE | MREPLACEWITH | MGOTOLINE | MWRITEFILE | MINSERTFILE | MEXECUTE | MWHEREISFILE | MGOTODIR | MFINDINHELP | MSPELL | MLINTER),
+  MSOME        = (MMOST | MBROWSER)
+# define MMAIN         MMAIN
+# define MWHEREIS      MWHEREIS
+# define MREPLACE      MREPLACE
+# define MREPLACEWITH  MREPLACEWITH
+# define MGOTOLINE     MGOTOLINE
+# define MWRITEFILE    MWRITEFILE
+# define MINSERTFILE   MINSERTFILE
+# define MEXECUTE      MEXECUTE
+# define MHELP         MHELP
+# define MSPELL        MSPELL
+# define MBROWSER      MBROWSER
+# define MWHEREISFILE  MWHEREISFILE
+# define MGOTODIR      MGOTODIR
+# define MYESNO        MYESNO
+# define MLINTER       MLINTER
+# define MFINDINHELP   MFINDINHELP
+# define MMOST         MMOST
+# define MSOME         MSOME
 } menu_type;
 
 /* Identifiers for the different flags. */

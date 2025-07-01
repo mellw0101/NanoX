@@ -2240,69 +2240,69 @@
 // }
 
 /* Rewrap the given line (that starts with the given lead string which is of the given length), into lines that fit within the target width (wrap_at). */
-static void rewrap_paragraph(linestruct **line, char *lead_string, Ulong lead_len) _NOTHROW {
-  /* The x-coordinate where the current line is to be broken. */
-  long break_pos;
-  while (breadth((*line)->data) > wrap_at) {
-    Ulong line_len = strlen((*line)->data);
-    /* Find a point in the line where it can be broken. */
-    break_pos = break_line(((*line)->data + lead_len), (wrap_at - wideness((*line)->data, lead_len)), FALSE);
-    /* If we can't break the line, or don't need to, we're done. */
-    if (break_pos < 0 || (lead_len + break_pos) == line_len) {
-      break;
-    }
-    /* Adjust the breaking position for the leading part and move it beyond the found whitespace character. */
-    break_pos += (lead_len + 1);
-    /* Insert a new line after the current one, and copy the leading part plus the text after the breaking point into it. */
-    splice_node(*line, make_new_node(*line));
-    (*line)->next->data = (char *)xmalloc(lead_len + line_len - break_pos + 1);
-    strncpy((*line)->next->data, lead_string, lead_len);
-    strcpy(((*line)->next->data + lead_len), ((*line)->data + break_pos));
-    /* When requested, snip the one or two trailing spaces. */
-    if (ISSET(TRIM_BLANKS)) {
-      while (break_pos > 0 && (*line)->data[break_pos - 1] == ' ') {
-        --break_pos;
-      }
-    }
-    /* Now actually break the current line, and go to the next. */
-    (*line)->data[break_pos] = '\0';
-    *line = (*line)->next;
-  }
-  /* If the new paragraph exceeds the viewport, recalculate the multidata. */
-  if ((*line)->lineno >= editwinrows) {
-    recook = TRUE;
-  }
-  /* When possible, go to the line after the rewrapped paragraph. */
-  if ((*line)->next) {
-    *line = (*line)->next;
-  }
-}
+// static void rewrap_paragraph(linestruct **line, char *lead_string, Ulong lead_len) _NOTHROW {
+//   /* The x-coordinate where the current line is to be broken. */
+//   long break_pos;
+//   while (breadth((*line)->data) > wrap_at) {
+//     Ulong line_len = strlen((*line)->data);
+//     /* Find a point in the line where it can be broken. */
+//     break_pos = break_line(((*line)->data + lead_len), (wrap_at - wideness((*line)->data, lead_len)), FALSE);
+//     /* If we can't break the line, or don't need to, we're done. */
+//     if (break_pos < 0 || (lead_len + break_pos) == line_len) {
+//       break;
+//     }
+//     /* Adjust the breaking position for the leading part and move it beyond the found whitespace character. */
+//     break_pos += (lead_len + 1);
+//     /* Insert a new line after the current one, and copy the leading part plus the text after the breaking point into it. */
+//     splice_node(*line, make_new_node(*line));
+//     (*line)->next->data = (char *)xmalloc(lead_len + line_len - break_pos + 1);
+//     strncpy((*line)->next->data, lead_string, lead_len);
+//     strcpy(((*line)->next->data + lead_len), ((*line)->data + break_pos));
+//     /* When requested, snip the one or two trailing spaces. */
+//     if (ISSET(TRIM_BLANKS)) {
+//       while (break_pos > 0 && (*line)->data[break_pos - 1] == ' ') {
+//         --break_pos;
+//       }
+//     }
+//     /* Now actually break the current line, and go to the next. */
+//     (*line)->data[break_pos] = '\0';
+//     *line = (*line)->next;
+//   }
+//   /* If the new paragraph exceeds the viewport, recalculate the multidata. */
+//   if ((*line)->lineno >= editwinrows) {
+//     recook = TRUE;
+//   }
+//   /* When possible, go to the line after the rewrapped paragraph. */
+//   if ((*line)->next) {
+//     *line = (*line)->next;
+//   }
+// }
 
 /* Justify the lines of the given paragraph (that starts at *line, and consists of 'count' lines)
  * so they all fit within the target width (wrap_at) and have their whitespace normalized. */
-static void justify_paragraph(linestruct **line, Ulong count) _NOTHROW {
-  /* The line from which the indentation is copied. */
-  linestruct *sampleline;
-  /* Length of the quote part. */
-  Ulong quot_len;
-  /* Length of the quote part plus the indentation part. */
-  Ulong lead_len;
-  /* The quote+indent stuff that is copied from the sample line. */
-  char *lead_string;
-  /* The sample line is either the only line or the second line. */
-  sampleline = ((count == 1) ? *line : (*line)->next);
-  /* Copy the leading part (quoting + indentation) of the sample line. */
-  quot_len    = quote_length(sampleline->data);
-  lead_len    = (quot_len + indent_length(sampleline->data + quot_len));
-  lead_string = measured_copy(sampleline->data, lead_len);
-  /* Concatenate all lines of the paragraph into a single line. */
-  concat_paragraph(*line, count);
-  /* Change all blank characters to spaces and remove excess spaces. */
-  squeeze(*line, quot_len + indent_length((*line)->data + quot_len));
-  /* Rewrap the line into multiple lines, accounting for the leading part. */
-  rewrap_paragraph(line, lead_string, lead_len);
-  free(lead_string);
-}
+// static void justify_paragraph(linestruct **line, Ulong count) _NOTHROW {
+//   /* The line from which the indentation is copied. */
+//   linestruct *sampleline;
+//   /* Length of the quote part. */
+//   Ulong quot_len;
+//   /* Length of the quote part plus the indentation part. */
+//   Ulong lead_len;
+//   /* The quote+indent stuff that is copied from the sample line. */
+//   char *lead_string;
+//   /* The sample line is either the only line or the second line. */
+//   sampleline = ((count == 1) ? *line : (*line)->next);
+//   /* Copy the leading part (quoting + indentation) of the sample line. */
+//   quot_len    = quote_length(sampleline->data);
+//   lead_len    = (quot_len + indent_length(sampleline->data + quot_len));
+//   lead_string = measured_copy(sampleline->data, lead_len);
+//   /* Concatenate all lines of the paragraph into a single line. */
+//   concat_paragraph(*line, count);
+//   /* Change all blank characters to spaces and remove excess spaces. */
+//   squeeze(*line, quot_len + indent_length((*line)->data + quot_len));
+//   /* Rewrap the line into multiple lines, accounting for the leading part. */
+//   rewrap_paragraph(line, lead_string, lead_len);
+//   free(lead_string);
+// }
 
 #define ONE_PARAGRAPH FALSE
 #define WHOLE_BUFFER  TRUE
@@ -2559,50 +2559,50 @@ void do_full_justify(void) {
 }
 
 /* Set up an argument list for executing the given command. */
-static void construct_argument_list(char ***arguments, char *command, char *filename) {
-  char *copy_of_command = copy_of(command);
-  char *element = strtok(copy_of_command, " ");
-  int count = 2;
-  while (element) {
-    (*arguments) = (char **)nrealloc(*arguments, (++count * sizeof(char *)));
-    (*arguments)[count - 3] = element;
-    element = strtok(NULL, " ");
-  }
-  (*arguments)[count - 2] = filename;
-  (*arguments)[count - 1] = NULL;
-}
+// static void construct_argument_list(char ***arguments, char *command, char *filename) {
+//   char *copy_of_command = copy_of(command);
+//   char *element = strtok(copy_of_command, " ");
+//   int count = 2;
+//   while (element) {
+//     (*arguments) = (char **)nrealloc(*arguments, (++count * sizeof(char *)));
+//     (*arguments)[count - 3] = element;
+//     element = strtok(NULL, " ");
+//   }
+//   (*arguments)[count - 2] = filename;
+//   (*arguments)[count - 1] = NULL;
+// }
 
 /* Open the specified file, and if that succeeds, remove the text of the marked
  * region or of the entire buffer and read the file contents into its place.
  * TODO: Split this up, or make subfunctonality from this available, so that
  * we can implement replace marked region in a mush better way and also meny more things. */
-static bool replace_buffer(const char *filename, undo_type action, const char *operation) {
-  linestruct *was_cutbuffer = cutbuffer;
-  int descriptor;
-  FILE *stream;
-  descriptor = open_file(filename, FALSE, &stream);
-  if (descriptor < 0) {
-    return FALSE;
-  }
-  add_undo(COUPLE_BEGIN, operation);
-  /* When replacing the whole buffer, start cutting at the top. */
-  if (action == CUT_TO_EOF) {
-    openfile->current   = openfile->filetop;
-    openfile->current_x = 0;
-  }
-  cutbuffer = NULL;
-  /* Cut either the marked region or the whole buffer. */
-  add_undo(action, NULL);
-  do_snip((openfile->mark != NULL), (openfile->mark == NULL), FALSE);
-  update_undo(action);
-  /* Discard what was cut. */
-  free_lines(cutbuffer);
-  cutbuffer = was_cutbuffer;
-  /* Insert the spell-checked file into the cleared area. */
-  read_file(stream, descriptor, filename, TRUE);
-  add_undo(COUPLE_END, operation);
-  return TRUE;
-}
+// static bool replace_buffer(const char *filename, undo_type action, const char *operation) {
+//   linestruct *was_cutbuffer = cutbuffer;
+//   int descriptor;
+//   FILE *stream;
+//   descriptor = open_file(filename, FALSE, &stream);
+//   if (descriptor < 0) {
+//     return FALSE;
+//   }
+//   add_undo(COUPLE_BEGIN, operation);
+//   /* When replacing the whole buffer, start cutting at the top. */
+//   if (action == CUT_TO_EOF) {
+//     openfile->current   = openfile->filetop;
+//     openfile->current_x = 0;
+//   }
+//   cutbuffer = NULL;
+//   /* Cut either the marked region or the whole buffer. */
+//   add_undo(action, NULL);
+//   do_snip((openfile->mark != NULL), (openfile->mark == NULL), FALSE);
+//   update_undo(action);
+//   /* Discard what was cut. */
+//   free_lines(cutbuffer);
+//   cutbuffer = was_cutbuffer;
+//   /* Insert the spell-checked file into the cleared area. */
+//   read_file(stream, descriptor, filename, TRUE);
+//   add_undo(COUPLE_END, operation);
+//   return TRUE;
+// }
 
 /* Execute the given program, with the given temp file as last argument. */
 static void treat(char *tempfile_name, char *theprogram, bool spelling) {
@@ -2721,84 +2721,84 @@ static void treat(char *tempfile_name, char *theprogram, bool spelling) {
 }
 
 /* Let the user edit the misspelled word.  Return 'FALSE' if the user cancels. */
-static bool fix_spello(const char *word) {
-  linestruct *was_edittop = openfile->edittop;
-  linestruct *was_current = openfile->current;
-  linestruct *top, *bot;
-  Ulong top_x, bot_x;
-  Ulong was_firstcolumn = openfile->firstcolumn;
-  Ulong was_x   = openfile->current_x;
-  bool  proceed = FALSE;
-  int   result;
-  bool  right_side_up = (openfile->mark && mark_is_before_cursor());
-  /* If the mark is on, start at the beginning of the marked region. */
-  if (openfile->mark) {
-    /* If the region is marked normally, swap the end points, so that (current, current_x) (where searching starts) is at the top. */
-    get_region(&top, &top_x, &bot, &bot_x);
-    if (right_side_up) {
-      openfile->current   = top;
-      openfile->current_x = top_x;
-      openfile->mark      = bot;
-      openfile->mark_x    = bot_x;
-    }
-  }
-  /* Otherwise, start from the top of the file. */
-  else {
-    openfile->current   = openfile->filetop;
-    openfile->current_x = 0;
-  }
-  /* Find the first whole occurrence of word. */
-  result = findnextstr(word, TRUE, INREGION, NULL, FALSE, NULL, 0);
-  /* If the word isn't found, alert the user; if it is, allow correction. */
-  if (result == 0) {
-    statusline(ALERT, _("Unfindable word: %s"), word);
-    lastmessage = VACUUM;
-    proceed     = TRUE;
-    napms(2800);
-  }
-  else if (result == 1) {
-    spotlighted            = TRUE;
-    light_from_col         = xplustabs();
-    light_to_col           = light_from_col + breadth(word);
-    linestruct *saved_mark = openfile->mark;
-    openfile->mark         = NULL;
-    edit_refresh();
-    put_cursor_at_end_of_answer();
-    /* Let the user supply a correctly spelled alternative. */
-    proceed = (do_prompt(MSPELL, word, NULL, edit_refresh, /* TRANSLATORS: This is a prompt. */ _("Edit a replacement")) != -1);
-    spotlighted = FALSE;
-    openfile->mark = saved_mark;
-    /* If a replacement was given, go through all occurrences. */
-    if (proceed && strcmp(word, answer) != 0) {
-      do_replace_loop(word, TRUE, was_current, &was_x);
-      /* TRANSLATORS: Shown after fixing misspellings in one word. */
-      statusbar_all(_("Next word..."));
-      napms(400);
-    }
-  }
-  if (openfile->mark) {
-    /* Restore the (compensated) end points of the marked region. */
-    if (right_side_up) {
-      openfile->current   = openfile->mark;
-      openfile->current_x = openfile->mark_x;
-      openfile->mark      = top;
-      openfile->mark_x    = top_x;
-    }
-    else {
-      openfile->current   = top;
-      openfile->current_x = top_x;
-    }
-  }
-  else {
-    /* Restore the (compensated) cursor position. */
-    openfile->current   = was_current;
-    openfile->current_x = was_x;
-  }
-  /* Restore the viewport to where it was. */
-  openfile->edittop     = was_edittop;
-  openfile->firstcolumn = was_firstcolumn;
-  return proceed;
-}
+// static bool fix_spello(const char *word) {
+//   linestruct *was_edittop = openfile->edittop;
+//   linestruct *was_current = openfile->current;
+//   linestruct *top, *bot;
+//   Ulong top_x, bot_x;
+//   Ulong was_firstcolumn = openfile->firstcolumn;
+//   Ulong was_x   = openfile->current_x;
+//   bool  proceed = FALSE;
+//   int   result;
+//   bool  right_side_up = (openfile->mark && mark_is_before_cursor());
+//   /* If the mark is on, start at the beginning of the marked region. */
+//   if (openfile->mark) {
+//     /* If the region is marked normally, swap the end points, so that (current, current_x) (where searching starts) is at the top. */
+//     get_region(&top, &top_x, &bot, &bot_x);
+//     if (right_side_up) {
+//       openfile->current   = top;
+//       openfile->current_x = top_x;
+//       openfile->mark      = bot;
+//       openfile->mark_x    = bot_x;
+//     }
+//   }
+//   /* Otherwise, start from the top of the file. */
+//   else {
+//     openfile->current   = openfile->filetop;
+//     openfile->current_x = 0;
+//   }
+//   /* Find the first whole occurrence of word. */
+//   result = findnextstr(word, TRUE, INREGION, NULL, FALSE, NULL, 0);
+//   /* If the word isn't found, alert the user; if it is, allow correction. */
+//   if (result == 0) {
+//     statusline(ALERT, _("Unfindable word: %s"), word);
+//     lastmessage = VACUUM;
+//     proceed     = TRUE;
+//     napms(2800);
+//   }
+//   else if (result == 1) {
+//     spotlighted            = TRUE;
+//     light_from_col         = xplustabs();
+//     light_to_col           = light_from_col + breadth(word);
+//     linestruct *saved_mark = openfile->mark;
+//     openfile->mark         = NULL;
+//     edit_refresh();
+//     put_cursor_at_end_of_answer();
+//     /* Let the user supply a correctly spelled alternative. */
+//     proceed = (do_prompt(MSPELL, word, NULL, edit_refresh, /* TRANSLATORS: This is a prompt. */ _("Edit a replacement")) != -1);
+//     spotlighted = FALSE;
+//     openfile->mark = saved_mark;
+//     /* If a replacement was given, go through all occurrences. */
+//     if (proceed && strcmp(word, answer) != 0) {
+//       do_replace_loop(word, TRUE, was_current, &was_x);
+//       /* TRANSLATORS: Shown after fixing misspellings in one word. */
+//       statusbar_all(_("Next word..."));
+//       napms(400);
+//     }
+//   }
+//   if (openfile->mark) {
+//     /* Restore the (compensated) end points of the marked region. */
+//     if (right_side_up) {
+//       openfile->current   = openfile->mark;
+//       openfile->current_x = openfile->mark_x;
+//       openfile->mark      = top;
+//       openfile->mark_x    = top_x;
+//     }
+//     else {
+//       openfile->current   = top;
+//       openfile->current_x = top_x;
+//     }
+//   }
+//   else {
+//     /* Restore the (compensated) cursor position. */
+//     openfile->current   = was_current;
+//     openfile->current_x = was_x;
+//   }
+//   /* Restore the viewport to where it was. */
+//   openfile->edittop     = was_edittop;
+//   openfile->firstcolumn = was_firstcolumn;
+//   return proceed;
+// }
 
 /* Run a spell-check on the given file, using 'spell' to produce a list of all misspelled words, then feeding those through
  * 'sort' and 'uniq' to obtain an alphabetical list, which words are then offered one by one to the user for correction. */
