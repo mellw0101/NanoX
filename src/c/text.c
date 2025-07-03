@@ -788,7 +788,6 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
  * set) a string containg spaces to the next tabstop, or one tabulator. */
 char *line_indent_plus_tab(const char *const restrict data, Ulong *const outlen) {
   ASSERT(data);
-  ASSERT(outlen);
   char *ret;
   int tablen;
   int len = indent_length(data);
@@ -3209,8 +3208,9 @@ bool tab_helper(openfilestruct *const file) {
   Ulong indent;
   Ulong full_length;
   char *data;
-  if (is_previous_char_one_of(file->current, file->current_x, "{[(:", &line, NULL) 
-   && line != file->current && white_string(file->current->data))
+  /* If the previous char is a open bracket char, and we are not on the same line as that bracket. */
+  if (is_previous_char_one_of(file->current, file->current_x, "{[(:", &line, NULL)
+  && line != file->current && white_string(file->current->data))
   {
     indent = indent_length(line->data);
     data   = line_indent_plus_tab(line->data, &full_length);

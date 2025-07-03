@@ -1053,14 +1053,11 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
           /* When a click occurs in the text element of a editor, make that editor the currently active editor. */
           editor_set_open(test->dp_editor);
           /* Get the line and index from the mouse position. */
-          Ulong index;
-          linestruct *line = line_and_index_from_mousepos(gui_font_get_font(gui->font), &index);
-          GUI_OF->current     = line;
-          GUI_OF->mark        = line;
-          GUI_OF->current_x   = index;
-          GUI_OF->mark_x      = index;
-          GUI_OF->softmark    = TRUE;
-          GUI_OF->placewewant = xplustabs();
+          editor_get_text_line_index(test->dp_editor, mouse_x, mouse_y, &GUI_OF->current, &GUI_OF->current_x);
+          GUI_OF->mark     = GUI_OF->current;
+          GUI_OF->mark_x   = GUI_OF->current_x;
+          GUI_OF->softmark = TRUE;
+          SET_PWW(GUI_OF);
           /* If this was a double click then select the current word, if any. */
           if (mouse_flag.is_set<WAS_MOUSE_DOUBLE_PRESS>()) {
             Ulong st, end;
@@ -1192,11 +1189,7 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
       }
       /* Editor-Text */
       else if (gui->clicked->has_editor_data && gui->clicked == gui->clicked->dp_editor->text) {
-        Ulong index;
-        linestruct *line;
-        editor_get_text_line_index(gui->clicked->dp_editor, mousepos.x, mousepos.y, &line, &index);
-        GUI_OF->current   = line;
-        GUI_OF->current_x = index;
+        editor_get_text_line_index(gui->clicked->dp_editor, mousepos.x, mousepos.y, &GUI_OF->current, &GUI_OF->current_x);
         /* If the left press was a tripple press, adjust the mark based on the current cursor line. */
         if (mouse_flag.is_set<WAS_MOUSE_TRIPPLE_PRESS>()) {
           Ulong st, end;

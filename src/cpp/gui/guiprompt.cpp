@@ -250,7 +250,6 @@ static void gui_promptmenu_open_file_search(void) {
       );
       gui_promptmenu_find_completions();
       if (cvec_len(gui->promptmenu->completions)) {
-        writef("\nPrompt menu: open file: result:\n");
         for (int i=0, len=cvec_len(gui->promptmenu->completions); i<len; ++i) {
           writef("%s\n", (char *)cvec_get(gui->promptmenu->completions, i));
         }
