@@ -528,17 +528,23 @@ void confirm_margin(void) {
 /* Stop ^C from generating a SIGINT. */
 void disable_kb_interrupt(void) {
   struct termios settings = {0};
-  tcgetattr(0, &settings);
-  settings.c_lflag &= ~ISIG;
-  tcsetattr(0, TCSANOW, &settings);
+  /* Only perform any action when in curses-mode.  TODO: Check this... */
+  if (IN_CURSES_CTX) {
+    tcgetattr(0, &settings);
+    settings.c_lflag &= ~ISIG;
+    tcsetattr(0, TCSANOW, &settings);
+  }
 }
 
 /* Make ^C generate a SIGINT. */
 void enable_kb_interrupt(void) {
   struct termios settings = {0};
-  tcgetattr(0, &settings);
-  settings.c_lflag |= ISIG;
-  tcsetattr(0, TCSANOW, &settings);
+  /* Only perform any action when in curses-mode.  TODO: Check this... */
+  if (IN_CURSES_CTX) {
+    tcgetattr(0, &settings);
+    settings.c_lflag |= ISIG;
+    tcsetattr(0, TCSANOW, &settings);
+  }
 }
 
 /* Make ^C interrupt a system call and set a flag. */

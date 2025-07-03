@@ -740,8 +740,7 @@ void gui_promptmenu_open_file(void) {
   typing_x = strlen(answer);
   /* If the current working directory does not end with a '/' char, then add it. */
   if (typing_x && answer[typing_x - 1] != '/') {
-    answer = xnstrncat(answer, typing_x, S__LEN("/"));
-    ++typing_x;
+    answer = xnstrncat(answer, typing_x++, S__LEN("/"));
   }
   gui_promptmenu_open_file_search();
 }

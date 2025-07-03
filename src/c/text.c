@@ -786,23 +786,24 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
 
 /* Return the given indent of data, plus either (when `TABS_TO_SPACES` is
  * set) a string containg spaces to the next tabstop, or one tabulator. */
-char *line_indent_plus_tab(const char *const restrict data, Ulong *const len) {
+char *line_indent_plus_tab(const char *const restrict data, Ulong *const outlen) {
   ASSERT(data);
-  ASSERT(len);
+  ASSERT(outlen);
   char *ret;
   int tablen;
-  *len = indent_length(data);
+  int len = indent_length(data);
   /* When tabs are represented by a number of spaces. */
   if (ISSET(TABS_TO_SPACES)) {
-    tablen = tabstop_length(data, *len);
-    ret = fmtstr("%.*s%*s", (int)(*len), data, tablen, " ");
+    tablen = tabstop_length(data, len);
+    ret = fmtstr("%.*s%*s", len, data, tablen, " ");
   }
   /* Otherwise, just use a single tabulator. */
   else {
     tablen = 1;
-    ret = fmtstr("%.*s\t", (int)(*len), data);
+    ret = fmtstr("%.*s\t", len, data);
   }
-  *len += tablen;
+  len += tablen;
+  ASSIGN_IF_VALID(outlen, len);
   return ret;
 }
 
@@ -2161,8 +2162,6 @@ void auto_bracket_for(openfilestruct *const file, linestruct *const line, Ulong 
   ASSERT(file);
   ASSERT(line);
   Ulong indentlen;
-  /* Number of chars to next tabstop when `TABS_TO_SPACES` is set. */
-  Ulong tablen;
   Ulong lenleft;
   linestruct *middle = make_new_node(line);
   linestruct *end    = make_new_node(middle);
@@ -2170,23 +2169,12 @@ void auto_bracket_for(openfilestruct *const file, linestruct *const line, Ulong 
   splice_node_for(file, middle, end);
   renumber_from(middle);
   indentlen = indent_length(line->data);
-  tablen    = tabstop_length(line->data, indentlen);
   lenleft   = strlen(line->data + posx);
-  middle->data = xmalloc(indentlen + tablen + 1);
-  end->data    = xmalloc(indentlen + lenleft + 1);
   /* Set up the middle line. */
-  memcpy(middle->data, line->data, indentlen);
-  if (ISSET(TABS_TO_SPACES)) {
-    memset((middle->data + indentlen), ' ', tablen);
-    middle->data[indentlen + tablen] = '\0';
-    file->totsize += tablen;
-  }
-  else {
-    middle->data[indentlen]     = '\t';
-    middle->data[indentlen + 1] = '\0';
-    ++file->totsize;
-  }
+  middle->data   = line_indent_plus_tab(line->data, &file->current_x);
+  file->totsize += file->current_x;
   /* Set up end line. */
+  end->data = xmalloc(indentlen + lenleft + 1);
   memcpy((end->data + indentlen), (line->data + posx), (lenleft + 1));
   memcpy(end->data, line->data, indentlen);
   /* Set up start line. */
@@ -2194,9 +2182,24 @@ void auto_bracket_for(openfilestruct *const file, linestruct *const line, Ulong 
   line->data[posx] = '\0';
   /* Set the cursor line and x pos to the middle line. */
   file->current   = middle; 
-  file->current_x = (indentlen + tablen);
-  set_pww_for(file);
+  SET_PWW(file);
   refresh_needed = TRUE;
+  /* Number of chars to next tabstop when `TABS_TO_SPACES` is set. */
+  // Ulong tablen;
+  // tablen    = tabstop_length(line->data, indentlen);
+  // middle->data = xmalloc(indentlen + tablen + 1);
+  // memcpy(middle->data, line->data, indentlen);
+  // if (ISSET(TABS_TO_SPACES)) {
+  //   memset((middle->data + indentlen), ' ', tablen);
+  //   middle->data[indentlen + tablen] = '\0';
+  //   file->totsize += tablen;
+  // }
+  // else {
+  //   middle->data[indentlen]     = '\t';
+  //   middle->data[indentlen + 1] = '\0';
+  //   ++file->totsize;
+  // }
+  // file->current_x = (indentlen + tablen);
 }
 
 /* Auto insert a empty line between '{' and '}', as well as indenting the line once and setting openfile->current to it. */
@@ -2290,7 +2293,7 @@ bool comment_line_for(openfilestruct *const file, undo_type action, linestruct *
     /* Adjust the positions of the cursor, when it is behind the comment. */
     if (line == file->current && file->current_x > indent_len) {
       file->current_x -= (pre_len + space_existed);
-      set_pww_for(file);
+      SET_PWW(file);
     }
     /* Adjust the position of the mark when it is behind the comment. */
     if (line == file->mark && file->mark_x > indent_len) {
@@ -2478,7 +2481,9 @@ void do_enter_for(openfilestruct *const file) {
   /* If the previous char is an opening bracket, or a lable, and we are not on the same line, we should indent once more. */
   do_another_indent = (
     is_previous_char_one_of(file->current, file->current_x, "{[(:", &another_indent_line, NULL)
-    && another_indent_line != file->current
+    /* For now when on the same line only allow doing another indent when at the end of the line. */
+    && (another_indent_line != file->current || !file->current->data[file->current_x])
+    && white_string(file->current->data + file->current_x)
   );
   newnode = make_new_node(file->current);
   if (ISSET(AUTOINDENT)) {
@@ -3131,16 +3136,68 @@ char *get_previous_char(linestruct *line, Ulong xpos, linestruct **const outline
   }
 }
 
+/* ----------------------------- Get next char ----------------------------- */
+
+/* Returns a pointer to the next character (at or right of `xpos` in `line`) that is neither a blank nor a
+ * zero-width.  If `xpos` is at the end of the `line`, move to the next line and continue searching from it's
+ * start.  Continue across lines until a non-blank, non-zero-width character is found, or return `NULL` at
+ * buffer end.  The function advances `line` and `xpos` as needed to traverse forward.  Also note that both
+ * `outline` and `outxpos` can be `NULL`, if they are not, the position we ended up in will be assigned to them. */
+char *get_next_char(linestruct *line, Ulong xpos, linestruct **const outline, Ulong *const outxpos) {
+  ASSERT(line);
+  while (1) {
+    /* We are at the end of the line. */
+    if (!line->data[xpos]) {
+      /* If there is no more lines, return NULL. */
+      if (!line->next) {
+        return NULL;
+      }
+      /* Otherwise, move to the next line, and place the position at the start of the line. */
+      else {
+        DLIST_ADV_NEXT(line);
+        xpos = 0;
+      }
+    }
+    /* Otherwise */
+    else {
+      /* Check if we are at a non-blank, non-zero-width char.  If so, we stop here. */
+      if (!is_blank_char(line->data + xpos) && !is_zerowidth(line->data + xpos)) {
+        /* If the caller wants to know what line, and where in the line we ended up, tell them. */
+        ASSIGN_IF_VALID(outline, line);
+        ASSIGN_IF_VALID(outxpos, xpos);
+        return (line->data + xpos);
+      }
+      /* Otherwise, we move to the right. */
+      else {
+        xpos = step_right(line->data, xpos);
+      }
+    }
+  }
+}
+
 /* ----------------------------- Is previous char one of ----------------------------- */
 
-/* Returns `TRUE` when the previous char before the current line, pos is one of `mathces`, this retrieves the
- * true previous char, skipping over all blanks and zerowidth chars, and then compares that char to `matches`. */
+/* Returns `TRUE` when the previous char before the current `line,xpos` is one of `mathces`, this retrieves the
+ * true previous char, skipping over all blanks and zero-width chars, and then compares that char to `matches`. */
 bool is_previous_char_one_of(linestruct *const line, Ulong xpos,
   const char *const restrict matches, linestruct **const outline, Ulong *const outxpos)
 {
   ASSERT(matches);
   ASSERT(*matches);
   char *ch = get_previous_char(line, xpos, outline, outxpos);
+  return !(!ch || !mbstrchr(matches, ch));
+}
+
+/* ----------------------------- Is next char one of ----------------------------- */
+
+/* Returns `TRUE` when the next char at or after the current `line,xpos` is one of `matches`, this retrieves the
+ * true next char, skipping over all blanks and zero-width chars, and then compares that char to `marches`. */
+bool is_next_char_one_of(linestruct *const line, Ulong xpos,
+  const char *const restrict matches, linestruct **const outline, Ulong *const outxpos)
+{
+  ASSERT(matches);
+  ASSERT(*matches);
+  char *ch = get_next_char(line, xpos, outline, outxpos);
   return !(!ch || !mbstrchr(matches, ch));
 }
 

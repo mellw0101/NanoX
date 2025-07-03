@@ -194,6 +194,12 @@ extern configstruct *config;
 extern syntaxtype *nanox_rc_live_syntax;
 extern syntaxtype *syntaxes;
 
+/* ----------------------------- files.c ----------------------------- */
+
+/* static */ extern pid_t pid_of_command;
+/* static */ extern pid_t pid_of_sender;
+/* static */ extern bool should_pipe;
+
 /* ----------------------------- search.c ----------------------------- */
 
 extern bool came_full_circle;
@@ -500,8 +506,13 @@ bool  find_paragraph(linestruct **const first, Ulong *const count);
 void  do_verbatim_input(void);
 /* ----------------------------- Get previous char ----------------------------- */
 char *get_previous_char(linestruct *line, Ulong xpos, linestruct **const outline, Ulong *const outxpos);
+/* ----------------------------- Get next char ----------------------------- */
+char *get_next_char(linestruct *line, Ulong xpos, linestruct **const outline, Ulong *const outxpos);
 /* ----------------------------- Is previous char one of ----------------------------- */
 bool is_previous_char_one_of(linestruct *const line, Ulong xpos,
+  const char *const restrict matches, linestruct **const outline, Ulong *const outxpos);
+/* ----------------------------- Is next char one of ----------------------------- */
+bool is_next_char_one_of(linestruct *const line, Ulong xpos,
   const char *const restrict matches, linestruct **const outline, Ulong *const outxpos);
 /* ----------------------------- Tab helper ----------------------------- */
 bool tab_helper(openfilestruct *const file);
@@ -698,6 +709,13 @@ void   menu_qsort(CMenu *const menu, CmpFuncPtr cmp_func);
 /* static */ bool make_backup_of_for(openfilestruct *const file, char *realname);
 /* static */ bool make_backup_of(char *realname);
 
+/* static */ void cancel_the_command(int _UNUSED signal);
+/* static */ void send_data(const linestruct *head, int fd);
+
+/* static */ void execute_command_for(CTX_ARGS_REF_OF, const char *const restrict command);
+/* static */ void execute_command(const char *const restrict command);
+
+
 /* ----------------------------- Make new buffer ----------------------------- */
 void make_new_buffer_for(openfilestruct **const start, openfilestruct **const open);
 void make_new_buffer(void);
@@ -723,17 +741,27 @@ void close_buffer_for(openfilestruct *const orphan, openfilestruct **const start
 void close_buffer(void);
 /* ----------------------------- Real dir from tilde ----------------------------- */
 char *real_dir_from_tilde(const char *const restrict path) _RETURNS_NONNULL _NONNULL(1);
-bool  is_dir(const char *const path) _NODISCARD _NONNULL(1);
+/* ----------------------------- Is dir ----------------------------- */
+bool is_dir(const char *const path) _NODISCARD _NONNULL(1);
+/* ----------------------------- Get full path ----------------------------- */
 char *get_full_path(const char *const restrict origpath);
+/* ----------------------------- Check writable directory ----------------------------- */
 char *check_writable_directory(const char *path);
-int   diralphasort(const void *va, const void *vb);
-void  set_modified_for(openfilestruct *const file);
-void  set_modified(void);
+/* ----------------------------- Diralphasort ----------------------------- */
+int diralphasort(const void *va, const void *vb);
+/* ----------------------------- Set modified ----------------------------- */
+void set_modified_for(openfilestruct *const file);
+void set_modified(void);
+/* ----------------------------- Encode data ----------------------------- */
 char *encode_data(char *text, Ulong length);
-void  init_operating_dir(void);
-bool  outside_of_confinement(const char *const restrict somepath, bool tabbing);
-void  init_backup_dir(void);
-int   copy_file(FILE *inn, FILE *out, bool close_out);
+/* ----------------------------- Init operating dir ----------------------------- */
+void init_operating_dir(void);
+/* ----------------------------- Outside of confinement ----------------------------- */
+bool outside_of_confinement(const char *const restrict somepath, bool tabbing);
+/* ----------------------------- Init backup dir ----------------------------- */
+void init_backup_dir(void);
+/* ----------------------------- Copy file ----------------------------- */
+int copy_file(FILE *inn, FILE *out, bool close_out);
 /* ----------------------------- Safe tempfile ----------------------------- */
 char *safe_tempfile_for(openfilestruct *const file, FILE **const stream);
 char *safe_tempfile(FILE **const stream);

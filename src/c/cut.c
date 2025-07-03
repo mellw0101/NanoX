@@ -97,7 +97,7 @@ void expunge_for(openfilestruct *const file, int cols, undo_type action) {
   Ulong line_len;
   Ulong old_amount;
   linestruct *joining;
-  set_pww_for(file);
+  SET_PWW(file);
   /* When in the middle of a line, delete the current character. */
   if (file->current->data[file->current_x]) {
     charlen    = char_length(file->current->data + file->current_x);
@@ -327,7 +327,7 @@ void do_snip_for(CTX_ARGS, bool marked, bool until_eof, bool append) {
     }
     else if (file->current != file->filebot) {
       extract_segment_for(STACK_CTX, line, file->current_x, line->next, 0);
-      set_pww_for(file);
+      SET_PWW(file);
     }
   }
   else {
@@ -770,7 +770,7 @@ void paste_text_for(CTX_PARAMS) {
     precalc_multicolorinfo_for(file);
   }
   /* Set the disired x position to where the pasted text ends. */
-  set_pww_for(file);
+  SET_PWW(file);
   set_modified_for(file);
   wipe_statusbar();
   refresh_needed = TRUE;

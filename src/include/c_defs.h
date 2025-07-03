@@ -44,6 +44,7 @@
 #include <sys/epoll.h>
 #include <sys/un.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 /* ftgl */
 #include <ftgl/freetype-gl.h>
@@ -111,23 +112,27 @@
 #define GUI_CTX  GUI_OF, GUI_RC
 #define TUI_CTX  TUI_OF, TUI_RC
 
-/* Used internaly by context-less functions, to call others. */
-#define STACK_CTX  file, rows, cols
+#define STACK_OF      file
+#define STACK_OF_DF  *file
+#define STACK_ROWS    rows
+#define STACK_COLS    cols
 
-#define STACK_OF    file
-#define STACK_ROWS  rows
-#define STACK_COLS  cols
+/* Used internaly by context-less functions, to call others. */
+#define STACK_CTX     STACK_OF,    STACK_ROWS, STACK_COLS
+#define STACK_CTX_DF  STACK_OF_DF, STACK_ROWS, STACK_COLS
 
 /* These are used when building context-less functions, as these
  * ensure there is no confusion about the use of the parameters */
 
-#define CTX_ARG_OF    openfilestruct *const file
-#define CTX_ARG_ROWS  int rows
-#define CTX_ARG_COLS  int cols
+#define CTX_ARG_OF      openfilestruct *const file
+#define CTX_ARG_REF_OF  openfilestruct **const file
+#define CTX_ARG_ROWS    int rows
+#define CTX_ARG_COLS    int cols
 
 /* The full context parameters.  So the file, the total text and rows available. */
-#define CTX_ARGS      CTX_ARG_OF, CTX_ARG_ROWS, CTX_ARG_COLS
-#define CTX_PARAMS    CTX_ARG_OF, CTX_ARG_ROWS, CTX_ARG_COLS
+#define CTX_ARGS         CTX_ARG_OF,     CTX_ARG_ROWS, CTX_ARG_COLS
+#define CTX_ARGS_REF_OF  CTX_ARG_REF_OF, CTX_ARG_ROWS, CTX_ARG_COLS
+#define CTX_PARAMS       CTX_ARG_OF,     CTX_ARG_ROWS, CTX_ARG_COLS
 
 /* For use when modifying the state of the context. */
 #define FULL_GUI_CTX  &GUI_SF, &GUI_OF, GUI_RC
@@ -600,7 +605,7 @@ static const short bg_vs_code_color_array[] = {
 
 #define SET_PWW(file)                                          \
   /* A simple way to correctly set placewewant for `file`. */  \
-  DO_WHILE((file)->placewewant = xplustabs_for(file);)
+  DO_WHILE((file)->placewewant = XPLUSTABS(file);)
 
 #define SET_CURSOR_TO_EOL(file)                                                    \
   /* A simple way to set the cursor at the end of the current line for `file`. */  \

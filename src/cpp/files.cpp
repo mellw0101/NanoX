@@ -829,181 +829,181 @@ void open_new_empty_buffer(void) {
 // }
 
 /* The PID of a forked process -- needed when wanting to abort it. */
-static pid_t pid_of_command = -1;
+// static pid_t pid_of_command = -1;
 /* The PID of the process that pipes data to the above process. */
-static pid_t pid_of_sender = -1;
+// static pid_t pid_of_sender = -1;
 /* Whether we are piping data to the external command. */
-static bool should_pipe = FALSE;
+// static bool should_pipe = FALSE;
 
 /* Send an unconditional kill signal to the running external command. */
-static void cancel_the_command(int signal) _NOTHROW {
-  if (pid_of_command > 0) {
-    kill(pid_of_command, SIGKILL);
-  }
-  if (should_pipe && pid_of_sender > 0) {
-    kill(pid_of_sender, SIGKILL);
-  }
-}
+// static void cancel_the_command(int signal) _NOTHROW {
+//   if (pid_of_command > 0) {
+//     kill(pid_of_command, SIGKILL);
+//   }
+//   if (should_pipe && pid_of_sender > 0) {
+//     kill(pid_of_sender, SIGKILL);
+//   }
+// }
 
 /* Send the text that starts at the given line to file descriptor fd. */
-static void send_data(const linestruct *line, int fd) {
-  FILE *tube = fdopen(fd, "w");
-  if (!tube) {
-    exit(4);
-  }
-  /* Send each line, except a final empty line. */
-  while (line && (line->next || line->data[0])) {
-    Ulong length = recode_LF_to_NUL(line->data);
-    if (fwrite(line->data, 1, length, tube) < length) {
-      exit(5);
-    }
-    if (line->next && putc('\n', tube) == EOF) {
-      exit(6);
-    }
-    line = line->next;
-  }
-  fclose(tube);
-}
+// static void send_data(const linestruct *line, int fd) {
+//   FILE *tube = fdopen(fd, "w");
+//   if (!tube) {
+//     exit(4);
+//   }
+//   /* Send each line, except a final empty line. */
+//   while (line && (line->next || line->data[0])) {
+//     Ulong length = recode_LF_to_NUL(line->data);
+//     if (fwrite(line->data, 1, length, tube) < length) {
+//       exit(5);
+//     }
+//     if (line->next && putc('\n', tube) == EOF) {
+//       exit(6);
+//     }
+//     line = line->next;
+//   }
+//   fclose(tube);
+// }
 
 /* Execute the given command in a shell. */
-static void execute_command(const char *command) {
-  /* The pipes through which text will be written and read. */
-  int from_fd[2], to_fd[2];
-  /* Original and temporary handlers for SIGINT. */
-  struct sigaction oldaction, newaction = {};
-  long  was_lineno = (openfile->mark ? 0 : openfile->current->lineno);
-  int   command_status, sender_status;
-  FILE *stream;
-  should_pipe = (command[0] == '|');
-  /* Create a pipe to read the command's output from, and, if needed, a pipe to feed the command's input through. */
-  if (pipe(from_fd) == -1 || (should_pipe && pipe(to_fd) == -1)) {
-    statusline(ALERT, _("Could not create pipe: %s"), strerror(errno));
-    return;
-  }
-  /* Fork a child process to run the command in. */
-  if ((pid_of_command = fork()) == 0) {
-    const char *theshell = getenv("SHELL");
-    if (!theshell) {
-      theshell = "/bin/sh";
-    }
-    /* Child: close the unused read end of the output pipe. */
-    close(from_fd[0]);
-    /* Connect the write end of the output pipe to the process' output streams. */
-    if (dup2(from_fd[1], STDOUT_FILENO) < 0) {
-      exit(3);
-    }
-    if (dup2(from_fd[1], STDERR_FILENO) < 0) {
-      exit(4);
-    }
-    /* If the parent sends text, connect the read end of the feeding pipe to the child's input stream. */
-    if (should_pipe) {
-      if (dup2(to_fd[0], STDIN_FILENO) < 0) {
-        exit(5);
-      }
-      close(from_fd[1]);
-      close(to_fd[1]);
-    }
-    /* Run the given command inside the preferred shell. */
-    execl(theshell, tail(theshell), "-c", should_pipe ? &command[1] : command, NULL);
-    /* If the exec call returns, there was an error. */
-    exit(6);
-  }
-  /* Parent: close the unused write end of the pipe. */
-  close(from_fd[1]);
-  if (pid_of_command == -1) {
-    statusline(ALERT, _("Could not fork: %s"), strerror(errno));
-    close(from_fd[0]);
-    return;
-  }
-  statusbar_all(_("Executing..."));
-  /* If the command starts with "|", pipe buffer or region to the command. */
-  if (should_pipe) {
-    linestruct *was_cutbuffer = cutbuffer;
-    bool        whole_buffer  = FALSE;
-    cutbuffer                 = NULL;
-    if (ISSET(MULTIBUFFER)) {
-      openfile = openfile->prev;
-      if (openfile->mark) {
-        copy_marked_region();
-      }
-      else {
-        whole_buffer = TRUE;
-      }
-    }
-    else {
-      /* TRANSLATORS: This one goes with Undid/Redid messages. */
-      add_undo(COUPLE_BEGIN, N_("filtering"));
-      if (!openfile->mark) {
-        openfile->current   = openfile->filetop;
-        openfile->current_x = 0;
-      }
-      add_undo(CUT, NULL);
-      do_snip((openfile->mark != NULL), (openfile->mark == NULL), FALSE);
-      if (!openfile->filetop->next) {
-        openfile->filetop->has_anchor = FALSE;
-      }
-      update_undo(CUT);
-    }
-    /* Create a separate process for piping the data to the command. */
-    if (!(pid_of_sender = fork())) {
-      send_data((whole_buffer ? openfile->filetop : cutbuffer), to_fd[1]);
-      exit(0);
-    }
-    if (pid_of_sender == -1) {
-      statusline(ALERT, _("Could not fork: %s"), strerror(errno));
-    }
-    close(to_fd[0]);
-    close(to_fd[1]);
-    if (ISSET(MULTIBUFFER)) {
-      openfile = openfile->next;
-    }
-    free_lines(cutbuffer);
-    cutbuffer = was_cutbuffer;
-  }
-  /* Re-enable interpretation of the special control keys so that we get SIGINT when Ctrl-C is pressed. */
-  enable_kb_interrupt();
-  /* Set up a signal handler so that ^C will terminate the forked process. */
-  newaction.sa_handler = cancel_the_command;
-  newaction.sa_flags   = 0;
-  sigaction(SIGINT, &newaction, &oldaction);
-  stream = fdopen(from_fd[0], "rb");
-  if (!stream) {
-    statusline(ALERT, _("Failed to open pipe: %s"), strerror(errno));
-  }
-  else {
-    read_file(stream, 0, "pipe", TRUE);
-  }
-  if (should_pipe && !ISSET(MULTIBUFFER)) {
-    if (was_lineno) {
-      goto_line_posx(was_lineno, 0);
-    }
-    add_undo(COUPLE_END, N_("filtering"));
-  }
-  /* Wait for the external command (and possibly data sender) to terminate. */
-  waitpid(pid_of_command, &command_status, 0);
-  if (should_pipe && pid_of_sender > 0) {
-    waitpid(pid_of_sender, &sender_status, 0);
-  }
-  /* If the command failed, show what the shell reported. */
-  if (!WIFEXITED(command_status) || WEXITSTATUS(command_status)) {
-    statusline(ALERT, WIFSIGNALED(command_status) ? _("Cancelled") : _("Error: %s"),
-               openfile->current->prev && strstr(openfile->current->prev->data, ": ")
-                 ? (strstr(openfile->current->prev->data, ": ") + 2)
-                 : "---");
-  }
-  else if (should_pipe && pid_of_sender > 0 && (!WIFEXITED(sender_status) || WEXITSTATUS(sender_status))) {
-    statusline(ALERT, _("Piping failed"));
-  }
-  /* If there was an error, undo and discard what the command did. */
-  if (lastmessage == ALERT) {
-    do_undo();
-    discard_until(openfile->current_undo);
-  }
-  /* Restore the original handler for SIGINT. */
-  sigaction(SIGINT, &oldaction, NULL);
-  /* Restore the terminal to its desired state, and disable interpretation of the special control keys again. */
-  terminal_init();
-}
+// static void execute_command(const char *command) {
+//   /* The pipes through which text will be written and read. */
+//   int from_fd[2], to_fd[2];
+//   /* Original and temporary handlers for SIGINT. */
+//   struct sigaction oldaction, newaction = {};
+//   long  was_lineno = (openfile->mark ? 0 : openfile->current->lineno);
+//   int   command_status, sender_status;
+//   FILE *stream;
+//   should_pipe = (command[0] == '|');
+//   /* Create a pipe to read the command's output from, and, if needed, a pipe to feed the command's input through. */
+//   if (pipe(from_fd) == -1 || (should_pipe && pipe(to_fd) == -1)) {
+//     statusline(ALERT, _("Could not create pipe: %s"), strerror(errno));
+//     return;
+//   }
+//   /* Fork a child process to run the command in. */
+//   if ((pid_of_command = fork()) == 0) {
+//     const char *theshell = getenv("SHELL");
+//     if (!theshell) {
+//       theshell = "/bin/sh";
+//     }
+//     /* Child: close the unused read end of the output pipe. */
+//     close(from_fd[0]);
+//     /* Connect the write end of the output pipe to the process' output streams. */
+//     if (dup2(from_fd[1], STDOUT_FILENO) < 0) {
+//       exit(3);
+//     }
+//     if (dup2(from_fd[1], STDERR_FILENO) < 0) {
+//       exit(4);
+//     }
+//     /* If the parent sends text, connect the read end of the feeding pipe to the child's input stream. */
+//     if (should_pipe) {
+//       if (dup2(to_fd[0], STDIN_FILENO) < 0) {
+//         exit(5);
+//       }
+//       close(from_fd[1]);
+//       close(to_fd[1]);
+//     }
+//     /* Run the given command inside the preferred shell. */
+//     execl(theshell, tail(theshell), "-c", should_pipe ? &command[1] : command, NULL);
+//     /* If the exec call returns, there was an error. */
+//     exit(6);
+//   }
+//   /* Parent: close the unused write end of the pipe. */
+//   close(from_fd[1]);
+//   if (pid_of_command == -1) {
+//     statusline(ALERT, _("Could not fork: %s"), strerror(errno));
+//     close(from_fd[0]);
+//     return;
+//   }
+//   statusbar_all(_("Executing..."));
+//   /* If the command starts with "|", pipe buffer or region to the command. */
+//   if (should_pipe) {
+//     linestruct *was_cutbuffer = cutbuffer;
+//     bool        whole_buffer  = FALSE;
+//     cutbuffer                 = NULL;
+//     if (ISSET(MULTIBUFFER)) {
+//       openfile = openfile->prev;
+//       if (openfile->mark) {
+//         copy_marked_region();
+//       }
+//       else {
+//         whole_buffer = TRUE;
+//       }
+//     }
+//     else {
+//       /* TRANSLATORS: This one goes with Undid/Redid messages. */
+//       add_undo(COUPLE_BEGIN, N_("filtering"));
+//       if (!openfile->mark) {
+//         openfile->current   = openfile->filetop;
+//         openfile->current_x = 0;
+//       }
+//       add_undo(CUT, NULL);
+//       do_snip((openfile->mark != NULL), (openfile->mark == NULL), FALSE);
+//       if (!openfile->filetop->next) {
+//         openfile->filetop->has_anchor = FALSE;
+//       }
+//       update_undo(CUT);
+//     }
+//     /* Create a separate process for piping the data to the command. */
+//     if (!(pid_of_sender = fork())) {
+//       send_data((whole_buffer ? openfile->filetop : cutbuffer), to_fd[1]);
+//       exit(0);
+//     }
+//     if (pid_of_sender == -1) {
+//       statusline(ALERT, _("Could not fork: %s"), strerror(errno));
+//     }
+//     close(to_fd[0]);
+//     close(to_fd[1]);
+//     if (ISSET(MULTIBUFFER)) {
+//       openfile = openfile->next;
+//     }
+//     free_lines(cutbuffer);
+//     cutbuffer = was_cutbuffer;
+//   }
+//   /* Re-enable interpretation of the special control keys so that we get SIGINT when Ctrl-C is pressed. */
+//   enable_kb_interrupt();
+//   /* Set up a signal handler so that ^C will terminate the forked process. */
+//   newaction.sa_handler = cancel_the_command;
+//   newaction.sa_flags   = 0;
+//   sigaction(SIGINT, &newaction, &oldaction);
+//   stream = fdopen(from_fd[0], "rb");
+//   if (!stream) {
+//     statusline(ALERT, _("Failed to open pipe: %s"), strerror(errno));
+//   }
+//   else {
+//     read_file(stream, 0, "pipe", TRUE);
+//   }
+//   if (should_pipe && !ISSET(MULTIBUFFER)) {
+//     if (was_lineno) {
+//       goto_line_posx(was_lineno, 0);
+//     }
+//     add_undo(COUPLE_END, N_("filtering"));
+//   }
+//   /* Wait for the external command (and possibly data sender) to terminate. */
+//   waitpid(pid_of_command, &command_status, 0);
+//   if (should_pipe && pid_of_sender > 0) {
+//     waitpid(pid_of_sender, &sender_status, 0);
+//   }
+//   /* If the command failed, show what the shell reported. */
+//   if (!WIFEXITED(command_status) || WEXITSTATUS(command_status)) {
+//     statusline(ALERT, WIFSIGNALED(command_status) ? _("Cancelled") : _("Error: %s"),
+//                openfile->current->prev && strstr(openfile->current->prev->data, ": ")
+//                  ? (strstr(openfile->current->prev->data, ": ") + 2)
+//                  : "---");
+//   }
+//   else if (should_pipe && pid_of_sender > 0 && (!WIFEXITED(sender_status) || WEXITSTATUS(sender_status))) {
+//     statusline(ALERT, _("Piping failed"));
+//   }
+//   /* If there was an error, undo and discard what the command did. */
+//   if (lastmessage == ALERT) {
+//     do_undo();
+//     discard_until(openfile->current_undo);
+//   }
+//   /* Restore the original handler for SIGINT. */
+//   sigaction(SIGINT, &oldaction, NULL);
+//   /* Restore the terminal to its desired state, and disable interpretation of the special control keys again. */
+//   terminal_init();
+// }
 
 /* Insert a file into the current buffer (or into a new buffer).
  * But when execute is 'TRUE', run a command in the shell and insert its output

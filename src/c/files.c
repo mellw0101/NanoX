@@ -42,11 +42,11 @@
 
 
 /* The PID of a forked process -- needed when wanting to abort it. */
-// static pid_t pid_of_command = -1;
+/* static */ pid_t pid_of_command = -1;
 /* The PID of the process that pipes data to the above process. */
-// static pid_t pid_of_sender = -1;
+/* static */ pid_t pid_of_sender = -1;
 /* Whether we are pipeing data to the external command. */
-// static bool should_pipe = FALSE;
+/* static */ bool should_pipe = FALSE;
 
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
@@ -379,6 +379,215 @@
  * then in the user's home directory).  Return 'TRUE' if the save can proceed. */
 /* static */ bool make_backup_of(char *realname) {
   return make_backup_of_for(CTX_OF, realname);
+}
+
+/* ----------------------------- Cancel the command ----------------------------- */
+
+/* Send an unconditional kill signal to the running external command. */
+/* static */ void cancel_the_command(int _UNUSED signal) {
+  if (pid_of_command > 0) {
+    kill(pid_of_command, SIGKILL);
+  }
+  if (should_pipe && pid_of_sender > 0) {
+    kill(pid_of_sender, SIGKILL);
+  }
+}
+
+/* ----------------------------- Send data ----------------------------- */
+
+/* Send the text that starts at `head` to the file-desctiptor `fd`.  TODO: Make this fully fd based. */
+/* static */ void send_data(const linestruct *head, int fd) {
+  ASSERT(head);
+  ASSERT(fd >= 0);
+  FILE *pipe = fdopen(fd, "w");
+  Ulong length;
+  if (!pipe) {
+    exit(4);
+  }
+  /* Send each line, except a final empty line. */
+  while (head && (head->next || *head->data)) {
+    length = recode_LF_to_NUL(head->data);
+    if (fwrite(head->data, 1, length, pipe) < length) {
+      exit(5);
+    }
+    if (head->next && putc('\n', pipe) == EOF) {
+      exit(6);
+    }
+    DLIST_ADV_NEXT(head);
+  }
+  fclose(pipe);
+}
+
+/* ----------------------------- Execute command ----------------------------- */
+
+/* Execute the given command in a shell. */
+/* static */ void execute_command_for(CTX_ARGS_REF_OF, const char *const restrict command) {
+  ASSERT(file);
+  ASSERT(*file);
+  ASSERT(command);
+  /* The pipes through which text will be written and read. */
+  int pipe_from[2];
+  int pipe_to[2];
+  /* Original and temporary handlers for SIGINT. */
+  struct sigaction old_action = {0};
+  struct sigaction new_action = {0};
+  long was_lineno = ((*file)->mark ? 0 : (*file)->current->lineno);
+  int command_status;
+  int sender_status;
+  FILE *stream;
+  const char *shell;
+  linestruct *was_cutbuffer;
+  bool whole_buffer;
+  should_pipe = (*command == '|');
+  /* Create a pipe to read the command's output from, and if needed, a pipe to feed the command's input through. */
+  if (pipe(pipe_from) == -1 || (should_pipe && pipe(pipe_to) == -1)) {
+    statusline(ALERT, _("Could not create pipe: %s"), strerror(errno));
+    return;
+  }
+  /* Fork a child process to run the command in. */
+  if ((pid_of_command = fork()) == -1) {
+    /* If we fail to fork a child process, inform the user and make a clean getaway. */
+    statusline(ALERT, _("Failed to fork a child process: %s"), strerror(errno));
+    close(pipe_from[0]);
+    close(pipe_from[1]);
+    if (should_pipe) {
+      close(pipe_to[0]);
+      close(pipe_to[1]);
+    }
+    return;
+  }
+  /* Child */
+  else if (pid_of_command == 0) {
+    /* Child: If we fail to get the shell from the env varaible, default to sh. */
+    if (!(shell = getenv("SHELL"))) {
+      shell = "/bin/sh";
+    }
+    /* Child: Close the unused read end of the output pipe. */
+    close(pipe_from[0]);
+    /* Child: Connect the write end of the output pipe to the process's output streams. */
+    if (dup2(pipe_from[1], STDOUT_FILENO) < 0) {
+      exit(3);
+    }
+    if (dup2(pipe_from[1], STDERR_FILENO) < 0) {
+      exit(4);
+    }
+    /* Child: If we should pipe the child's input. */
+    if (should_pipe) {
+      /* Child: If the parent sends text, connect the read end of the feeding pipe to the child's input stream. */
+      if (dup2(pipe_to[0], STDIN_FILENO) < 0) {
+        exit(5);
+      }
+      close(pipe_from[1]);
+      close(pipe_to[1]);
+    }
+    /* Child: Run the given command inside the preferred shell. */
+    execl(shell, tail(shell), "-c", (command + !!should_pipe), NULL);
+    /* If the exec call returns, there has been some error. */
+    exit(6);
+  }
+  /* Parent */
+  else {
+    /* Parent: Close the unused write end of the pipe. */
+    close(pipe_from[1]);
+    statusbar_all(_("Executing..."));
+    /* Parent: If the command starts with '|', pipe buffer region to the command. */
+    if (should_pipe) {
+      was_cutbuffer = cutbuffer;
+      whole_buffer  = FALSE;
+      cutbuffer     = NULL;
+      if (ISSET(MULTIBUFFER)) {
+        CLIST_ADV_PREV(*file);
+        if ((*file)->mark) {
+          copy_marked_region_for(*file);
+        }
+        else {
+          whole_buffer = TRUE;
+        }
+      }
+      else {
+        /* TRANSLATORS: This one goes with Undid/Redid messages. */
+        add_undo_for(*file, COUPLE_BEGIN, N_("filtering"));
+        if (!(*file)->mark) {
+          (*file)->current   = (*file)->filetop;
+          (*file)->current_x = 0;
+        }
+        add_undo_for(*file, CUT, NULL);
+        do_snip_for(STACK_CTX_DF, (*file)->mark, !(*file)->mark, FALSE);
+        /* Parent: If there is only a single line in the (*file). */
+        if (!(*file)->filetop->next) {
+          (*file)->filetop->has_anchor = FALSE;
+        }
+        update_undo_for(*file, CUT);
+      }
+      /* Parent: Create a seperate process for piping the data to the command.*/
+      if ((pid_of_sender = fork()) == 0) {
+        send_data((whole_buffer ? (*file)->filetop : cutbuffer), pipe_to[1]);
+        exit(0);
+      }
+      if (pid_of_sender == -1) {
+        statusline(ALERT, _("Could not fork: %s"), strerror(errno));
+      }
+      close(pipe_to[0]);
+      close(pipe_to[1]);
+      if (ISSET(MULTIBUFFER)) {
+        CLIST_ADV_NEXT(*file);
+      }
+      free_lines(cutbuffer);
+      cutbuffer = was_cutbuffer;
+    }
+    /* Parent: Re-enable interpretation of the special control keys so that we can get SIGINT when Ctrl-C is pressed. */
+    enable_kb_interrupt();
+    /* Set up a signal handler so that ^C will terminate the forked process. */
+    new_action.sa_handler = cancel_the_command;
+    new_action.sa_flags   = 0;
+    sigaction(SIGINT, &new_action, &old_action);
+    stream = fdopen(pipe_from[0], "rb");
+    if (!stream) {
+      statusline(ALERT, _("Failed to open pipe: %s"), strerror(errno));
+    }
+    else {
+      read_file_into(STACK_CTX_DF, stream, 0, "pipe", TRUE);
+    }
+    if (should_pipe && !ISSET(MULTIBUFFER)) {
+      if (was_lineno) {
+        goto_line_posx_for(*file, rows, was_lineno, 0);
+      }
+      add_undo_for(*file, COUPLE_END, N_("filtering"));
+    }
+    /* Wait for the external command (and possible data sender) to terminate. */
+    waitpid(pid_of_command, &command_status, 0);
+    if (should_pipe && pid_of_sender > 0) {
+      waitpid(pid_of_sender, &sender_status, 0);
+    }
+    /* If the command failed, show what the shell reported. */
+    if (!WIFEXITED(command_status) || WEXITSTATUS(command_status)) {
+      statusline(ALERT, WIFSIGNALED(command_status) ? _("Cancelled") : _("Error %s"),
+        (((*file)->current->prev) && strstr((*file)->current->prev->data, ": "))
+          ? (strstr((*file)->current->prev->data, ": ") + 2) : "---");
+    }
+    else if (should_pipe && pid_of_sender > 0 && (!WIFEXITED(sender_status) || WEXITSTATUS(sender_status))) {
+      statusline(ALERT, _("Piping failed"));
+    }
+    /* If there was and error, undo and discard what the command did. */
+    if (lastmessage == ALERT) {
+      do_undo_for(STACK_CTX_DF);
+      discard_until_for(*file, (*file)->current_undo);
+    }
+    /* Restore the original handler for SIGINT. */
+    sigaction(SIGINT, &old_action, NULL);
+    /* Restore the terminal to it's desired state, and disable interpretation of the special control keys again. */
+    terminal_init();
+  }
+}
+
+/* Execute the given command in a shell.  Note that this is `context-safe`. */
+/* static */ void execute_command(const char *const restrict command) {
+  if (IN_GUI_CTX) {
+    execute_command_for(&GUI_OF, GUI_RC, command);
+  }
+  else {
+    execute_command_for(&TUI_OF, TUI_RC, command);
+  }
 }
 
 
@@ -834,6 +1043,8 @@ char *real_dir_from_tilde(const char *const restrict path) {
   return ret;
 }
 
+/* ----------------------------- Is dir ----------------------------- */
+
 /* Return 'TRUE' when the given path is a directory. */
 bool is_dir(const char *const path) {
   char *thepath = real_dir_from_tilde(path);
@@ -842,6 +1053,8 @@ bool is_dir(const char *const path) {
   free(thepath);
   return retval;
 }
+
+/* ----------------------------- Get full path ----------------------------- */
 
 /* For the given bare path (or path plus filename), return the canonical,
  * absolute path (plus filename) when the path exists, and 'NULL' when not. */
@@ -875,6 +1088,8 @@ char *get_full_path(const char *const restrict origpath) {
   return target;
 }
 
+/* ----------------------------- Check writable directory ----------------------------- */
+
 /* Check whether the given path refers to a directory that is writable.
  * Return the absolute form of the path on success, and 'NULL' on failure. */
 char *check_writable_directory(const char *path) {
@@ -888,6 +1103,8 @@ char *check_writable_directory(const char *path) {
   }
   return full_path;
 }
+
+/* ----------------------------- Diralphasort ----------------------------- */
 
 /* Our sort routine for file listings.  Sort alphabetically and case-insensitively, and sort directories before filenames. */
 int diralphasort(const void *va, const void *vb) {
@@ -1482,7 +1699,7 @@ void read_file_into(CTX_ARGS, FILE *const f, int fd, const char *const restrict 
   /* Insert the just read buffer into `file`. */
   ingraft_buffer_into(file, top, bot);
   /* Set the desired x position at the end of what was inserted. */
-  set_pww_for(file);
+  SET_PWW(file);
   /* If this file is unwritable, inform the user. */
   if (!writable) {
     statusline(ALERT, _("File '%s' is unwritable"), filename);
@@ -2435,3 +2652,4 @@ void do_savefile(void) {
     do_savefile_for(&TUI_SF, &TUI_OF, TUI_COLS);
   }
 }
+

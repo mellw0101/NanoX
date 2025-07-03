@@ -542,7 +542,8 @@ static void _NO_RETURN usage(void) {
  * information, and the configuration options this nano was compiled with. */
 static void _NO_RETURN version(void) _NOTHROW {
   printf(_(" NanoX, version %s\n"), VERSION);
-  printf(" 'NanoX %s' is a Fork of 'GNU nano v8.0-44-gef1c9b9f' from git source code, converted into C++\n", REVISION);
+  printf(" 'NanoX %s' is a Fork of 'GNU nano v8.0-44-gef1c9b9f' from git source code.\n"
+         "  converted into C++, then converted back into c.\n", REVISION);
   /* TRANSLATORS: The %s is the year of the latest release. */
   printf(_(" (C) %s the Free Software Foundation and various contributors\n"), "2024");
 #ifdef DEBUG
