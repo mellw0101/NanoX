@@ -121,17 +121,23 @@
 #define STACK_CTX     STACK_OF,    STACK_ROWS, STACK_COLS
 #define STACK_CTX_DF  STACK_OF_DF, STACK_ROWS, STACK_COLS
 
+#define FULL_STACK_CTX  start, open, rows, cols
+
 /* These are used when building context-less functions, as these
  * ensure there is no confusion about the use of the parameters */
-
 #define CTX_ARG_OF      openfilestruct *const file
 #define CTX_ARG_REF_OF  openfilestruct **const file
+
 #define CTX_ARG_ROWS    int rows
 #define CTX_ARG_COLS    int cols
+
 
 /* The full context parameters.  So the file, the total text and rows available. */
 #define CTX_ARGS         CTX_ARG_OF,     CTX_ARG_ROWS, CTX_ARG_COLS
 #define CTX_ARGS_REF_OF  CTX_ARG_REF_OF, CTX_ARG_ROWS, CTX_ARG_COLS
+
+#define FULL_CTX_ARGS    openfilestruct **const start, openfilestruct **const open, int rows, int cols
+
 #define CTX_PARAMS       CTX_ARG_OF,     CTX_ARG_ROWS, CTX_ARG_COLS
 
 /* For use when modifying the state of the context. */
@@ -176,6 +182,46 @@
     else {                                  \
       return (func)(TUI_CTX, __VA_ARGS__);  \
     }                                       \
+  )
+
+#define FULL_CTX_CALL(func)  \
+  DO_WHILE(                  \
+    if (IN_GUI_CTX) {        \
+      (func)(FULL_GUI_CTX);  \
+    }                        \
+    else {                   \
+      (func)(FULL_TUI_CTX);  \
+    }                        \
+  )
+
+#define FULL_CTX_CALL_WARGS(func, ...)       \
+  DO_WHILE(                                  \
+    if (IN_GUI_CTX) {                        \
+      (func)(FULL_GUI_CTX, __VA_ARGS__);     \
+    }                                        \
+    else {                                   \
+      (func)(FULL_TUI_CTX, __VA_ARGS__);     \
+    }                                        \
+  )
+
+#define RET_FULL_CTX_CALL(func)     \
+  DO_WHILE(                         \
+    if (IN_GUI_CTX) {               \
+      return (func)(FULL_GUI_CTX);  \
+    }                               \
+    else {                          \
+      return (func)(FULL_TUI_CTX);  \
+    }                               \
+  )
+
+#define RET_FULL_CTX_CALL_WARGS(func, ...)       \
+  DO_WHILE(                                      \
+    if (IN_GUI_CTX) {                            \
+      return (func)(FULL_GUI_CTX, __VA_ARGS__);  \
+    }                                            \
+    else {                                       \
+      return (func)(FULL_TUI_CTX, __VA_ARGS__);  \
+    }                                            \
   )
 
 #define ASSERT_EDITOR(editor)  \

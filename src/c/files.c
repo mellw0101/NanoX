@@ -590,6 +590,172 @@
   }
 }
 
+/* ----------------------------- Insert a file or ----------------------------- */
+
+/* Insert a file into `*open` (or into a `new buffer`).  But when `execute` is `TRUE`, run a command in
+ * the shell and insert it's output into the buffer, or just run one or the tools listed in the help lines. */
+/* static */ void insert_a_file_or_for(FULL_CTX_ARGS, bool execute) {
+  ASSERT(start);
+  ASSERT(open);
+  ASSERT(*start);
+  ASSERT(*open);
+  int response;
+  const char *msg;
+  /* The last answer the user typed at the status-bar prompt. */
+  char *given;
+  /* When using the browser, this is the user-chosen answer. */
+  char *chosen;
+  long priorline;
+  long priorcol;
+  bool  was_multibuffer = ISSET(MULTIBUFFER);
+  long  was_lineno;
+  Ulong was_x;
+  functionptrtype function;
+  /* Display newlines in filenames as ^J. */
+  as_an_at = FALSE;
+  /* Reset the flag that is set by the Spell Checker and Linter and such. */
+  ran_a_tool = FALSE;
+  /* For now just allow curses-mode operation. */
+  if (IN_CURSES_CTX) {
+    given = COPY_OF("");
+    while (1) {
+      /* TRANSLATORS: The next six messages are prompts. */
+      if (execute) {
+        if (ISSET(MULTIBUFFER)) {
+          msg = _("Command to execute in new buffer");
+        }
+        else {
+          msg = _("Command to execute");
+        }
+      }
+      else {
+        if (ISSET(MULTIBUFFER)) {
+          if (ISSET(NO_CONVERT)) {
+            msg = _("File to read unconverted into new buffer [from %s]");
+          }
+          else {
+            msg = _("File to read into new buffer [from %s]");
+          }
+        }
+        else {
+          if (ISSET(NO_CONVERT)) {
+            msg = _("File to insert unconverted [from %s]");
+          }
+          else {
+            msg = _("File to insert [from %s]");
+          }
+        }
+      }
+      present_path = xstrcpy(present_path, "./");
+      response     = do_prompt((execute ? MEXECUTE : MINSERTFILE), given,
+        (execute ? &execute_history : NULL), edit_refresh, msg, (operating_dir ? operating_dir : "./"));
+      /* If we're in multibuffer-mode and the filename or command is blank, open a new buffer instead of canceling. */
+      if (response == -1 || (response == -2 && !ISSET(MULTIBUFFER))) {
+        statusbar_all(_("Cancelled"));
+        break;
+      }
+      else {
+        was_lineno = (*open)->current->lineno;
+        was_x      = (*open)->current_x;
+        function   = func_from_key(response);
+        given      = xstrcpy(given, answer);
+        if (ran_a_tool) {
+          break;
+        }
+        else if (function == flip_newbuffer) {
+          /* Allow toggling only when not in view-mode. */
+          if (!ISSET(VIEW_MODE)) {
+            TOGGLE(MULTIBUFFER);
+          }
+          else {
+            beep();
+          }
+          continue;
+        }
+        else if (function == flip_convert) {
+          TOGGLE(NO_CONVERT);
+          continue;  
+        }
+        else if (function == flip_execute) {
+          execute = !execute;
+          continue;
+        }
+        else if (function == flip_pipe) {
+          add_or_remove_pipe_symbol_from_answer();
+          given = xstrcpy(given, answer);
+          continue;
+        }
+        else if (function == to_files) {
+          chosen = browse_in(answer);
+          /* If no file was chosen, go back to the prompt. */
+          if (!chosen) {
+            continue;
+          }
+          answer   = free_and_assign(answer, chosen);
+          response = 0;
+        }
+        /* If we dont have a file yet, go back to the prompt. */
+        if (response && (!ISSET(MULTIBUFFER) || response != -2)) {
+          continue;
+        }
+        else if (execute) {
+          /* When in multibuffer mode, first open a blank buffer. */
+          if (ISSET(MULTIBUFFER)) {
+            open_buffer_for(FULL_STACK_CTX, "", TRUE);
+          }
+          /* If the command is not empty, execute it and read it's output
+           * into the buffer, and add the command to the history list. */
+          if (*answer) {
+            execute_command_for(open, rows, cols, answer);
+            update_history(&execute_history, answer, PRUNE_DUPLICATE);
+          }
+          /* If this is a new buffer, put the cursor at the top. */
+          if (ISSET(MULTIBUFFER)) {
+            (*open)->current     = (*open)->filetop;
+            (*open)->current_x   = 0;
+            (*open)->placewewant = 0;
+            set_modified_for(*open);
+          }
+        }
+        else {
+          /* Make sure the specified path is tilde-expanded. */
+          answer = free_and_assign(answer, real_dir_from_tilde(answer));
+          /* Read the file into a new buffer or into the current buffer. */
+          open_buffer_for(FULL_STACK_CTX, answer, ISSET(MULTIBUFFER));
+        }
+        if (ISSET(MULTIBUFFER)) {
+          if (ISSET(POSITIONLOG) && !execute && has_old_position(answer, &priorline, &priorcol)) {
+            goto_line_and_column_for(*open, rows, cols, priorline, priorcol, FALSE, FALSE);
+          }
+          /* Update title-bar and color info for this new buffer. */
+          prepare_for_display_for(*open);
+        }
+        else {
+          /* If the buffer actually changed, mark it as modified. */
+          if ((*open)->current->lineno != was_lineno || (*open)->current_x != was_x) {
+            set_modified_for(*open);
+          }
+          refresh_needed = TRUE;
+        }
+        break;
+      }
+    }
+    free(given);
+    if (was_multibuffer) {
+      SET(MULTIBUFFER);
+    }
+    else {
+      UNSET(MULTIBUFFER);
+    }
+  }
+}
+
+/* Insert a file into the `currently open buffer` (or into a `new buffer`).  But when `execute` is `TRUE`, run a
+ * command in the shell and insert it's output into the buffer, or just run one or the tools listed in the help lines. */
+/* static */ void insert_a_file_or(bool execute) {
+  FULL_CTX_CALL_WARGS(insert_a_file_or_for, execute);
+}
+
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
@@ -642,7 +808,7 @@ void make_new_buffer_for(openfilestruct **const start, openfilestruct **const op
   (*open)->syntax        = NULL;
 }
 
-/* Add an item to the circular list of openfile structs. */
+/* Add an item to the circular list of openfile structs.  Note that this is `context-safe`. */
 void make_new_buffer(void) {
   if (IN_GUI_CTX) {
     make_new_buffer_for(&GUI_SF, &GUI_OF);
@@ -1422,10 +1588,6 @@ void switch_to_prev_buffer(void) {
   else {
     switch_to_prev_buffer_for(&TUI_OF, TUI_COLS);
   }
-  // if (IN_CURSES_CTX) {
-  //   openfile = openfile->prev;
-  //   redecorate_after_switch();
-  // }
 }
 
 /* ----------------------------- Switch to next buffer ----------------------------- */
@@ -2653,3 +2815,30 @@ void do_savefile(void) {
   }
 }
 
+/* ----------------------------- Do insertfile ----------------------------- */
+
+/* If the current mode of operation allows it, go insert a file. */
+void do_insertfile_for(FULL_CTX_ARGS) {
+  if (!in_restricted_mode()) {
+    insert_a_file_or_for(FULL_STACK_CTX, FALSE);
+  }
+}
+
+/* If the current mode of operation allows it, go insert a file.  Note that this is `context-safe`. */
+void do_insertfile(void) {
+  FULL_CTX_CALL(do_insertfile_for);
+}
+
+/* ----------------------------- Do execute ----------------------------- */
+
+/* If the current mode of operation allows it, go prompt for a command. */
+void do_execute_for(FULL_CTX_ARGS) {
+  if (!in_restricted_mode()) {
+    insert_a_file_or_for(FULL_STACK_CTX, TRUE);
+  }
+}
+
+/* If the current mode of operation allows it, go prompt for a command.  Note that this is `context-safe`. */
+void do_execute(void) {
+  FULL_CTX_CALL(do_execute_for);
+}

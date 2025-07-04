@@ -715,6 +715,9 @@ void   menu_qsort(CMenu *const menu, CmpFuncPtr cmp_func);
 /* static */ void execute_command_for(CTX_ARGS_REF_OF, const char *const restrict command);
 /* static */ void execute_command(const char *const restrict command);
 
+/* static */ void insert_a_file_or_for(FULL_CTX_ARGS, bool execute);
+/* static */ void insert_a_file_or(bool execute);
+
 
 /* ----------------------------- Make new buffer ----------------------------- */
 void make_new_buffer_for(openfilestruct **const start, openfilestruct **const open);
@@ -804,6 +807,12 @@ void do_writeout(void);
 /* ----------------------------- Do savefile ----------------------------- */
 void do_savefile_for(openfilestruct **const start, openfilestruct **const open, int cols);
 void do_savefile(void);
+/* ----------------------------- Do insertfile ----------------------------- */
+void do_insertfile_for(FULL_CTX_ARGS);
+void do_insertfile(void);
+/* ----------------------------- Do execute ----------------------------- */
+void do_execute_for(FULL_CTX_ARGS);
+void do_execute(void);
 
 
 /* ---------------------------------------------------------- chars.c ---------------------------------------------------------- */

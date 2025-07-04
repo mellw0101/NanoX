@@ -1008,165 +1008,165 @@ void open_new_empty_buffer(void) {
 /* Insert a file into the current buffer (or into a new buffer).
  * But when execute is 'TRUE', run a command in the shell and insert its output
  * into the buffer, or just run one of the tools listed in the help lines. */
-static void insert_a_file_or(bool execute) {
-  int response;
-  const char *msg;
-  /* The last answer the user typed at the status-bar prompt. */
-  char *given = STRLTR_COPY_OF("");
-  bool was_multibuffer = ISSET(MULTIBUFFER);
-  /* Display newlines in filenames as ^J. */
-  as_an_at = FALSE;
-  /* Reset the flag that is set by the Spell Checker and Linter and such. */
-  ran_a_tool = FALSE;
-  while (TRUE) {
-    /* TRANSLATORS: The next six messages are prompts. */
-    if (execute) {
-      if (ISSET(MULTIBUFFER)) {
-        msg = _("Command to execute in new buffer");
-      }
-      else {
-        msg = _("Command to execute");
-      }
-    }
-    else {
-      if (ISSET(MULTIBUFFER)) {
-        if (ISSET(NO_CONVERT)) {
-          msg = _("File to read unconverted into new buffer [from %s]");
-        }
-        else {
-          msg = _("File to read into new buffer [from %s]");
-        }
-      }
-      else {
-        if (ISSET(NO_CONVERT)) {
-          msg = _("File to insert unconverted [from %s]");
-        }
-        else {
-          msg = _("File to insert [from %s]");
-        }
-      }
-    }
-    present_path = realloc_strcpy(present_path, "./");
-    response = do_prompt((execute ? MEXECUTE : MINSERTFILE), given, (execute ? &execute_history : NULL), edit_refresh, msg, (operating_dir ? operating_dir : "./"));
-    /* If we're in multibuffer mode and the filename or command is blank, open a new buffer instead of canceling. */
-    if (response == -1 || (response == -2 && !ISSET(MULTIBUFFER))) {
-      statusbar_all(_("Cancelled"));
-      break;
-    }
-    else {
-      long  was_current_lineno = openfile->current->lineno;
-      Ulong was_current_x      = openfile->current_x;
-      functionptrtype function = func_from_key(response);
-      given = realloc_strcpy(given, answer);
-      if (ran_a_tool) {
-        break;
-      }
-      if (function == flip_newbuffer) {
-        /* Allow toggling only when not in view mode. */
-        if (!ISSET(VIEW_MODE)) {
-          TOGGLE(MULTIBUFFER);
-        }
-        else {
-          beep();
-        }
-        continue;
-      }
-      if (function == flip_convert) {
-        TOGGLE(NO_CONVERT);
-        continue;
-      }
-      if (function == flip_execute) {
-        execute = !execute;
-        continue;
-      }
-      if (function == flip_pipe) {
-        add_or_remove_pipe_symbol_from_answer();
-        given = realloc_strcpy(given, answer);
-        continue;
-      }
-      if (function == to_files) {
-        char *chosen = browse_in(answer);
-        /* If no file was chosen, go back to the prompt. */
-        if (!chosen) {
-          continue;
-        }
-        free(answer);
-        answer   = chosen;
-        response = 0;
-      }
-      /* If we don't have a file yet, go back to the prompt. */
-      if (response && (!ISSET(MULTIBUFFER) || response != -2)) {
-        continue;
-      }
-      if (execute) {
-        /* When in multibuffer mode, first open a blank buffer. */
-        if (ISSET(MULTIBUFFER)) {
-          open_buffer("", TRUE);
-        }
-        /* If the command is not empty, execute it and read its output into the buffer, and add the command to the history list. */
-        if (*answer) {
-          execute_command(answer);
-          update_history(&execute_history, answer, PRUNE_DUPLICATE);
-        }
-        /* If this is a new buffer, put the cursor at the top. */
-        if (ISSET(MULTIBUFFER)) {
-          openfile->current     = openfile->filetop;
-          openfile->current_x   = 0;
-          openfile->placewewant = 0;
-          set_modified();
-        }
-      }
-      else {
-        /* Make sure the specified path is tilde-expanded. */
-        answer = free_and_assign(answer, real_dir_from_tilde(answer));
-        /* Read the file into a new buffer or into current buffer. */
-        open_buffer(answer, ISSET(MULTIBUFFER));
-      }
-      if (ISSET(MULTIBUFFER)) {
-        if (ISSET(POSITIONLOG)) {
-          long priorline = 0;
-          long priorcol  = 0;
-          if (!execute) {
-            if (has_old_position(answer, &priorline, &priorcol)) {
-              goto_line_and_column(priorline, priorcol, FALSE, FALSE);
-            }
-          }
-        }
-        /* Update title bar and color info for this new buffer. */
-        prepare_for_display();
-      }
-      else {
-        /* If the buffer actually changed, mark it as modified. */
-        if (openfile->current->lineno != was_current_lineno || openfile->current_x != was_current_x) {
-          set_modified();
-        }
-        refresh_needed = TRUE;
-      }
-      break;
-    }
-  }
-  free(given);
-  if (was_multibuffer) {
-    SET(MULTIBUFFER);
-  }
-  else {
-    UNSET(MULTIBUFFER);
-  }
-}
+// static void insert_a_file_or(bool execute) {
+//   int response;
+//   const char *msg;
+//   /* The last answer the user typed at the status-bar prompt. */
+//   char *given = STRLTR_COPY_OF("");
+//   bool was_multibuffer = ISSET(MULTIBUFFER);
+//   /* Display newlines in filenames as ^J. */
+//   as_an_at = FALSE;
+//   /* Reset the flag that is set by the Spell Checker and Linter and such. */
+//   ran_a_tool = FALSE;
+//   while (TRUE) {
+//     /* TRANSLATORS: The next six messages are prompts. */
+//     if (execute) {
+//       if (ISSET(MULTIBUFFER)) {
+//         msg = _("Command to execute in new buffer");
+//       }
+//       else {
+//         msg = _("Command to execute");
+//       }
+//     }
+//     else {
+//       if (ISSET(MULTIBUFFER)) {
+//         if (ISSET(NO_CONVERT)) {
+//           msg = _("File to read unconverted into new buffer [from %s]");
+//         }
+//         else {
+//           msg = _("File to read into new buffer [from %s]");
+//         }
+//       }
+//       else {
+//         if (ISSET(NO_CONVERT)) {
+//           msg = _("File to insert unconverted [from %s]");
+//         }
+//         else {
+//           msg = _("File to insert [from %s]");
+//         }
+//       }
+//     }
+//     present_path = realloc_strcpy(present_path, "./");
+//     response = do_prompt((execute ? MEXECUTE : MINSERTFILE), given, (execute ? &execute_history : NULL), edit_refresh, msg, (operating_dir ? operating_dir : "./"));
+//     /* If we're in multibuffer mode and the filename or command is blank, open a new buffer instead of canceling. */
+//     if (response == -1 || (response == -2 && !ISSET(MULTIBUFFER))) {
+//       statusbar_all(_("Cancelled"));
+//       break;
+//     }
+//     else {
+//       long  was_current_lineno = openfile->current->lineno;
+//       Ulong was_current_x      = openfile->current_x;
+//       functionptrtype function = func_from_key(response);
+//       given = realloc_strcpy(given, answer);
+//       if (ran_a_tool) {
+//         break;
+//       }
+//       if (function == flip_newbuffer) {
+//         /* Allow toggling only when not in view mode. */
+//         if (!ISSET(VIEW_MODE)) {
+//           TOGGLE(MULTIBUFFER);
+//         }
+//         else {
+//           beep();
+//         }
+//         continue;
+//       }
+//       if (function == flip_convert) {
+//         TOGGLE(NO_CONVERT);
+//         continue;
+//       }
+//       if (function == flip_execute) {
+//         execute = !execute;
+//         continue;
+//       }
+//       if (function == flip_pipe) {
+//         add_or_remove_pipe_symbol_from_answer();
+//         given = realloc_strcpy(given, answer);
+//         continue;
+//       }
+//       if (function == to_files) {
+//         char *chosen = browse_in(answer);
+//         /* If no file was chosen, go back to the prompt. */
+//         if (!chosen) {
+//           continue;
+//         }
+//         free(answer);
+//         answer   = chosen;
+//         response = 0;
+//       }
+//       /* If we don't have a file yet, go back to the prompt. */
+//       if (response && (!ISSET(MULTIBUFFER) || response != -2)) {
+//         continue;
+//       }
+//       if (execute) {
+//         /* When in multibuffer mode, first open a blank buffer. */
+//         if (ISSET(MULTIBUFFER)) {
+//           open_buffer("", TRUE);
+//         }
+//         /* If the command is not empty, execute it and read its output into the buffer, and add the command to the history list. */
+//         if (*answer) {
+//           execute_command(answer);
+//           update_history(&execute_history, answer, PRUNE_DUPLICATE);
+//         }
+//         /* If this is a new buffer, put the cursor at the top. */
+//         if (ISSET(MULTIBUFFER)) {
+//           openfile->current     = openfile->filetop;
+//           openfile->current_x   = 0;
+//           openfile->placewewant = 0;
+//           set_modified();
+//         }
+//       }
+//       else {
+//         /* Make sure the specified path is tilde-expanded. */
+//         answer = free_and_assign(answer, real_dir_from_tilde(answer));
+//         /* Read the file into a new buffer or into current buffer. */
+//         open_buffer(answer, ISSET(MULTIBUFFER));
+//       }
+//       if (ISSET(MULTIBUFFER)) {
+//         if (ISSET(POSITIONLOG)) {
+//           long priorline = 0;
+//           long priorcol  = 0;
+//           if (!execute) {
+//             if (has_old_position(answer, &priorline, &priorcol)) {
+//               goto_line_and_column(priorline, priorcol, FALSE, FALSE);
+//             }
+//           }
+//         }
+//         /* Update title bar and color info for this new buffer. */
+//         prepare_for_display();
+//       }
+//       else {
+//         /* If the buffer actually changed, mark it as modified. */
+//         if (openfile->current->lineno != was_current_lineno || openfile->current_x != was_current_x) {
+//           set_modified();
+//         }
+//         refresh_needed = TRUE;
+//       }
+//       break;
+//     }
+//   }
+//   free(given);
+//   if (was_multibuffer) {
+//     SET(MULTIBUFFER);
+//   }
+//   else {
+//     UNSET(MULTIBUFFER);
+//   }
+// }
 
 /* If the current mode of operation allows it, go insert a file. */
-void do_insertfile(void) {
-  if (!in_restricted_mode()) {
-    insert_a_file_or(FALSE);
-  }
-}
+// void do_insertfile(void) {
+//   if (!in_restricted_mode()) {
+//     insert_a_file_or(FALSE);
+//   }
+// }
 
 /* If the current mode of operation allows it, go prompt for a command. */
-void do_execute(void) {
-  if (!in_restricted_mode()) {
-    insert_a_file_or(TRUE);
-  }
-}
+// void do_execute(void) {
+//   if (!in_restricted_mode()) {
+//     insert_a_file_or(TRUE);
+//   }
+// }
 
 /* For the given bare path (or path plus filename), return the canonical,
  * absolute path (plus filename) when the path exists, and 'NULL' when not. */

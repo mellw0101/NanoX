@@ -394,21 +394,34 @@ static void undo_insert_empty_line_for(openfilestruct *const file, int rows, und
 
 /* ----------------------------- Handle tab auto indent ----------------------------- */
 
+/* Undo-redo handler for tab helper auto indent. */
 static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const u, bool undoing) {
   ASSERT(file);
   ASSERT(u);
+  /* When redoing, this is the indent of the current line. */
+  Ulong cur_indent;
+  char *data;
+  /* Set the correct current line and position. */
   file->current = line_from_number_for(file, u->head_lineno);
+  file->current_x = u->head_x;
   /* Undo */
   if (undoing) {
     file->current->data = xstrcpy(file->current->data, u->strdata);
-    file->current_x     = u->head_x;
   }
   /* Redo */
   else {
-    file->current->data = free_and_assign(
-      file->current->data,
-      line_indent_plus_tab(line_from_number_for(file, u->tail_lineno)->data, &file->current_x)
-    );
+    cur_indent = indent_length(file->current->data);
+    if (white_string(file->current->data)) {
+      file->current->data = free_and_assign(
+        file->current->data,
+        line_indent_plus_tab(line_from_number_for(file, u->tail_lineno)->data, &file->current_x)
+      );
+    }
+    else if (file->current_x <= cur_indent) {
+      data = line_indent_plus_tab(line_from_number_for(file, u->tail_lineno)->data, &file->current_x);
+      xstr_erase_norealloc(file->current->data, 0, cur_indent);
+      file->current->data = free_and_assign(data, xstrninj(file->current->data, data, file->current_x, 0));
+    }
   }
   SET_PWW(file);
   refresh_needed = TRUE;
@@ -3202,16 +3215,16 @@ bool is_next_char_one_of(linestruct *const line, Ulong xpos,
 
 /* ----------------------------- Tab helper ----------------------------- */
 
+/* Improve the experiace of the tabulator. */
 bool tab_helper(openfilestruct *const file) {
   ASSERT(file);
   linestruct *line;
   Ulong indent;
+  Ulong cur_indent;
   Ulong full_length;
   char *data;
   /* If the previous char is a open bracket char, and we are not on the same line as that bracket. */
-  if (is_previous_char_one_of(file->current, file->current_x, "{[(:", &line, NULL)
-  && line != file->current && white_string(file->current->data))
-  {
+  if (is_previous_char_one_of(file->current, file->current_x, "{[(:", &line, NULL) && line != file->current) {
     indent = indent_length(line->data);
     data   = line_indent_plus_tab(line->data, &full_length);
     /* If there is no indent for the given line, or we are already past the full length, just return false. */
@@ -3219,14 +3232,35 @@ bool tab_helper(openfilestruct *const file) {
       free(data);
       return FALSE;
     }
-    /* Add the undo-action. */
-    add_undo_for(file, TAB_AUTO_INDENT, NULL);
-    file->current_undo->tail_x      = indent;
-    file->current_undo->tail_lineno = line->lineno;
-    /* Now we remake the line. */
-    file->current->data = free_and_assign(file->current->data, data);
-    file->current_x     = full_length;
+    /* The the indent of the current line. */
+    cur_indent = indent_length(file->current->data);
+    /* If the current line is an empty or blank only line. */
+    if (white_string(file->current->data)) {
+      /* Add the undo-action. */
+      add_undo_for(file, TAB_AUTO_INDENT, NULL);
+      file->current_undo->tail_x      = indent;
+      file->current_undo->tail_lineno = line->lineno;
+      /* Now we remake the line. */
+      file->current->data = free_and_assign(file->current->data, data);
+      file->current_x     = full_length;
+    }
+    /* Otherwise, only allow any operation when the cursor is at the indent part of the current line. */
+    else if (file->current_x <= cur_indent && cur_indent < full_length) {
+      add_undo_for(file, TAB_AUTO_INDENT, NULL);
+      file->current_undo->tail_x      = indent;
+      file->current_undo->tail_lineno = line->lineno;
+      /* Now construct the line. */
+      xstr_erase_norealloc(file->current->data, 0, cur_indent);
+      file->current->data = free_and_assign(data, xstrninj(file->current->data, data, full_length, 0));
+      file->current_x = full_length;
+    }
+    /* Otherwise, we did nothing, so return FALSE. */
+    else {
+      free(data);
+      return FALSE;
+    }
     SET_PWW(file);
+    refresh_needed = TRUE;
     return TRUE;
   }
   return FALSE;
