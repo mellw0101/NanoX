@@ -2605,120 +2605,120 @@ void do_full_justify(void) {
 // }
 
 /* Execute the given program, with the given temp file as last argument. */
-static void treat(char *tempfile_name, char *theprogram, bool spelling) {
-  static char **arguments = NULL;
-  struct stat fileinfo;
-  long  was_lineno = openfile->current->lineno;
-  Ulong was_pww    = openfile->placewewant;
-  Ulong was_x      = openfile->current_x;
-  bool  was_at_eol = !(openfile->current->data[openfile->current_x]);
-  long  timestamp_sec  = 0;
-  long  timestamp_nsec = 0;
-  pid_t thepid;
-  int   program_status, errornumber;
-  bool  replaced = FALSE;
-  /* Stat the temporary file.  If that succeeds and its size is zero, there is nothing to do; otherwise, store its time of modification. */
-  if (stat(tempfile_name, &fileinfo) == 0) {
-    if (fileinfo.st_size == 0) {
-      if (spelling && openfile->mark) {
-        statusline(AHEM, _("Selection is empty"));
-      }
-      else {
-        statusline(AHEM, _("Buffer is empty"));
-      }
-      return;
-    }
-    timestamp_sec  = (long)fileinfo.st_mtim.tv_sec;
-    timestamp_nsec = (long)fileinfo.st_mtim.tv_nsec;
-  }
-  /* The spell checker needs the screen, so exit from curses mode. */
-  if (spelling) {
-    endwin();
-  }
-  else {
-    statusbar_all(_("Invoking formatter..."));
-  }
-  construct_argument_list(&arguments, theprogram, tempfile_name);
-  /* Fork a child process and run the given program in it. */
-  if ((thepid = fork()) == 0) {
-    execvp(arguments[0], arguments);
-    /* Terminate the child if the program is not found. */
-    exit(9);
-  }
-  else if (thepid > 0) {
-    /* Block SIGWINCHes while waiting for the forked program to end, so nano doesn't get pushed past the wait(). */
-    block_sigwinch(TRUE);
-    wait(&program_status);
-    block_sigwinch(FALSE);
-  }
-  errornumber = errno;
-  /* After spell checking, restore terminal state and reenter curses mode;
-   * after formatting, make sure that any formatter output is wiped. */
-  if (spelling) {
-    terminal_init();
-    doupdate();
-  }
-  else {
-    full_refresh();
-  }
-  if (thepid < 0) {
-    statusline(ALERT, _("Could not fork: %s"), strerror(errornumber));
-    free(arguments[0]);
-    return;
-  }
-  else if (!WIFEXITED(program_status) || WEXITSTATUS(program_status) > 2) {
-    statusline(ALERT, _("Error invoking '%s'"), arguments[0]);
-    free(arguments[0]);
-    return;
-  }
-  else if (WEXITSTATUS(program_status) != 0) {
-    statusline(ALERT, _("Program '%s' complained"), arguments[0]);
-  }
-  free(arguments[0]);
-  /* When the temporary file wasn't touched, say so and leave. */
-  if (timestamp_sec > 0 && stat(tempfile_name, &fileinfo) == 0 && (long)fileinfo.st_mtim.tv_sec == timestamp_sec
-   && (long)fileinfo.st_mtim.tv_nsec == timestamp_nsec) {
-    statusline(REMARK, _("Nothing changed"));
-    return;
-  }
-  /* Replace the marked text (or entire text) with the corrected text. */
-  if (spelling && openfile->mark) {
-    long was_mark_lineno = openfile->mark->lineno;
-    bool upright         = mark_is_before_cursor();
-    replaced             = replace_buffer(tempfile_name, CUT, "spelling correction");
-    /* Adjust the end point of the marked region for any change in length of the region's last line. */
-    if (upright) {
-      was_x = openfile->current_x;
-    }
-    else {
-      openfile->mark_x = openfile->current_x;
-    }
-    /* Restore the mark. */
-    openfile->mark = line_from_number(was_mark_lineno);
-  }
-  else {
-    replaced = replace_buffer(tempfile_name, CUT_TO_EOF,
-                              /* TRANSLATORS: The next two go with Undid/Redid messages. */
-                              (spelling ? N_("spelling correction") : N_("formatting")));
-  }
-  /* Go back to the old position. */
-  goto_line_posx(was_lineno, was_x);
-  if (was_at_eol || openfile->current_x > strlen(openfile->current->data)) {
-    openfile->current_x = strlen(openfile->current->data);
-  }
-  if (replaced) {
-    openfile->filetop->has_anchor = FALSE;
-    update_undo(COUPLE_END);
-  }
-  openfile->placewewant = was_pww;
-  adjust_viewport(STATIONARY);
-  if (spelling) {
-    statusline(REMARK, _("Finished checking spelling"));
-  }
-  else {
-    statusline(REMARK, _("Buffer has been processed"));
-  }
-}
+// static void treat(char *tempfile_name, char *theprogram, bool spelling) {
+//   static char **arguments = NULL;
+//   struct stat fileinfo;
+//   long  was_lineno = openfile->current->lineno;
+//   Ulong was_pww    = openfile->placewewant;
+//   Ulong was_x      = openfile->current_x;
+//   bool  was_at_eol = !(openfile->current->data[openfile->current_x]);
+//   long  timestamp_sec  = 0;
+//   long  timestamp_nsec = 0;
+//   pid_t thepid;
+//   int   program_status, errornumber;
+//   bool  replaced = FALSE;
+//   /* Stat the temporary file.  If that succeeds and its size is zero, there is nothing to do; otherwise, store its time of modification. */
+//   if (stat(tempfile_name, &fileinfo) == 0) {
+//     if (fileinfo.st_size == 0) {
+//       if (spelling && openfile->mark) {
+//         statusline(AHEM, _("Selection is empty"));
+//       }
+//       else {
+//         statusline(AHEM, _("Buffer is empty"));
+//       }
+//       return;
+//     }
+//     timestamp_sec  = (long)fileinfo.st_mtim.tv_sec;
+//     timestamp_nsec = (long)fileinfo.st_mtim.tv_nsec;
+//   }
+//   /* The spell checker needs the screen, so exit from curses mode. */
+//   if (spelling) {
+//     endwin();
+//   }
+//   else {
+//     statusbar_all(_("Invoking formatter..."));
+//   }
+//   construct_argument_list(&arguments, theprogram, tempfile_name);
+//   /* Fork a child process and run the given program in it. */
+//   if ((thepid = fork()) == 0) {
+//     execvp(arguments[0], arguments);
+//     /* Terminate the child if the program is not found. */
+//     exit(9);
+//   }
+//   else if (thepid > 0) {
+//     /* Block SIGWINCH'es while waiting for the forked program to end, so nano doesn't get pushed past the wait(). */
+//     block_sigwinch(TRUE);
+//     wait(&program_status);
+//     block_sigwinch(FALSE);
+//   }
+//   errornumber = errno;
+//   /* After spell checking, restore terminal state and reenter curses mode;
+//    * after formatting, make sure that any formatter output is wiped. */
+//   if (spelling) {
+//     terminal_init();
+//     doupdate();
+//   }
+//   else {
+//     full_refresh();
+//   }
+//   if (thepid < 0) {
+//     statusline(ALERT, _("Could not fork: %s"), strerror(errornumber));
+//     free(arguments[0]);
+//     return;
+//   }
+//   else if (!WIFEXITED(program_status) || WEXITSTATUS(program_status) > 2) {
+//     statusline(ALERT, _("Error invoking '%s'"), arguments[0]);
+//     free(arguments[0]);
+//     return;
+//   }
+//   else if (WEXITSTATUS(program_status) != 0) {
+//     statusline(ALERT, _("Program '%s' complained"), arguments[0]);
+//   }
+//   free(arguments[0]);
+//   /* When the temporary file wasn't touched, say so and leave. */
+//   if (timestamp_sec > 0 && stat(tempfile_name, &fileinfo) == 0 && (long)fileinfo.st_mtim.tv_sec == timestamp_sec
+//    && (long)fileinfo.st_mtim.tv_nsec == timestamp_nsec) {
+//     statusline(REMARK, _("Nothing changed"));
+//     return;
+//   }
+//   /* Replace the marked text (or entire text) with the corrected text. */
+//   if (spelling && openfile->mark) {
+//     long was_mark_lineno = openfile->mark->lineno;
+//     bool upright         = mark_is_before_cursor();
+//     replaced             = replace_buffer(tempfile_name, CUT, "spelling correction");
+//     /* Adjust the end point of the marked region for any change in length of the region's last line. */
+//     if (upright) {
+//       was_x = openfile->current_x;
+//     }
+//     else {
+//       openfile->mark_x = openfile->current_x;
+//     }
+//     /* Restore the mark. */
+//     openfile->mark = line_from_number(was_mark_lineno);
+//   }
+//   else {
+//     replaced = replace_buffer(tempfile_name, CUT_TO_EOF,
+//                               /* TRANSLATORS: The next two go with Undid/Redid messages. */
+//                               (spelling ? N_("spelling correction") : N_("formatting")));
+//   }
+//   /* Go back to the old position. */
+//   goto_line_posx(was_lineno, was_x);
+//   if (was_at_eol || openfile->current_x > strlen(openfile->current->data)) {
+//     openfile->current_x = strlen(openfile->current->data);
+//   }
+//   if (replaced) {
+//     openfile->filetop->has_anchor = FALSE;
+//     update_undo(COUPLE_END);
+//   }
+//   openfile->placewewant = was_pww;
+//   adjust_viewport(STATIONARY);
+//   if (spelling) {
+//     statusline(REMARK, _("Finished checking spelling"));
+//   }
+//   else {
+//     statusline(REMARK, _("Buffer has been processed"));
+//   }
+// }
 
 /* Let the user edit the misspelled word.  Return 'FALSE' if the user cancels. */
 // static bool fix_spello(const char *word) {
@@ -2802,160 +2802,160 @@ static void treat(char *tempfile_name, char *theprogram, bool spelling) {
 
 /* Run a spell-check on the given file, using 'spell' to produce a list of all misspelled words, then feeding those through
  * 'sort' and 'uniq' to obtain an alphabetical list, which words are then offered one by one to the user for correction. */
-static void do_int_speller(const char *const tempfile_name) {
-  char *misspellings, *pointer, *oneword;
-  long  pipesize;
-  Ulong buffersize, bytesread, totalread;
-  int   spell_fd[2], sort_fd[2], uniq_fd[2], tempfile_fd = -1;
-  pid_t pid_spell, pid_sort, pid_uniq;
-  int   spell_status, sort_status, uniq_status;
-  Ulong stash[sizeof(flags) / sizeof(flags[0])];
-  /* Create all three pipes up front. */
-  if (pipe(spell_fd) == -1 || pipe(sort_fd) == -1 || pipe(uniq_fd) == -1) {
-    statusline(ALERT, _("Could not create pipe: %s"), strerror(errno));
-    return;
-  }
-  statusbar_all(_("Invoking spell checker..."));
-  /* Fork a process to run spell in. */
-  if ((pid_spell = fork()) == 0) {
-    /* Child: open the temporary file that holds the text to be checked. */
-    if ((tempfile_fd = open(tempfile_name, O_RDONLY)) == -1) {
-      exit(6);
-    }
-    /* Connect standard input to the temporary file. */
-    if (dup2(tempfile_fd, STDIN_FILENO) < 0) {
-      exit(7);
-    }
-    /* Connect standard output to the write end of the first pipe. */
-    if (dup2(spell_fd[1], STDOUT_FILENO) < 0) {
-      exit(8);
-    }
-    close(tempfile_fd);
-    close(spell_fd[0]);
-    close(spell_fd[1]);
-    /* Try to run 'hunspell'; if that fails, fall back to 'spell'. */
-    execlp("hunspell", "hunspell", "-l", NULL);
-    execlp("spell", "spell", NULL);
-    /* Indicate failure when neither speller was found. */
-    exit(9);
-  }
-  /* Parent: close the unused write end of the first pipe. */
-  close(spell_fd[1]);
-  /* Fork a process to run sort in. */
-  if ((pid_sort = fork()) == 0) {
-    /* Connect standard input to the read end of the first pipe. */
-    if (dup2(spell_fd[0], STDIN_FILENO) < 0) {
-      exit(7);
-    }
-    /* Connect standard output to the write end of the second pipe. */
-    if (dup2(sort_fd[1], STDOUT_FILENO) < 0) {
-      exit(8);
-    }
-    close(spell_fd[0]);
-    close(sort_fd[0]);
-    close(sort_fd[1]);
-    /* Now run the sort program.  Use -f to mix upper and lower case. */
-    execlp("sort", "sort", "-f", NULL);
-    exit(9);
-  }
-  close(spell_fd[0]);
-  close(sort_fd[1]);
-  /* Fork a process to run uniq in. */
-  if ((pid_uniq = fork()) == 0) {
-    if (dup2(sort_fd[0], STDIN_FILENO) < 0) {
-      exit(7);
-    }
-    if (dup2(uniq_fd[1], STDOUT_FILENO) < 0) {
-      exit(8);
-    }
-    close(sort_fd[0]);
-    close(uniq_fd[0]);
-    close(uniq_fd[1]);
-    execlp("uniq", "uniq", NULL);
-    exit(9);
-  }
-  close(sort_fd[0]);
-  close(uniq_fd[1]);
-  /* When some child process was not forked successfully... */
-  if (pid_spell < 0 || pid_sort < 0 || pid_uniq < 0) {
-    statusline(ALERT, _("Could not fork: %s"), ERRNO_C_STR);
-    close(uniq_fd[0]);
-    return;
-  }
-  /* Get the system pipe buffer size. */
-  pipesize = fpathconf(uniq_fd[0], _PC_PIPE_BUF);
-  if (pipesize < 1) {
-    statusline(ALERT, _("Could not get size of pipe buffer"));
-    close(uniq_fd[0]);
-    return;
-  }
-  /* Leave curses mode so that error messages go to the original screen. */
-  endwin();
-  /* Block SIGWINCHes while reading misspelled words from the third pipe. */
-  block_sigwinch(TRUE);
-  totalread    = 0;
-  buffersize   = pipesize + 1;
-  misspellings = (char *)nmalloc(buffersize);
-  pointer      = misspellings;
-  while ((bytesread = read(uniq_fd[0], pointer, pipesize)) > 0) {
-    totalread += bytesread;
-    buffersize += pipesize;
-    misspellings = (char *)nrealloc(misspellings, buffersize);
-    pointer      = misspellings + totalread;
-  }
-  *pointer = '\0';
-  close(uniq_fd[0]);
-  block_sigwinch(FALSE);
-  /* Re-enter curses mode. */
-  terminal_init();
-  doupdate();
-  /* Save the settings of the global flags. */
-  memcpy(stash, flags, sizeof(flags));
-  /* Do any replacements case-sensitively, forward, and without regexes. */
-  SET(CASE_SENSITIVE);
-  UNSET(BACKWARDS_SEARCH);
-  UNSET(USE_REGEXP);
-  pointer = misspellings;
-  oneword = misspellings;
-  /* Process each of the misspelled words. */
-  while (*pointer != '\0') {
-    if ((*pointer == '\r') || (*pointer == '\n')) {
-      *pointer = '\0';
-      if (oneword != pointer) {
-        if (!fix_spello(oneword)) {
-          oneword = pointer;
-          break;
-        }
-      }
-      oneword = (pointer + 1);
-    }
-    ++pointer;
-  }
-  /* Special case: the last word doesn't end with '\r' or '\n'. */
-  if (oneword != pointer) {
-    fix_spello(oneword);
-  }
-  free(misspellings);
-  refresh_needed = TRUE;
-  /* Restore the settings of the global flags. */
-  memcpy(flags, stash, sizeof(flags));
-  /* Process the end of the three processes. */
-  waitpid(pid_spell, &spell_status, 0);
-  waitpid(pid_sort, &sort_status, 0);
-  waitpid(pid_uniq, &uniq_status, 0);
-  if (WIFEXITED(uniq_status) == 0 || WEXITSTATUS(uniq_status)) {
-    statusline(ALERT, _("Error invoking \"uniq\""));
-  }
-  else if (WIFEXITED(sort_status) == 0 || WEXITSTATUS(sort_status)) {
-    statusline(ALERT, _("Error invoking \"sort\""));
-  }
-  else if (WIFEXITED(spell_status) == 0 || WEXITSTATUS(spell_status)) {
-    statusline(ALERT, _("Error invoking \"spell\""));
-  }
-  else {
-    statusline(REMARK, _("Finished checking spelling"));
-  }
-}
+// static void do_int_speller(const char *const tempfile_name) {
+//   char *misspellings, *pointer, *oneword;
+//   long  pipesize;
+//   Ulong buffersize, bytesread, totalread;
+//   int   spell_fd[2], sort_fd[2], uniq_fd[2], tempfile_fd = -1;
+//   pid_t pid_spell, pid_sort, pid_uniq;
+//   int   spell_status, sort_status, uniq_status;
+//   Ulong stash[sizeof(flags) / sizeof(flags[0])];
+//   /* Create all three pipes up front. */
+//   if (pipe(spell_fd) == -1 || pipe(sort_fd) == -1 || pipe(uniq_fd) == -1) {
+//     statusline(ALERT, _("Could not create pipe: %s"), strerror(errno));
+//     return;
+//   }
+//   statusbar_all(_("Invoking spell checker..."));
+//   /* Fork a process to run spell in. */
+//   if ((pid_spell = fork()) == 0) {
+//     /* Child: open the temporary file that holds the text to be checked. */
+//     if ((tempfile_fd = open(tempfile_name, O_RDONLY)) == -1) {
+//       exit(6);
+//     }
+//     /* Connect standard input to the temporary file. */
+//     if (dup2(tempfile_fd, STDIN_FILENO) < 0) {
+//       exit(7);
+//     }
+//     /* Connect standard output to the write end of the first pipe. */
+//     if (dup2(spell_fd[1], STDOUT_FILENO) < 0) {
+//       exit(8);
+//     }
+//     close(tempfile_fd);
+//     close(spell_fd[0]);
+//     close(spell_fd[1]);
+//     /* Try to run 'hunspell'; if that fails, fall back to 'spell'. */
+//     execlp("hunspell", "hunspell", "-l", NULL);
+//     execlp("spell", "spell", NULL);
+//     /* Indicate failure when neither speller was found. */
+//     exit(9);
+//   }
+//   /* Parent: close the unused write end of the first pipe. */
+//   close(spell_fd[1]);
+//   /* Fork a process to run sort in. */
+//   if ((pid_sort = fork()) == 0) {
+//     /* Connect standard input to the read end of the first pipe. */
+//     if (dup2(spell_fd[0], STDIN_FILENO) < 0) {
+//       exit(7);
+//     }
+//     /* Connect standard output to the write end of the second pipe. */
+//     if (dup2(sort_fd[1], STDOUT_FILENO) < 0) {
+//       exit(8);
+//     }
+//     close(spell_fd[0]);
+//     close(sort_fd[0]);
+//     close(sort_fd[1]);
+//     /* Now run the sort program.  Use -f to mix upper and lower case. */
+//     execlp("sort", "sort", "-f", NULL);
+//     exit(9);
+//   }
+//   close(spell_fd[0]);
+//   close(sort_fd[1]);
+//   /* Fork a process to run uniq in. */
+//   if ((pid_uniq = fork()) == 0) {
+//     if (dup2(sort_fd[0], STDIN_FILENO) < 0) {
+//       exit(7);
+//     }
+//     if (dup2(uniq_fd[1], STDOUT_FILENO) < 0) {
+//       exit(8);
+//     }
+//     close(sort_fd[0]);
+//     close(uniq_fd[0]);
+//     close(uniq_fd[1]);
+//     execlp("uniq", "uniq", NULL);
+//     exit(9);
+//   }
+//   close(sort_fd[0]);
+//   close(uniq_fd[1]);
+//   /* When some child process was not forked successfully... */
+//   if (pid_spell < 0 || pid_sort < 0 || pid_uniq < 0) {
+//     statusline(ALERT, _("Could not fork: %s"), ERRNO_C_STR);
+//     close(uniq_fd[0]);
+//     return;
+//   }
+//   /* Get the system pipe buffer size. */
+//   pipesize = fpathconf(uniq_fd[0], _PC_PIPE_BUF);
+//   if (pipesize < 1) {
+//     statusline(ALERT, _("Could not get size of pipe buffer"));
+//     close(uniq_fd[0]);
+//     return;
+//   }
+//   /* Leave curses mode so that error messages go to the original screen. */
+//   endwin();
+//   /* Block SIGWINCHes while reading misspelled words from the third pipe. */
+//   block_sigwinch(TRUE);
+//   totalread    = 0;
+//   buffersize   = pipesize + 1;
+//   misspellings = (char *)nmalloc(buffersize);
+//   pointer      = misspellings;
+//   while ((bytesread = read(uniq_fd[0], pointer, pipesize)) > 0) {
+//     totalread += bytesread;
+//     buffersize += pipesize;
+//     misspellings = (char *)nrealloc(misspellings, buffersize);
+//     pointer      = misspellings + totalread;
+//   }
+//   *pointer = '\0';
+//   close(uniq_fd[0]);
+//   block_sigwinch(FALSE);
+//   /* Re-enter curses mode. */
+//   terminal_init();
+//   doupdate();
+//   /* Save the settings of the global flags. */
+//   memcpy(stash, flags, sizeof(flags));
+//   /* Do any replacements case-sensitively, forward, and without regexes. */
+//   SET(CASE_SENSITIVE);
+//   UNSET(BACKWARDS_SEARCH);
+//   UNSET(USE_REGEXP);
+//   pointer = misspellings;
+//   oneword = misspellings;
+//   /* Process each of the misspelled words. */
+//   while (*pointer != '\0') {
+//     if ((*pointer == '\r') || (*pointer == '\n')) {
+//       *pointer = '\0';
+//       if (oneword != pointer) {
+//         if (!fix_spello(oneword)) {
+//           oneword = pointer;
+//           break;
+//         }
+//       }
+//       oneword = (pointer + 1);
+//     }
+//     ++pointer;
+//   }
+//   /* Special case: the last word doesn't end with '\r' or '\n'. */
+//   if (oneword != pointer) {
+//     fix_spello(oneword);
+//   }
+//   free(misspellings);
+//   refresh_needed = TRUE;
+//   /* Restore the settings of the global flags. */
+//   memcpy(flags, stash, sizeof(flags));
+//   /* Process the end of the three processes. */
+//   waitpid(pid_spell, &spell_status, 0);
+//   waitpid(pid_sort, &sort_status, 0);
+//   waitpid(pid_uniq, &uniq_status, 0);
+//   if (WIFEXITED(uniq_status) == 0 || WEXITSTATUS(uniq_status)) {
+//     statusline(ALERT, _("Error invoking \"uniq\""));
+//   }
+//   else if (WIFEXITED(sort_status) == 0 || WEXITSTATUS(sort_status)) {
+//     statusline(ALERT, _("Error invoking \"sort\""));
+//   }
+//   else if (WIFEXITED(spell_status) == 0 || WEXITSTATUS(spell_status)) {
+//     statusline(ALERT, _("Error invoking \"spell\""));
+//   }
+//   else {
+//     statusline(REMARK, _("Finished checking spelling"));
+//   }
+// }
 
 /* Spell check the current file.  If an alternate spell checker is specified, use it.  Otherwise, use the internal spell checker. */
 void do_spell(void) {
@@ -3309,81 +3309,81 @@ void do_linter(void) {
 }
 
 /* Run a manipulation program on the contents of the buffer. */
-void do_formatter(void) {
-  FILE *stream;
-  char *temp_name;
-  bool  okay = FALSE;
-  ran_a_tool = TRUE;
-  if (in_restricted_mode()) {
-    return;
-  }
-  if (!openfile->syntax || !openfile->syntax->formatter || !*openfile->syntax->formatter) {
-    statusline(AHEM, _("No formatter is defined for this type of file"));
-    return;
-  }
-  openfile->mark = NULL;
-  temp_name = safe_tempfile(&stream);
-  if (temp_name) {
-    okay = write_file(temp_name, stream, TEMPORARY, OVERWRITE, NONOTES);
-  }
-  if (!okay) {
-    statusline(ALERT, _("Error writing temp file: %s"), strerror(errno));
-  }
-  else {
-    treat(temp_name, openfile->syntax->formatter, FALSE);
-  }
-  unlink(temp_name);
-  free(temp_name);
-}
+// void do_formatter(void) {
+//   FILE *stream;
+//   char *temp_name;
+//   bool  okay = FALSE;
+//   ran_a_tool = TRUE;
+//   if (in_restricted_mode()) {
+//     return;
+//   }
+//   if (!openfile->syntax || !openfile->syntax->formatter || !*openfile->syntax->formatter) {
+//     statusline(AHEM, _("No formatter is defined for this type of file"));
+//     return;
+//   }
+//   openfile->mark = NULL;
+//   temp_name = safe_tempfile(&stream);
+//   if (temp_name) {
+//     okay = write_file(temp_name, stream, TEMPORARY, OVERWRITE, NONOTES);
+//   }
+//   if (!okay) {
+//     statusline(ALERT, _("Error writing temp file: %s"), strerror(errno));
+//   }
+//   else {
+//     treat(temp_name, openfile->syntax->formatter, FALSE);
+//   }
+//   unlink(temp_name);
+//   free(temp_name);
+// }
 
 /* Our own version of "wc".  Note that the character count is in multibyte characters instead of single-byte characters. */
-void count_lines_words_and_characters(void) {
-  linestruct *was_current = openfile->current;
-  Ulong       was_x       = openfile->current_x;
-  linestruct *topline, *botline;
-  Ulong       top_x, bot_x;
-  Ulong       words = 0, chars = 0;
-  long        lines = 0;
-  /* Set the start and end point of the area to measure: either the marked
-   * region or the whole buffer.  Then compute the number of characters. */
-  if (openfile->mark) {
-    get_region(&topline, &top_x, &botline, &bot_x);
-    if (topline != botline) {
-      chars = (number_of_characters_in(topline->next, botline) + 1);
-    }
-    chars += (mbstrlen(topline->data + top_x) - mbstrlen(botline->data + bot_x));
-  }
-  else {
-    topline = openfile->filetop;
-    top_x   = 0;
-    botline = openfile->filebot;
-    bot_x   = strlen(botline->data);
-    chars   = openfile->totsize;
-  }
-  /* Compute the number of lines. */
-  lines = botline->lineno - topline->lineno;
-  lines += ((bot_x == 0 || (topline == botline && top_x == bot_x)) ? 0 : 1);
-  openfile->current   = topline;
-  openfile->current_x = top_x;
-  /* Keep stepping to the next word (considering punctuation as part of a word, as "wc -w" does),
-   * until we reach the end of the relevant area, incrementing the word count for each successful step. */
-  while (openfile->current->lineno < botline->lineno || (openfile->current == botline && openfile->current_x < bot_x)) {
-    if (do_next_word(FALSE)) {
-      ++words;
-    }
-  }
-  /* Restore where we were. */
-  openfile->current   = was_current;
-  openfile->current_x = was_x;
-  /* Report on the status bar the number of lines, words, and characters. */
-  statusline(
-    INFO, _("%s%zd %s,  %zu %s,  %zu %s"),
-    (openfile->mark ? _("In Selection:  ") : ""),
-    lines, P_("line", "lines", lines),
-    words, P_("word", "words", words),
-    chars, P_("character", "characters", chars)
-  );
-}
+// void count_lines_words_and_characters(void) {
+//   linestruct *was_current = openfile->current;
+//   Ulong       was_x       = openfile->current_x;
+//   linestruct *topline, *botline;
+//   Ulong       top_x, bot_x;
+//   Ulong       words = 0, chars = 0;
+//   long        lines = 0;
+//   /* Set the start and end point of the area to measure: either the marked
+//    * region or the whole buffer.  Then compute the number of characters. */
+//   if (openfile->mark) {
+//     get_region(&topline, &top_x, &botline, &bot_x);
+//     if (topline != botline) {
+//       chars = (number_of_characters_in(topline->next, botline) + 1);
+//     }
+//     chars += (mbstrlen(topline->data + top_x) - mbstrlen(botline->data + bot_x));
+//   }
+//   else {
+//     topline = openfile->filetop;
+//     top_x   = 0;
+//     botline = openfile->filebot;
+//     bot_x   = strlen(botline->data);
+//     chars   = openfile->totsize;
+//   }
+//   /* Compute the number of lines. */
+//   lines = botline->lineno - topline->lineno;
+//   lines += ((bot_x == 0 || (topline == botline && top_x == bot_x)) ? 0 : 1);
+//   openfile->current   = topline;
+//   openfile->current_x = top_x;
+//   /* Keep stepping to the next word (considering punctuation as part of a word, as "wc -w" does),
+//    * until we reach the end of the relevant area, incrementing the word count for each successful step. */
+//   while (openfile->current->lineno < botline->lineno || (openfile->current == botline && openfile->current_x < bot_x)) {
+//     if (do_next_word(FALSE)) {
+//       ++words;
+//     }
+//   }
+//   /* Restore where we were. */
+//   openfile->current   = was_current;
+//   openfile->current_x = was_x;
+//   /* Report on the status bar the number of lines, words, and characters. */
+//   statusline(
+//     INFO, _("%s%zd %s,  %zu %s,  %zu %s"),
+//     (openfile->mark ? _("In Selection:  ") : ""),
+//     lines, P_("line", "lines", lines),
+//     words, P_("word", "words", words),
+//     chars, P_("character", "characters", chars)
+//   );
+// }
 
 /* Get verbatim input.  This is used to insert a Unicode character by its hexadecimal code, which is typed
  * in by the user.  The function returns the bytes that were typed in, and the number of bytes that were read. */

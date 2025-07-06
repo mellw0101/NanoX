@@ -134,9 +134,11 @@ bool is_alnum_char(const char *const c) {
   return iswalnum(wc);
 }
 
+/* ----------------------------- Is blank char ----------------------------- */
+
 /* Return 'TRUE' when the given character is space or tab or other whitespace. */
-bool is_blank_char(const char *const c) {
-  wchar_t wc;
+bool is_blank_char(const char *const restrict c) {
+  wchar wc;
   if ((Schar)*c >= 0) {
     return ASCII_ISWHITE(*c);
   }
@@ -351,6 +353,8 @@ char control_mbrep(const char *const c, bool isdata) {
   }
 }
 
+/* ----------------------------- Mbtowide ----------------------------- */
+
 /* Convert the given multibyte sequence c to wide character wc, and return
  * the number of bytes in the sequence, or -1 for an invalid sequence. */
 int mbtowide(wchar *const restrict wc, const char *const restrict c) {
@@ -395,7 +399,7 @@ int mbtowide(wchar *const restrict wc, const char *const restrict c) {
   }
 }
 
-/* ----------------------------- Encode multi byte from wide ----------------------------- */
+/* ----------------------------- Widetomb ----------------------------- */
 
 /* Returns the length (not including the null-terminator) of wc when reprecented as
  * a multi-byte char string.  Ensure `mb` has a size of at least `MAXCHARLEN + 1`. */
@@ -440,6 +444,8 @@ int widetomb(Uint wc, char *const restrict mb) {
   mb[0] = NUL;
   return 0;
 }
+
+/* ----------------------------- Is doublewidth ----------------------------- */
 
 /* Return `TRUE` when the given character occupies two cells. */
 bool is_doublewidth(const char *const ch) {
@@ -834,6 +840,8 @@ char *mbstrpbrk(const char *str, const char *accept) {
   return NULL;
 }
 
+/* ----------------------------- Mbrevstrpbrk ----------------------------- */
+
 /* Locate, in the string that starts at head, the first occurrence of any of
  * the characters in accept, starting from pointer and searching backwards. */
 char *mbrevstrpbrk(const char *const head, const char *const accept, const char *pointer) {
@@ -855,17 +863,21 @@ char *mbrevstrpbrk(const char *const head, const char *const accept, const char 
   }
 }
 
+/* ----------------------------- Has blank char ----------------------------- */
+
 /* Return 'TRUE' if the given string contains at least one blank character. */
-bool has_blank_char(const char *str) {
+bool has_blank_char(const char *restrict str) {
   while (*str && !is_blank_char(str)) {
     str += char_length(str);
   }
   return *str;
 }
 
+/* ----------------------------- White string ----------------------------- */
+
 /* Return 'TRUE' when the given string is empty or consists of only blanks. */
-bool white_string(const char *str) {
-  while (*str && (is_blank_char(str) || *str == '\r')) {
+bool white_string(const char *restrict str) {
+  while (is_blank_char(str) || *str == '\r') {
     str += char_length(str);
   }
   return !*str;

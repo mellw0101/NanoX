@@ -829,7 +829,7 @@ void goto_line_and_column_for(CTX_ARGS, long line, long column, bool retain_answ
     }
   }
   /* Take a negative line number to mean lines from the end of the file. */
-  if (line < 1) {
+  if (line < 0) {
     line += (file->filebot->lineno + 1);
   }
   if (line < 1) {

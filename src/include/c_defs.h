@@ -657,6 +657,11 @@ static const short bg_vs_code_color_array[] = {
   /* A simple way to set the cursor at the end of the current line for `file`. */  \
   DO_WHILE((file)->current_x = strlen((file)->current->data);)
 
+#define TABSTOP_LENGTH(tab_size, data, index) \
+  /* Returns the number of spaces away from the next  \
+   * tabstop given the current `index` in `data`. */  \
+  ((tab_size) - (wideness((data), (index)) % (tab_size)))
+
 /* ----------------------------- nanox.c ----------------------------- */
 
 #define CTRL_C_HANDLER_ACTION(...)        \

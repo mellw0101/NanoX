@@ -416,6 +416,12 @@ int  nanox_socket_client(void);
 /* static */ bool replace_buffer_for(CTX_ARGS, const char *const restrict filename, undo_type action, const char *const restrict operation);
 /* static */ bool replace_buffer(const char *const restrict filename, undo_type action, const char *const restrict operation);
 
+/* static */ void treat_for(CTX_ARGS, char *tempfile, char *program, bool spelling);
+/* static */ void treat(char *tempfile, char *program, bool spelling);
+
+/* static */ void do_int_speller_for(CTX_ARGS, const char *const restrict tempfile);
+/* static */ void do_int_speller(const char *const restrict tempfile);
+
 /* ----------------------------- Line indent plus tab ----------------------------- */
 char *line_indent_plus_tab(const char *const restrict data, Ulong *const len);
 /* ----------------------------- Set marked region ----------------------------- */
@@ -495,15 +501,27 @@ void  do_comment_for(openfilestruct *const file, int cols);
 void  do_comment(void);
 void  handle_comment_action_for(openfilestruct *const file, int rows, undostruct *const u, bool undoing, bool add_comment);
 void  handle_comment_action(undostruct *const u, bool undoing, bool add_comment);
+/* ----------------------------- Copy completion ----------------------------- */
 char *copy_completion(const char *restrict text);
-void  do_enter_for(openfilestruct *const file);
-void  do_enter(void);
-void  do_undo_for(CTX_PARAMS);
-void  do_undo(void);
-void  do_redo_for(CTX_PARAMS);
-void  do_redo(void);
-bool  find_paragraph(linestruct **const first, Ulong *const count);
-void  do_verbatim_input(void);
+/* ----------------------------- Do enter ----------------------------- */
+void do_enter_for(openfilestruct *const file);
+void do_enter(void);
+/* ----------------------------- Do undo ----------------------------- */
+void do_undo_for(CTX_ARGS);
+void do_undo(void);
+/* ----------------------------- Do redo ----------------------------- */
+void do_redo_for(CTX_ARGS);
+void do_redo(void);
+/* ----------------------------- Count lines words and characters ----------------------------- */
+void count_lines_words_and_characters_for(openfilestruct *const file);
+void count_lines_words_and_characters(void);
+/* ----------------------------- Do formatter ----------------------------- */
+void do_formatter_for(CTX_ARGS, char *formatter);
+void do_formatter(void);
+/* ----------------------------- Find paragraph ----------------------------- */
+bool find_paragraph(linestruct **const first, Ulong *const count);
+/* ----------------------------- Do verbatim input ----------------------------- */
+void do_verbatim_input(void);
 /* ----------------------------- Get previous char ----------------------------- */
 char *get_previous_char(linestruct *line, Ulong xpos, linestruct **const outline, Ulong *const outxpos);
 /* ----------------------------- Get next char ----------------------------- */
@@ -826,7 +844,8 @@ bool is_cursor_language_word_char(void);
 bool is_enclose_char(char ch);
 bool is_alpha_char(const char *const c);
 bool is_alnum_char(const char *const c);
-bool is_blank_char(const char *const c);
+/* ----------------------------- Is blank char ----------------------------- */
+bool is_blank_char(const char *const restrict c) _NODISCARD;
 bool is_prev_blank_char(const char *pointer, Ulong index);
 bool is_prev_cursor_blank_char(void);
 bool is_cursor_blank_char(void);
@@ -852,17 +871,18 @@ bool is_curs_between_any_pair_for(openfilestruct *const restrict file, const cha
 bool is_curs_between_any_pair(const char **const restrict pairs, Ulong *const restrict out_index);
 bool is_cursor_between_chars(const char pre_ch, const char post_ch);
 char control_mbrep(const char *const c, bool isdata);
-int  mbtowide(wchar *const restrict wc, const char *const restrict c) __THROW _NODISCARD _NONNULL(1, 2);
-
-/* ----------------------------- Encode multi byte from wide ----------------------------- */
+/* ----------------------------- Mbtowide ----------------------------- */
+int mbtowide(wchar *const restrict wc, const char *const restrict c) __THROW _NODISCARD _NONNULL(1, 2);
+/* ----------------------------- Widetomb ----------------------------- */
 int widetomb(Uint wc, char *const restrict mb);
-
-bool  is_doublewidth(const char *const ch);
+/* ----------------------------- Is doublewidth ----------------------------- */
+bool is_doublewidth(const char *const ch);
 bool  is_zerowidth(const char *ch);
 bool  is_cursor_zerowidth(void);
 int   char_length(const char *const pointer);
 Ulong mbstrlen(const char *pointer);
-int   collect_char(const char *const str, char *c);
+/* ----------------------------- Collect char ----------------------------- */
+int collect_char(const char *const str, char *c);
 int   advance_over(const char *const str, Ulong *column);
 Ulong step_left(const char *const buf, const Ulong pos);
 void  step_cursor_left(openfilestruct *const file);
@@ -875,16 +895,18 @@ char *revstrstr(const char *const haystack, const char *const needle, const char
 char *mbrevstrcasestr(const char *const haystack, const char *const needle, const char *pointer) _NODISCARD;
 char *mbstrchr(const char *string, const char *const chr);
 char *mbstrpbrk(const char *str, const char *accept);
+/* ----------------------------- Mbrevstrpbrk ----------------------------- */
 char *mbrevstrpbrk(const char *const head, const char *const accept, const char *pointer);
-bool  has_blank_char(const char *str);
-bool  white_string(const char *str);
+/* ----------------------------- Has blank char ----------------------------- */
+bool  has_blank_char(const char *restrict str);
+/* ----------------------------- White string ----------------------------- */
+bool white_string(const char *restrict str);
 void  strip_leading_blanks_from(char *const str);
 void  strip_leading_chars_from(char *str, const char ch);
 bool  is_char_one_of(const char *pointer, Ulong index, const char *chars);
 
 
 /* ---------------------------------------------------------- winio.c ---------------------------------------------------------- */
-
 
 
 void  record_macro(void);
@@ -1128,29 +1150,29 @@ void to_prev_block_for(openfilestruct *const file, int rows, int cols);
 void to_prev_block(void);
 void to_next_block_for(openfilestruct *const file, int rows, int cols);
 void to_next_block(void);
-void do_up_for(CTX_PARAMS);
+void do_up_for(CTX_ARGS);
 void do_up(void);
-void do_down_for(CTX_PARAMS);
+void do_down_for(CTX_ARGS);
 void do_down(void);
 void do_left_for(openfilestruct *const file, int rows, int cols);
 void do_left(void);
-void do_right_for(CTX_PARAMS);
+void do_right_for(CTX_ARGS);
 void do_right(void);
 void do_prev_word_for(openfilestruct *const file, bool allow_punct);
 void do_prev_word(void);
-void to_prev_word_for(CTX_PARAMS, bool allow_punct);
+void to_prev_word_for(CTX_ARGS, bool allow_punct);
 void to_prev_word(void);
 bool do_next_word_for(openfilestruct *const file, bool after_ends, bool allow_punct);
 bool do_next_word(bool after_ends);
-void to_next_word_for(CTX_PARAMS, bool after_ends, bool allow_punct);
+void to_next_word_for(CTX_ARGS, bool after_ends, bool allow_punct);
 void to_next_word(void);
-void do_home_for(CTX_PARAMS);
+void do_home_for(CTX_ARGS);
 void do_home(void);
-void do_end_for(CTX_PARAMS);
+void do_end_for(CTX_ARGS);
 void do_end(void);
-void do_scroll_up_for(CTX_PARAMS);
+void do_scroll_up_for(CTX_ARGS);
 void do_scroll_up(void);
-void do_scroll_down_for(CTX_PARAMS);
+void do_scroll_down_for(CTX_ARGS);
 void do_scroll_down(void);
 
 
@@ -1295,13 +1317,13 @@ void copy_marked_region_for(openfilestruct *const file);
 void copy_marked_region(void);
 void copy_text_for(openfilestruct *const file, int rows, int cols);
 void copy_text(void);
-void paste_text_for(CTX_PARAMS);
+void paste_text_for(CTX_ARGS);
 void paste_text(void);
-void zap_replace_text_for(CTX_PARAMS, const char *const restrict replace_with, Ulong len);
+void zap_replace_text_for(CTX_ARGS, const char *const restrict replace_with, Ulong len);
 void zap_replace_text(const char *const restrict replace_with, Ulong len);
-void chop_previous_word_for(CTX_PARAMS);
+void chop_previous_word_for(CTX_ARGS);
 void chop_previous_word(void);
-void chop_next_word_for(CTX_PARAMS);
+void chop_next_word_for(CTX_ARGS);
 void chop_next_word(void);
 
 
@@ -1388,30 +1410,52 @@ void unlink_node(linestruct *const node);
 /* ----------------------------- Free lines ----------------------------- */
 void free_lines_for(openfilestruct *const file, linestruct *src);
 void free_lines(linestruct *const head);
-
+/* ----------------------------- Copy node ----------------------------- */
 linestruct *copy_node(const linestruct *const src) _NODISCARD _RETURNS_NONNULL _NONNULL(1);
-void        copy_buffer_top_bot(const linestruct *src, linestruct **const top, linestruct **const bot);
+/* ----------------------------- Copy buffer top bot ----------------------------- */
+void copy_buffer_top_bot(const linestruct *src, linestruct **const top, linestruct **const bot);
+/* ----------------------------- Copy buffer ----------------------------- */
 linestruct *copy_buffer(const linestruct *src);
-void        renumber_from(linestruct *line);
-void        print_view_warning(void);
-bool        in_restricted_mode(void);
-void        disable_flow_control(void);
-void        enable_flow_control(void);
-void        disable_extended_io(void);
-void        confirm_margin(void);
-void        disable_kb_interrupt(void);
-void        enable_kb_interrupt(void);
-void        install_handler_for_Ctrl_C(void);
-void        restore_handler_for_Ctrl_C(void);
-void        terminal_init(void);
-void        window_init(void);
-void        regenerate_screen(void);
-void        block_sigwinch(bool blockit);
-void        handle_sigwinch(int signal);
-void        suspend_nano(int _UNUSED signal);
-void        continue_nano(int _UNUSED signal);
-void        do_suspend(void);
-void        reconnect_and_store_state(void);
+/* ----------------------------- Renumber from ----------------------------- */
+void renumber_from(linestruct *line);
+/* ----------------------------- Print view warning ----------------------------- */
+void print_view_warning(void);
+/* ----------------------------- In restricted mode ----------------------------- */
+bool in_restricted_mode(void);
+/* ----------------------------- Disable flow control ----------------------------- */
+void disable_flow_control(void);
+/* ----------------------------- Enable flow control ----------------------------- */
+void enable_flow_control(void);
+/* ----------------------------- Disable extended io ----------------------------- */
+void disable_extended_io(void);
+/* ----------------------------- Confirm margin ----------------------------- */
+void confirm_margin(void);
+/* ----------------------------- Disable kb interrupt ----------------------------- */
+void disable_kb_interrupt(void);
+/* ----------------------------- Enable kb interrupt ----------------------------- */
+void enable_kb_interrupt(void);
+/* ----------------------------- Install handler for Ctrl C ----------------------------- */
+void install_handler_for_Ctrl_C(void);
+/* ----------------------------- Restore handler for Ctrl C ----------------------------- */
+void restore_handler_for_Ctrl_C(void);
+/* ----------------------------- Terminal init ----------------------------- */
+void terminal_init(void);
+/* ----------------------------- Window init ----------------------------- */
+void window_init(void);
+/* ----------------------------- Regenerate screen ----------------------------- */
+void regenerate_screen(void);
+/* ----------------------------- Block sigwinch ----------------------------- */
+void block_sigwinch(bool blockit);
+/* ----------------------------- Handle sigwinch ----------------------------- */
+void handle_sigwinch(int signal);
+/* ----------------------------- Suspend nano ----------------------------- */
+void suspend_nano(int _UNUSED signal);
+/* ----------------------------- Continue nano ----------------------------- */
+void continue_nano(int _UNUSED signal);
+/* ----------------------------- Do suspend ----------------------------- */
+void do_suspend(void);
+/* ----------------------------- Reconnect and store state ----------------------------- */
+void reconnect_and_store_state(void);
 /* ----------------------------- Handle hupterm ----------------------------- */
 void handle_hupterm(int _UNUSED signal) _NO_RETURN;
 /* ----------------------------- Handle crash ----------------------------- */

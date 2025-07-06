@@ -29,6 +29,9 @@ static void make_a_note(int _UNUSED signal) {
   control_C_was_pressed = TRUE;
 }
 
+/* ----------------------------- Disable mouse support ----------------------------- */
+
+/* Disable mouse support for `curses-mode`. */
 static void disable_mouse_support(void) {
   if (IN_CURSES_CTX) {
     mousemask(0, NULL);
@@ -36,6 +39,7 @@ static void disable_mouse_support(void) {
   }
 }
 
+/* Enable mouse support for `curses-mode`. */
 static void enable_mouse_support(void) {
   if (IN_CURSES_CTX) {
     mousemask(ALL_MOUSE_EVENTS, NULL);
@@ -383,6 +387,8 @@ void free_lines(linestruct *const head) {
   free_lines_for(CTX_OF, head);
 }
 
+/* ----------------------------- Copy node ----------------------------- */
+
 /* Make a copy of a linestruct node. */
 linestruct *copy_node(const linestruct *const src) {
   ASSERT(src);
@@ -393,6 +399,8 @@ linestruct *copy_node(const linestruct *const src) {
   dst->has_anchor = src->has_anchor;
   return dst;
 }
+
+/* ----------------------------- Copy buffer top bot ----------------------------- */
 
 /* Duplicate an entire linked list of linestructs, and assign the head to `*top` and when the caller wants the tail to `*bot`. */
 void copy_buffer_top_bot(const linestruct *src, linestruct **const top, linestruct **const bot) {
@@ -413,6 +421,8 @@ void copy_buffer_top_bot(const linestruct *src, linestruct **const top, linestru
   ASSIGN_IF_VALID(bot, item);
 }
 
+/* ----------------------------- Copy buffer ----------------------------- */
+
 /* Duplicate an entire linked list of linestructs. */
 linestruct *copy_buffer(const linestruct *src) {
   linestruct *head;
@@ -431,6 +441,8 @@ linestruct *copy_buffer(const linestruct *src) {
   return head;
 }
 
+/* ----------------------------- Renumber from ----------------------------- */
+
 /* Renumber the lines in a buffer, from the given line onwards. */
 void renumber_from(linestruct *line) {
   long number = (!line->prev ? 0 : line->prev->lineno);
@@ -440,10 +452,14 @@ void renumber_from(linestruct *line) {
   }
 }
 
+/* ----------------------------- Print view warning ----------------------------- */
+
 /* Display a warning about a key disabled in view mode. */
 void print_view_warning(void) {
   statusline(AHEM, _("Key is invalid in view mode"));
 }
+
+/* ----------------------------- In restricted mode ----------------------------- */
 
 /* When in restricted mode, show a warning and return 'TRUE'. */
 bool in_restricted_mode(void) {
@@ -458,6 +474,8 @@ bool in_restricted_mode(void) {
   return FALSE;
 }
 
+/* ----------------------------- Disable flow control ----------------------------- */
+
 /* Disable the terminal's XON/XOFF flow-control characters. */
 void disable_flow_control(void) {
   struct termios settings;
@@ -466,6 +484,8 @@ void disable_flow_control(void) {
   tcsetattr(0, TCSANOW, &settings);
 }
 
+/* ----------------------------- Enable flow control ----------------------------- */
+
 /* Enable the terminal's XON/XOFF flow-control characters. */
 void enable_flow_control(void) {
   struct termios settings;
@@ -473,6 +493,8 @@ void enable_flow_control(void) {
   settings.c_iflag |= IXON;
   tcsetattr(0, TCSANOW, &settings);
 }
+
+/* ----------------------------- Disable extended io ----------------------------- */
 
 /* Disable extended input and output processing in our terminal settings. */
 void disable_extended_io(void) {
@@ -483,23 +505,7 @@ void disable_extended_io(void) {
   tcsetattr(0, TCSANOW, &settings);
 }
 
-// void confirm_margin_for(openfilestruct *const file, int *const out_margin, int total_cols) {
-//   ASSERT(file);
-//   bool keep_focus;
-//   int needed_margin = (digits(file->filebot->lineno) + 1);
-//   /* When not requested, supress line numbers. */
-//   if (!ISSET(LINE_NUMBERS)) {
-//     needed_margin = 0;
-//   }
-//   if (needed_margin != (*out_margin)) {
-//     keep_focus    = (((*out_margin) > 0) && focusing);
-//     (*out_margin) = needed_margin;
-//     /* Ensure a proper starting column for the first screen row. */
-//     ensure_firstcolumn_is_aligned_for(file, total_cols);
-//     focusing = keep_focus;
-//     refresh_needed = TRUE;
-//   }
-// }
+/* ----------------------------- Confirm margin ----------------------------- */
 
 /* Ensure that the margin can accommodate the buffer's highest line number. */
 void confirm_margin(void) {
@@ -525,6 +531,8 @@ void confirm_margin(void) {
   }
 }
 
+/* ----------------------------- Disable kb interrupt ----------------------------- */
+
 /* Stop ^C from generating a SIGINT. */
 void disable_kb_interrupt(void) {
   struct termios settings = {0};
@@ -535,6 +543,8 @@ void disable_kb_interrupt(void) {
     tcsetattr(0, TCSANOW, &settings);
   }
 }
+
+/* ----------------------------- Enable kb interrupt ----------------------------- */
 
 /* Make ^C generate a SIGINT. */
 void enable_kb_interrupt(void) {
@@ -547,6 +557,8 @@ void enable_kb_interrupt(void) {
   }
 }
 
+/* ----------------------------- Install handler for Ctrl C ----------------------------- */
+
 /* Make ^C interrupt a system call and set a flag. */
 void install_handler_for_Ctrl_C(void) {
   /* Enable the generation of a SIGINT when ^C is pressed. */
@@ -557,11 +569,15 @@ void install_handler_for_Ctrl_C(void) {
   sigaction(SIGINT, &newaction, &oldaction);
 }
 
+/* ----------------------------- Restore handler for Ctrl C ----------------------------- */
+
 /* Go back to ignoring ^C. */
 void restore_handler_for_Ctrl_C(void) {
   sigaction(SIGINT, &oldaction, NULL);
   disable_kb_interrupt();
 }
+
+/* ----------------------------- Terminal init ----------------------------- */
 
 /* Set up the terminal state.  Put the terminal in raw mode
  * (read one character at a time, disable the special control keys, and disable
@@ -598,6 +614,8 @@ void terminal_init(void) {
   //   tui_enable_bracketed_pastes();
   // }
 }
+
+/* ----------------------------- Window init ----------------------------- */
 
 /* Initialize the three window portions nano uses.  For the tui. */
 void window_init(void) {
@@ -657,6 +675,8 @@ void window_init(void) {
   /* Add our tui here once we have redone it. */
 }
 
+/* ----------------------------- Regenerate screen ----------------------------- */
+
 /* Reinitialize and redraw the screen completely. */
 void regenerate_screen(void) {
   if (!IN_CURSES_CTX) {
@@ -680,6 +700,8 @@ void regenerate_screen(void) {
   }
 }
 
+/* ----------------------------- Block sigwinch ----------------------------- */
+
 /* Block or unblock the SIGWINCH signal, depending on the blockit parameter. */
 void block_sigwinch(bool blockit) {
   sigset_t winch;
@@ -691,11 +713,15 @@ void block_sigwinch(bool blockit) {
   }
 }
 
+/* ----------------------------- Handle sigwinch ----------------------------- */
+
 /* Handler for SIGWINCH (window size change). */
 void handle_sigwinch(int _UNUSED signal) {
   /* Let the input routine know that a SIGWINCH has occurred. */
   the_window_resized = TRUE;
 }
+
+/* ----------------------------- Suspend nano ----------------------------- */
 
 /* Handler for SIGTSTP (suspend). */
 void suspend_nano(int _UNUSED signal) {
@@ -711,6 +737,8 @@ void suspend_nano(int _UNUSED signal) {
   kill(0, SIGSTOP);
 }
 
+/* ----------------------------- Continue nano ----------------------------- */
+
 /* Handler for SIGCONT (continue after suspend). */
 void continue_nano(int _UNUSED signal) {
   if (ISSET(USE_MOUSE)) {
@@ -725,6 +753,8 @@ void continue_nano(int _UNUSED signal) {
   ungetch(KEY_FRESH);
 }
 
+/* ----------------------------- Do suspend ----------------------------- */
+
 /* When permitted, put nano to sleep. */
 void do_suspend(void) {
   if (in_restricted_mode()) {
@@ -733,6 +763,8 @@ void do_suspend(void) {
   suspend_nano(0);
   ran_a_tool = TRUE;
 }
+
+/* ----------------------------- Reconnect and store state ----------------------------- */
 
 /* Reconnect standard input to the tty, and store its state. */
 void reconnect_and_store_state(void) {

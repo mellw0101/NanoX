@@ -630,7 +630,7 @@ void to_prev_word(void) {
 /* Move to the next word in `file`.  If `after_ends` is `TRUE`, stop at the ends
  * of words instead of at their beginnings.  Returns `TRUE` if we started at a word.
  * And if `allow_punct` is `TRUE`, then punctuations are considered word chars. */
-bool do_next_word_for(CTX_ARG_OF, bool after_ends, bool allow_punct) {
+bool do_next_word_for(openfilestruct *const file, bool after_ends, bool allow_punct) {
   ASSERT(file);
   bool started_on_word = (IS_WORD_CHAR(file, allow_punct) || is_lang_word_char(file));
   bool seen_space      = !started_on_word;

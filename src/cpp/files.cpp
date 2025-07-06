@@ -1198,7 +1198,7 @@ void open_new_empty_buffer(void) {
 //   return target;
 // }
 
-/* Returns a normalized path.  IE: Removes all /../ correctly. */
+/* Returns a normalized path.  IE: Removes all /../ correctly.  TODO: Fully remake this, correctly this time... */
 char *normalized_path(const char *path) _NOTHROW {
   char *ret = copy_of(path);
   const char *start = ret;

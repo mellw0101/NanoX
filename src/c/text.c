@@ -394,10 +394,11 @@ static void undo_insert_empty_line_for(openfilestruct *const file, int rows, und
 
 /* ----------------------------- Handle tab auto indent ----------------------------- */
 
-/* Undo-redo handler for tab helper auto indent. */
+/* Undo-redo handler for `tab-auto-indent`. */
 static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const u, bool undoing) {
   ASSERT(file);
   ASSERT(u);
+  linestruct *line;
   /* When redoing, this is the indent of the current line. */
   Ulong cur_indent;
   char *data;
@@ -406,21 +407,35 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
   file->current_x = u->head_x;
   /* Undo */
   if (undoing) {
+    /* Restore the current line's data to how it was before anything was done. */
     file->current->data = xstrcpy(file->current->data, u->strdata);
   }
   /* Redo */
   else {
-    cur_indent = indent_length(file->current->data);
-    if (white_string(file->current->data)) {
-      file->current->data = free_and_assign(
-        file->current->data,
-        line_indent_plus_tab(line_from_number_for(file, u->tail_lineno)->data, &file->current_x)
-      );
+    /* If the previous char is a open bracket char, there is special handeling to be done, to add another indent. */
+    if (is_previous_char_one_of(file->current, file->current_x, "{[(:", &line, NULL) && line != file->current) {
+      /* Get the indent of the current line. */
+      cur_indent = indent_length(file->current->data);
+      /* The current line is a blank line. */
+      if (white_string(file->current->data)) {
+        file->current->data = free_and_assign(
+          file->current->data,
+          line_indent_plus_tab(line_from_number_for(file, u->tail_lineno)->data, &file->current_x)
+        );
+      }
+      /* Otherwise, the current line has data, in which case we only allow tab
+       * help when the cursor is in the leading whitespace of the current line. */
+      else if (file->current_x <= cur_indent) {
+        data = line_indent_plus_tab(line_from_number_for(file, u->tail_lineno)->data, &file->current_x);
+        xstr_erase_norealloc(file->current->data, 0, cur_indent);
+        file->current->data = free_and_assign(data, xstrninj(file->current->data, data, file->current_x, 0));
+      }
     }
-    else if (file->current_x <= cur_indent) {
-      data = line_indent_plus_tab(line_from_number_for(file, u->tail_lineno)->data, &file->current_x);
-      xstr_erase_norealloc(file->current->data, 0, cur_indent);
-      file->current->data = free_and_assign(data, xstrninj(file->current->data, data, file->current_x, 0));
+    /* Otherwise, this was a stright tab helper, to get to the same indentation as the previous line.  Note that we only allow for
+     * this type of help when the current line is a blank line, and the current cursor position is less then the given indent. */
+    else if (file->current->prev && white_string(file->current->data) && file->current_x < u->tail_x) {
+      file->current->data = xstrncpy(file->current->data, line_from_number_for(file, u->tail_lineno)->data, u->tail_x);
+      file->current_x     = u->tail_x;
     }
   }
   SET_PWW(file);
@@ -789,6 +804,332 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
  * we can implement replace marked region in a mush better way and also more things. */
 /* static */ bool replace_buffer(const char *const restrict filename, undo_type action, const char *const restrict operation) {
   RET_CTX_CALL_WARGS(replace_buffer_for, filename, action, operation);
+}
+
+/* ----------------------------- Treat ----------------------------- */
+
+/* Execute the given program, with the given temp-file as the last argument. */
+/* static */ void treat_for(CTX_ARGS, char *tempfile, char *program, bool spelling) {
+  ASSERT(file);
+  char **arguments = NULL;
+  struct stat info;
+  long was_lineno = file->current->lineno;
+  long was_mark_lineno;
+  long time_sec   = 0;
+  long time_nsec  = 0;
+  Ulong was_pww = file->placewewant;
+  Ulong was_x   = file->current_x;
+  bool was_at_eol = !file->current->data[was_x];
+  bool replaced   = FALSE;
+  bool upright;
+  pid_t pid;
+  int status;
+  int error;
+  /* Stat the temporary file. */
+  if (stat(tempfile, &info) == 0) {
+    /* The temporary file's size is zero, there is nothing to do. */
+    if (info.st_size == 0) {
+      statusline(AHEM, ((spelling && file->mark) ? _("Selection is empty") : _("Buffer is empty")));
+      return;
+    }
+    /* Otherwise, save the modification time of the temporary file. */
+    else {
+      time_sec  = info.st_mtim.tv_sec;
+      time_nsec = info.st_mtim.tv_nsec;
+    }
+  }
+  /* The spell checker needs the screen...?, so exit from curses-mode. */
+  if (spelling) {
+    if (IN_CURSES_CTX) {
+      endwin();
+    }
+  }
+  else {
+    statusbar_all(_("Invoking formatter..."));
+  }
+  construct_argument_list(&arguments, program, tempfile);
+  /* Fork a child process and run the given program in it. */
+  if ((pid = fork()) == 0) {
+    execvp(arguments[0], arguments);
+    /* Terminate the child if the program is not found. */
+    exit(9);
+  }
+  else if (pid > 0) {
+    /* Block SIGWINCH'es while waiting for the forked program to end, so nanox doesn't get pushed past `wait()`. */
+    block_sigwinch(TRUE);
+    wait(&status);
+    block_sigwinch(FALSE);
+  }
+  error = errno;
+  /* When in curses-mode. */
+  if (IN_CURSES_CTX) {
+    /* After spell checking, restore the terminal state and re-enter curses-mode. */
+    if (spelling) {
+      terminal_init();
+      doupdate();
+    }
+    /* After formating, make sure that any formatted output is wiped. */
+    else {
+      full_refresh();
+    }
+  }
+  /* We failed to fork. */
+  if (pid < 0) {
+    statusline(ALERT, _("Could not fork: %s"), strerror(error));
+    free(arguments[0]);
+    free(arguments);
+    return;
+  }
+  else if (!WIFEXITED(status) || WEXITSTATUS(status) > 2) {
+    statusline(ALERT, _("Error invoking '%s'"), arguments[0]);
+    free(arguments[0]);
+    free(arguments);
+    return;
+  }
+  else if (WEXITSTATUS(status) != 0) {
+    statusline(ALERT, _("Program '%s' complained"), arguments[0]);
+  }
+  free(arguments[0]);
+  free(arguments);
+  /* When the temporary file wasn't touched, say so and leave. */
+  if (time_sec > 0 && stat(tempfile, &info) == 0 && info.st_mtim.tv_sec == time_sec && info.st_mtim.tv_nsec == time_nsec) {
+    statusline(REMARK, _("Nothing changed"));
+    return;
+  }
+  /* Replace the marked text (or entire text) with the corrected text. */
+  if (spelling && file->mark) {
+    was_mark_lineno = file->mark->lineno;
+    upright         = mark_is_before_cursor_for(file);
+    replaced        = replace_buffer_for(STACK_CTX, tempfile, CUT, "spelling correction");
+    /* Adjust the end point of the marked region for any change in length of the region's last line. */
+    if (upright) {
+      was_x = file->current_x;
+    }
+    else {
+      file->mark_x = file->current_x;
+    }
+    /* Restore the mark. */
+    file->mark = line_from_number_for(file, was_mark_lineno);
+  }
+  else {
+    /* TRANSLATORS: The next two go with Undid/Redid messages. */
+    replaced = replace_buffer_for(STACK_CTX, tempfile, CUT_TO_EOF, (spelling ? N_("spelling correction") : N_("formatting")));
+  }
+  /* Go back to the old position. */
+  goto_line_posx_for(file, rows, was_lineno, was_x);
+  if (was_at_eol || file->current_x > strlen(file->current->data)) {
+    file->current_x = strlen(file->current->data);
+  }
+  if (replaced) {
+    file->filetop->has_anchor = FALSE;
+    update_undo_for(file, COUPLE_END);
+  }
+  file->placewewant = was_pww;
+  adjust_viewport_for(STACK_CTX, STATIONARY);
+  if (spelling) {
+    statusline(REMARK, _("Finished checking spelling"));
+  }
+  else {
+    statusline(REMARK, _("Buffer has been processed"));
+  }
+}
+
+/* Execute the given program, with the given temp-file as the last argument.  Note that this is `context-safe`. */
+/* static */ void treat(char *tempfile, char *program, bool spelling) {
+  CTX_CALL_WARGS(treat_for, tempfile, program, spelling);
+}
+
+/* ----------------------------- Do int speller ----------------------------- */
+
+/* Run a spell-check on the given temp-file, using `spell` to preduce a list of all
+ * misspelled words, then feeding those through `sort` and `uniq` to obtain a alphabetical
+ * non-duplicate list, which words are then offered one by one to the user for correction. */
+/* static */ void do_int_speller_for(CTX_ARGS, const char *const restrict tempfile) {
+  ASSERT(file);
+  ASSERT(tempfile);
+  char *buf;
+  char *pointer;
+  char *oneword;
+  long pipesize;
+  Ulong bufsize;
+  Ulong bytesread;
+  Ulong totalread = 0;
+  Ulong stash[ARRAY_SIZE(flags)];
+  int fd_spell[2];
+  int fd_sort[2];
+  int fd_uniq[2];
+  int fd_temp = -1;
+  int status_spell;
+  int status_sort;
+  int status_uniq;
+  pid_t pid_spell;
+  pid_t pid_sort;
+  pid_t pid_uniq;
+  /* Parent: Create all pipes up front. */
+  if (pipe(fd_spell) == -1 || pipe(fd_sort) == -1 || pipe(fd_uniq) == -1) {
+    statusline(ALERT, _("Could not create pipe: %s"), strerror(errno));
+    return;
+  }
+  statusbar_all(_("Invoking spell checker..."));
+  /* Parent: Fork a process to run the spell in. */
+  if ((pid_spell = fork()) == 0) {
+    /* Child: Open the temporary file that holds the text to be checked. */
+    if ((fd_temp = open(tempfile, O_RDONLY)) == -1) {
+      exit(6);
+    }
+    /* Child: Connect standard input to the temporary file. */
+    if (dup2(fd_temp, STDIN_FILENO) < 0) {
+      exit(7);
+    }
+    /* Child: Connect standard output to the temporary file. */
+    if (dup2(fd_spell[1], STDOUT_FILENO) < 0) {
+      exit(8);
+    }
+    close(fd_temp);
+    close(fd_spell[0]);
+    close(fd_spell[1]);
+    /* Child: Try to run `hunspell`.  If that fails, fall back to `spell`. */
+    execlp("hunspell", "hunspell", "-l", NULL);
+    execlp("spell", "spell", NULL);
+    /* Child: Indecate failure when neither speller was found. */
+    exit(9);
+  }
+  /* Parent: Close the unused write end of the spell pipe. */
+  close(fd_spell[1]);
+  /* Parent: Fork a process to run sort in. */
+  if ((pid_sort = fork()) == 0) {
+    /* Child: Connect standard input to the read end of the first pipe. */
+    if (dup2(fd_spell[0], STDIN_FILENO) < 0) {
+      exit(7);
+    }
+    /* Child: Connect standard output to the write end of the second pipe. */
+    if (dup2(fd_sort[1], STDOUT_FILENO) < 0) {
+      exit(8);
+    }
+    close(fd_spell[0]);
+    close(fd_sort[0]);
+    close(fd_sort[1]);
+    /* Child: Now run the sort program.  Use -f to mix upper and lower case. */
+    execlp("sort", "sort", "-l", NULL);
+    exit(9);
+  }
+  close(fd_spell[0]);
+  close(fd_sort[1]);
+  /* Fork a process to run uniq in. */
+  if ((pid_uniq = fork()) == 0) {
+    /* Child: Connect standard input to the read end of the sort pipe. */
+    if (dup2(fd_sort[0], STDIN_FILENO) < 0) {
+      exit(7);
+    }
+    /* Child: Connect standard output to the write end of the uniq pipe. */
+    if (dup2(fd_uniq[1], STDOUT_FILENO) < 0) {
+      exit(8);
+    }
+    close(fd_sort[0]);
+    close(fd_uniq[0]);
+    close(fd_uniq[1]);
+    /* Child: Run uniq. */
+    execlp("uniq", "uniq", NULL);
+    exit(9);
+  }
+  close(fd_sort[0]);
+  close(fd_uniq[1]);
+  /* Parent: When some child process was not forked successfully... */
+  if (pid_spell < 0 || pid_sort < 0 || pid_uniq < 0) {
+    statusline(ALERT, _("Could not fork: %s"), strerror(errno));
+    close(fd_uniq[0]);
+    return;
+  }
+  /* Parent: Get the system pipe buffer size. */
+  pipesize = fpathconf(fd_uniq[0], _PC_PIPE_BUF);
+  if (pipesize < 0) {
+    statusline(ALERT, _("Could not get the size of the pipe buffer"));
+    close(fd_uniq[0]);
+    return;
+  }
+  /* Parent: When in curses-mode. */
+  if (IN_CURSES_CTX) {
+    /* Parent: Leave curses so that error messages go to the original screen... */
+    endwin();
+    /* Parent: Block SIGWINCH'es while reading misspelled words from the third pipe. */
+    block_sigwinch(TRUE);
+  }
+  bufsize = (pipesize + 1);
+  buf     = xmalloc(bufsize);
+  pointer = buf;
+  /* TODO: Fix this shitty always reallocing shit, and do a exponential growth, with powers of 2.  Like one should. */
+  while ((bytesread = read(fd_uniq[0], pointer, pipesize)) > 0) {
+    totalread += bytesread;
+    bufsize   += pipesize;
+    buf     = xrealloc(buf, bufsize);
+    pointer = (buf + totalread);
+  }
+  *pointer = '\0';
+  close(fd_uniq[0]);
+  /* Parent: Re-enter curses when in curses-mode. */
+  if (IN_CURSES_CTX) {
+    /* Unblock SIGWINCH'es. */
+    block_sigwinch(FALSE);
+    terminal_init();
+    doupdate();
+  }
+  /* Parent: Save the settings of the global flags. */
+  memcpy(stash, flags, sizeof(flags));
+  /* Parent: Do any replacement case-sensitivly, forward, and without regexes. */
+  SET(CASE_SENSITIVE);
+  UNSET(BACKWARDS_SEARCH);
+  UNSET(USE_REGEXP);
+  pointer = buf;
+  oneword = buf;
+  /* Parent: Process each of the misspelled words. */
+  while (*pointer) {
+    if (*pointer == CR || *pointer == LF) {
+      *pointer = NUL;
+      if (oneword != pointer) {
+        if (!fix_spello_for(STACK_CTX, oneword)) {
+          oneword = pointer;
+          break;
+        }
+      }
+      oneword = (pointer + 1);
+    }
+    ++pointer;
+  }
+  /* Parent: Special case: The last word dosen't end with CR of LF. */
+  if (oneword != pointer) {
+    fix_spello_for(STACK_CTX, oneword);
+  }
+  free(buf);
+  refresh_needed = TRUE;
+  /* Parent: Restore the settings of the global flags. */
+  memcpy(flags, stash, sizeof(flags));
+  /* Parent: Wait for the three processes to end. */
+  waitpid(pid_spell, &status_spell, 0);
+  waitpid(pid_sort,  &status_sort,  0);
+  waitpid(pid_uniq,  &status_uniq,  0);
+  /* Uniq exited abnormaly. */
+  if (!WIFEXITED(status_uniq) || WEXITSTATUS(status_uniq)) {
+    statusline(ALERT, _("Error invoking \"uniq\""));
+  }
+  /* Sort exited abnormaly. */
+  else if (!WIFEXITED(status_sort) || WEXITSTATUS(status_sort)) {
+    statusline(ALERT, _("Error invoking \"sort\""));
+  }
+  /* Spell exited abnormaly. */
+  else if (!WIFEXITED(status_spell) || WEXITSTATUS(status_spell)) {
+    statusline(ALERT, _("Error invoking \"spell\""));
+  }
+  /* Everything exited correctly with no errors. */
+  else {
+    statusline(ALERT, _("Finished checking spelling"));
+  }
+}
+
+/* Run a spell-check on the given temp-file, using `spell` to preduce a list of all
+ * misspelled words, then feeding those through `sort` and `uniq` to obtain a alphabetical
+ * non-duplicate list, which words are then offered one by one to the user for correction. */
+/* static */ void do_int_speller(const char *const restrict tempfile) {
+  CTX_CALL_WARGS(do_int_speller_for, tempfile);
 }
 
 
@@ -1484,8 +1825,7 @@ void do_wrap_for(openfilestruct *const file, int cols) {
   else {
     file->current_x += (cursor_x - wrap_loc);
   }
-  // file->placewewant = xplustabs();
-  set_pww_for(file);
+  SET_PWW(file);
   add_undo_for(file, SPLIT_END, NULL);
   refresh_needed = TRUE;
 }
@@ -1951,7 +2291,7 @@ void do_indent_for(openfilestruct *const file, int cols) {
   /* Use either all the marked lines or just the current line. */
   get_range_for(file, &top, &bot);
   /* Skip any leading empty lines. */
-  while (top != bot->next && !top->data[0]) {
+  while (top != bot->next && !*top->data) {
     top = top->next;
   }
   /* If all lines are empty, there is nothing to do. */
@@ -2382,6 +2722,7 @@ void do_comment_for(openfilestruct *const file, int cols) {
   }
   /* Figure out whether to comment or uncomment the selected line or lines. */
   DLIST_FOR_NEXT_END(top, bot->next, line) {
+    PREFETCH(line->next, 0, 3);
     empty = white_string(line->data);
     /* If this line is not blank and not commented, we comment all. */
     if (!empty && !comment_line_for(file, PREFLIGHT, line, comment_seq)) {
@@ -2397,6 +2738,7 @@ void do_comment_for(openfilestruct *const file, int cols) {
   file->current_undo->strdata = comment_seq;
   /* Comment/uncomment each of the selected lines when possible, and store undo data when a line changed. */
   DLIST_FOR_NEXT_END(top, bot->next, line) {
+    PREFETCH(line->next, 0, 3);
     if (comment_line_for(file, action, line, comment_seq)) {
       update_multiline_undo_for(file, line->lineno, _(""));
     }
@@ -2785,7 +3127,7 @@ void do_undo_for(CTX_ARGS) {
     file->mark = NULL;
     keep_mark  = FALSE;
   }
-  set_pww_for(file);
+  SET_PWW(file);
   file->totsize = u->wassize;
   if (u->type <= REPLACE) {
     check_the_multis_for(file, file->current);
@@ -3043,6 +3385,112 @@ void do_redo(void) {
   CTX_CALL(do_redo_for);
 }
 
+/* ----------------------------- Count lines words and characters ----------------------------- */
+
+/* Our own version of `wc`.  Note that the character count is in
+ * multibyte characters instead of signle byte ascii characters. */
+void count_lines_words_and_characters_for(openfilestruct *const file) {
+  ASSERT(file);
+  linestruct *was_current = file->current;
+  linestruct *top;
+  linestruct *bot;
+  Ulong was_x = file->current_x;
+  Ulong words = 0;
+  Ulong chars = 0;
+  Ulong top_x;
+  Ulong bot_x;
+  long lines = 0;
+  /* The file has a marked region. */
+  if (file->mark) {
+    get_region_for(file, &top, &top_x, &bot, &bot_x);
+    /* When the top and bottom lines are not the same, count the chars from the line after the top line. */
+    if (top != bot) {
+      chars = (number_of_characters_in(top->next, bot) + 1);
+    }
+    /* Now add the chars at the top line after top_x and remove all chars on the bottom line after bot_x. */
+    chars += (mbstrlen(top->data + top_x) - mbstrlen(bot->data + bot_x));
+  }
+  /* Otherwise, use our saved values to determine the total number of chars. */
+  else {
+    top   = file->filetop;
+    top_x = 0;
+    bot   = file->filebot;
+    bot_x = strlen(file->filebot->data);
+    chars = file->totsize;
+  }
+  /* Compute the number of lines. */
+  lines = ((bot->lineno - top->lineno) + !(!bot_x || (top == bot && top_x == bot_x)));
+  /* Set the current cursor line and position in file. */
+  file->current   = top;
+  file->current_x = top_x;
+  /* Keep stepping to the next word (considering punctuation as part of a word, as "wc -w" does...?),
+   * until we reach the end of the relevent area, increamentng the word cound for each successful step. */
+  while (file->current->lineno < bot->lineno || (file->current == bot && file->current_x < bot_x)) {
+    if (do_next_word_for(file, FALSE, ISSET(WORD_BOUNDS))) {
+      ++words;
+    }
+  }
+  /* Restore where we were. */
+  file->current   = was_current;
+  file->current_x = was_x;
+  /* Report on the status-bar the number of lines, words and characters. */
+  statusline(
+    INFO, _("%s%ld %s,  %lu %s,  %lu %s"),
+    (file->mark ? _("In Selection:  ") : ""),
+    lines, P_("line", "lines", lines),
+    words, P_("word", "words", words),
+    chars, P_("character", "characters", chars)
+  );
+}
+
+/* Our own version of `wc`.  Note that the character count is in multibyte characters
+ * instead of signle byte ascii characters.  And also that this function is `context-safe`. */
+void count_lines_words_and_characters(void) {
+  count_lines_words_and_characters_for(CTX_OF);
+}
+
+/* ----------------------------- Do formatter ----------------------------- */
+
+/* Run a formatter on the contents of `file`. */
+void do_formatter_for(CTX_ARGS, char *formatter) {
+  ASSERT(file);
+  FILE *stream;
+  char *temp_name;
+  bool okay = FALSE;
+  ran_a_tool = TRUE;
+  /* Only perform any action when not in restricted mode. */
+  if (!in_restricted_mode()) {
+    if (!formatter || !*formatter) {
+      statusline(AHEM, _("No formatter is defined for this type of file"));
+      return;
+    }
+    file->mark = NULL;
+    temp_name = safe_tempfile_for(file, &stream);
+    if (temp_name) {
+      okay = write_file_for(file, temp_name, stream, TEMPORARY, OVERWRITE, NONOTES);
+    }
+    if (!okay) {
+      statusline(ALERT, _("Error writing temp file: %s"), strerror(errno));
+    }
+    else {
+      treat_for(STACK_CTX, temp_name, formatter, FALSE);
+    }
+    unlink(temp_name);
+    free(temp_name);
+  }
+}
+
+/* Run a formatter on the contents of the currently open buffer.  Note that this is `context-safe`, and
+ * that this uses the buffers syntax->formatter if it exists, otherwise, will inform the user and return. */
+void do_formatter(void) {
+  if (IN_GUI_CTX) {
+    do_formatter_for(GUI_OF, GUI_RC, PASS_FIELD_IF_VALID(GUI_OF->syntax, formatter, NULL));
+  }
+  else {
+    do_formatter_for(TUI_OF, TUI_RC, PASS_FIELD_IF_VALID(TUI_OF->syntax, formatter, NULL));
+  }
+}
+
 /* ----------------------------- Find paragraph ----------------------------- */
 
 /* Find the first occurring paragraph in the forward direction.  Return `TRUE` when a paragraph was found,
@@ -3053,6 +3501,8 @@ bool find_paragraph(linestruct **const first, Ulong *const count) {
   linestruct *line = (*first);
   /* When not currently in a paragraph, move forward until that is. */
   while (!inpar(line) && line->next) {
+    PREFETCH(line->next, 0, 3);
+    PREFETCH(line->next->next, 0, 3);
     DLIST_ADV_NEXT(line);
   }
   (*first) = line;
@@ -3130,7 +3580,9 @@ char *get_previous_char(linestruct *line, Ulong xpos, linestruct **const outline
       }
       /* Otherwise, Move to the line above, and place the position at the end of the line. */
       else {
+        PREFETCH(line->prev, 0, 3);
         DLIST_ADV_PREV(line);
+        PREFETCH(line->data, 0, 3);
         xpos = strlen(line->data);
       }
     }
@@ -3166,7 +3618,9 @@ char *get_next_char(linestruct *line, Ulong xpos, linestruct **const outline, Ul
       }
       /* Otherwise, move to the next line, and place the position at the start of the line. */
       else {
+        PREFETCH(line->next, 0, 3);
         DLIST_ADV_NEXT(line);
+        PREFETCH(line->data, 0, 3);
         xpos = 0;
       }
     }
@@ -3215,7 +3669,7 @@ bool is_next_char_one_of(linestruct *const line, Ulong xpos,
 
 /* ----------------------------- Tab helper ----------------------------- */
 
-/* Improve the experiace of the tabulator. */
+/* Improve the experience of the tabulator. */
 bool tab_helper(openfilestruct *const file) {
   ASSERT(file);
   linestruct *line;
@@ -3262,6 +3716,25 @@ bool tab_helper(openfilestruct *const file) {
     SET_PWW(file);
     refresh_needed = TRUE;
     return TRUE;
+  }
+  /* Otherwise, if there is a previous line, and the current line is blank. */
+  else if (file->current->prev && white_string(file->current->data)) {
+    /* Get the indent lenght of the previous and current line. */
+    indent = indent_length(file->current->prev->data);
+    /* If the previous line has indent, and the current cursor position
+     * is less then that indent, add the indent to the current line. */
+    if (indent && file->current_x < indent) {
+      /* Create the undo-redo action. */
+      add_undo_for(file, TAB_AUTO_INDENT, NULL);
+      file->current_undo->tail_x      = indent;
+      file->current_undo->tail_lineno = file->current->prev->lineno;
+      /* Construct the new line, and position the cursor correctly. */
+      file->current->data = xstrncpy(file->current->data, file->current->prev->data, indent);
+      file->current_x     = indent;
+      SET_PWW(file);
+      refresh_needed = TRUE;
+      return TRUE;
+    }
   }
   return FALSE;
 }

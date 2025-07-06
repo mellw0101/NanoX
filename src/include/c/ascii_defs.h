@@ -6,15 +6,15 @@
 
 // #define CTRL(x) (x&037)
 
-#define NUL     '\000'
+// #define NUL     '\000'
 #define BELL    '\007'
-#define BS      '\010'
-#define TAB     '\011'
+// #define BS      '\010'
+// #define TAB     '\011'
 #define NL      '\012'
 #define NL_STR  "\012"
-#define FF      '\014'
+// #define FF      '\014'
 #define CAR     '\015'
-#define CAN     0x18
+// #define CAN     0x18
 #define ESC     '\033'
 #define ESC_STR "\033"
 #define DELC      0x7f
