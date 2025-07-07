@@ -478,7 +478,7 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
     if (is_blank_char(from)) {
       from += char_length(from);
       /* Add one space. */
-      *(to++) = ' ';
+      *(to++) = SP;
       /* Then advance past all blank characters. */
       while (*from && is_blank_char(from)) {
         from += char_length(from);
@@ -494,11 +494,11 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
       /* At most change two following blanks to spaces. */
       if (*from && is_blank_char(from)) {
         from += char_length(from);
-        *(to++) = ' ';
+        *(to++) = SP;
       }
       if (*from && is_blank_char(from)) {
         from += char_length(from);
-        *(to++) = ' ';
+        *(to++) = SP;
       }
       /* Now advance past all following blanks. */
       while (*from && is_blank_char(from)) {
@@ -511,10 +511,10 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
     }
   }
   /* If there are spaces at the end of the line, remove them. */
-  while (to > start && *(to - 1) == ' ') {
+  while (to > start && *(to - 1) == SP) {
     --to;
   }
-  *to = '\0';
+  *to = NUL;
 }
 
 /* ----------------------------- Fix spello ----------------------------- */
@@ -631,7 +631,7 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
     lead_len = (quot_len + indent_length(next->data + quot_len));
     len      = strlen(line->data);
     /* We're just about to tack the next line onto the one.  If this line isn't empty, make sure it ends in a space. */
-    line->data = fmtstrncat(line->data, len, "%s%s", ((len && line->data[len - 1] != ' ') ? " " : ""), (next->data + lead_len));
+    line->data = fmtstrncat(line->data, len, "%s%s", ((len && line->data[len - 1] != SP) ? " " : ""), (next->data + lead_len));
     line->has_anchor |= next->has_anchor;
     unlink_node_for(file, next);
   }
@@ -1010,7 +1010,7 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
     close(fd_sort[0]);
     close(fd_sort[1]);
     /* Child: Now run the sort program.  Use -f to mix upper and lower case. */
-    execlp("sort", "sort", "-l", NULL);
+    execlp("sort", "sort", "-f", NULL);
     exit(9);
   }
   close(fd_spell[0]);
@@ -1131,6 +1131,76 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
 /* static */ void do_int_speller(const char *const restrict tempfile) {
   CTX_CALL_WARGS(do_int_speller_for, tempfile);
 }
+
+/* ----------------------------- Justify text ----------------------------- */
+
+// /* static */ void justify_text_for(CTX_ARGS, bool whole_buffer) {
+//   ASSERT(file);
+//   /* The leading part (quoting + indentation) of the first line of the paragraph where the marked region begins. */
+//   char *primary_lead = NULL;
+//   /* The leading part for lines after the first one. */
+//   char *secondary_lead = NULL;
+//   /* The old cutbuffer, so we can justify in the current cutbuffer. */
+//   linestruct *was_cutbuffer = cutbuffer;
+//   /* The line that we're justifying in the current cutbuffer. */
+//   linestruct *justline;
+//   /* The line where the paragraph or region starts. */
+//   linestruct *start;
+//   /* The line where the paragraph or region ends. */
+//   linestruct *end;
+//   linestruct *sample;
+//   /* The line to return to after a full justification...?  Would that not change? */
+//   long was_lineno = file->current->lineno;
+//   /* The length (in bytes) of the above first-line leading part. */
+//   Ulong primary_len = 0;
+//   /* The length (in bytes) of that later lead. */
+//   Ulong secondary_len = 0;
+//   /* The number of lines in the original paragraph. */
+//   Ulong linecount;
+//   /* The x position where the paragraph or region starts. */
+//   Ulong start_x;
+//   /* The x position where the paragraph or region ends. */
+//   Ulong end_x;
+//   Ulong quot_len;
+//   Ulong fore_len;
+//   Ulong other_qout_len;
+//   Ulong other_white_len;
+//   /* Whether the end of the marked region is before the end of its line. */
+//   bool before_eol      = FALSE;
+//   bool marked_backward = (file->mark && !mark_is_before_cursor_for(file));
+//   /* TRANSLATORS: This one goes with Undid/Redid messages. */
+//   add_undo_for(file, COUPLE_BEGIN, _("justification"));
+//   /* If the mark is on, do as pico.  Treat all marked text as one paragraph. */
+//   if (file->mark) {
+//     get_region_for(file, &start, &start_x, &end, &end_x);
+//     /* When the marked-region is empty, do nothing. */
+//     if (start == end && start_x == end_x) {
+//       statusline(AHEM, _("Selection is empty"));
+//       discard_until(file->undotop->next);
+//       return;
+//     }
+//     quot_len = quote_length(start->data);
+//     fore_len = (quot_len + indent_length(start->data + quot_len));
+//     /* When the region start in the lead, take the whole lead. */
+//     if (start_x <= fore_len) {
+//       start_x = 0;
+//     }
+//     /* Recede over blanks before the region.  This effectivly snips
+//      * trailing blanks from what will become the preceeding paragraph. */
+//     while (start_x && is_blank_char(start->data + start_x - 1)) {
+//       start_x = step_left(start->data, start_x);
+//     }
+//     quot_len = quote_length(end->data);
+//     fore_len = (quot_len + indent_length(end->data + quot_len));
+//     /* When the region ends in the lead, take the whole lead. */
+//     if (end_x && end_x < fore_len) {
+//       end_x = fore_len;
+//     }
+//     /* When not at the left edge, advance over blanks after that region. */
+//     while (end_x && is_blank_char(end->data + end_x)) { 
+//     }
+//   }
+// }
 
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
@@ -3491,6 +3561,55 @@ void do_formatter(void) {
   }
 }
 
+/* ----------------------------- Do spell ----------------------------- */
+
+/* Spell-check `file`.  If an alternate spell-checker is specified, use it.  Otherwise, use the
+ * internal spell checker...?  There is none, do they mean hunspell/spell.  Those are not internal. */
+void do_spell_for(CTX_ARGS) {
+  ASSERT(file);
+  FILE *stream;
+  char *tempfile;
+  bool okay;
+  ran_a_tool = TRUE;
+  if (!in_restricted_mode()) {
+    tempfile = safe_tempfile_for(file, &stream);
+    if (!tempfile) {
+      statusline(ALERT, _("Error writing temp-file: %s"), strerror(errno));
+      return;
+    }
+    if (file->mark) {
+      okay = write_region_to_file_for(file, tempfile, stream, TEMPORARY, OVERWRITE);
+    }
+    else {
+      okay = write_file_for(file, tempfile, stream, TEMPORARY, OVERWRITE, NONOTES);
+    }
+    if (!okay) {
+      statusline(ALERT, _("Error writing temp-file: %s"), strerror(errno));
+      unlink(tempfile);
+      free(tempfile);
+      return;
+    }
+    blank_bottombars();
+    if (alt_speller && *alt_speller) {
+      treat_for(STACK_CTX, tempfile, alt_speller, TRUE);
+    }
+    else {
+      do_int_speller_for(STACK_CTX, tempfile);
+    }
+    unlink(tempfile);
+    free(tempfile);
+    /* Ensure the help lines will be redrawn and a selection is retained. */
+    currmenu   = MMOST;
+    shift_held = TRUE;
+  }
+}
+
+/* Spell-check the `currently open buffer`.  If an alternate spell-checker is specified, use it.  Otherwise, use the internal
+ * spell checker...?  There is none, do they mean hunspell/spell.  Those are not internal.  Note that this is `context-safe`. */
+void do_spell(void) {
+  CTX_CALL(do_spell_for);
+}
+
 /* ----------------------------- Find paragraph ----------------------------- */
 
 /* Find the first occurring paragraph in the forward direction.  Return `TRUE` when a paragraph was found,
@@ -3665,6 +3784,55 @@ bool is_next_char_one_of(linestruct *const line, Ulong xpos,
   ASSERT(*matches);
   char *ch = get_next_char(line, xpos, outline, outxpos);
   return !(!ch || !mbstrchr(matches, ch));
+}
+
+/* ----------------------------- Get previous char match ----------------------------- */
+
+char *get_previous_char_match(linestruct *line, Ulong xpos, const char *const restrict matches,
+  bool allow_literals, linestruct **const outline, Ulong *const outxpos)
+{
+  ASSERT(line);
+  char *data;
+  int escapes;
+  /* Get the previous char, until, we reach the very top of the file. */
+  while ((data = get_previous_char(line, xpos, &line, &xpos))) {
+    /* We found a literal. */
+    if (!allow_literals && mbstrchr("\"'", data) && (!xpos || *(data - 1) != '\\')) {
+      /* Now go searching for the next one. */
+      while ((data = get_previous_char_match(line, xpos, ((*data == '"') ? "\"" : "'"), TRUE, &line, &xpos))) {
+        /* The one we found is escaped. */
+        if (xpos && *(data - 1) == '\\') {
+          escapes = 0;
+          /* Count consecutive escapes. */
+          while (xpos && *(data - 1) == '\\') {
+            ++escapes;
+            --xpos;
+            --data;
+          }
+          /* If we have a uneven number of escapes, then there is something wrong. */
+          if (!(escapes % 2)) {
+            return NULL;
+          }
+        }
+        /* And if we end up at the very start of the first line, while not allowing literals, we will not find a match. */
+        else if (!xpos && !line->prev) {
+          return NULL;
+        }
+        /* Otherwise, we have found our literal match, so break here, and continue searching. */
+        else {
+          break;
+        }
+      }
+    }
+    /* We found a match. */
+    else if (mbstrchr(matches, data)) {
+      /* Assign where we ended up to outline and outxpos, if the user wants. */
+      ASSIGN_IF_VALID(outline, line);
+      ASSIGN_IF_VALID(outxpos, xpos);
+      return (line->data + xpos);
+    }
+  }
+  return NULL;
 }
 
 /* ----------------------------- Tab helper ----------------------------- */

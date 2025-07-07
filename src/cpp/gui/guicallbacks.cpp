@@ -375,7 +375,17 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           }
           /* Prompt-Menu */
           else if (mods == (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL)) {
-            gui_ask_user(">", GUI_PROMPT_MENU);
+            // gui_ask_user(">", GUI_PROMPT_MENU);
+            if (GUI_OF->current->data[GUI_OF->current_x] == '}') {
+              linestruct *line;
+              Ulong x;
+              if (get_previous_char_match(GUI_OF->current, GUI_OF->current_x, "{", FALSE, &line, &x)) {
+                writef("hello\n");
+                GUI_OF->current = line;
+                GUI_OF->current_x = x;
+                refresh_needed = TRUE;
+              }
+            }
           }
           break;
         }

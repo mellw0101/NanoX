@@ -522,7 +522,7 @@ void  do_find_bracket(void) _NOTHROW;
 // bool  inpar(const linestruct *const line) _NOTHROW;
 void  do_justify(void);
 void  do_full_justify(void);
-void  do_spell(void);
+// void  do_spell(void);
 void  do_linter(void);
 // void  do_formatter(void);
 // void  count_lines_words_and_characters(void);

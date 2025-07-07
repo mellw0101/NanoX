@@ -515,7 +515,7 @@ void browser_refresh(void) {
   char *info;
   titlebar(present_path);
   blank_edit();
-  for (Ulong index = (selected - selected % (usable_rows * piles)); (index < list_length) && (row < (long)usable_rows); ++index) {
+  for (Ulong index=(selected - selected % (usable_rows * piles)); (index < list_length) && LT(row, usable_rows); ++index) {
     /* The filename we display, minus the path. */
     const char *thename = tail(filelist[index]);
     /* The file extention. */

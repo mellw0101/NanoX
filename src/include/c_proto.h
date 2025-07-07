@@ -286,7 +286,8 @@ Ulong       xplustabs(void) _NODISCARD;
 Ulong       wideness(const char *text, Ulong maxlen) _NODISCARD _NONNULL(1);
 Ulong       actual_x(const char *text, Ulong column) _NODISCARD _NONNULL(1);
 Ulong       breadth(const char *text) __THROW _NODISCARD _NONNULL(1);
-Ulong       number_of_characters_in(const linestruct *const begin, const linestruct *const end) _NODISCARD _NONNULL(1, 2);
+/* ----------------------------- Number of characters in ----------------------------- */
+Ulong number_of_characters_in(const linestruct *const begin, const linestruct *const end) _NODISCARD _NONNULL(1, 2);
 /* ----------------------------- Magicline ----------------------------- */
 void new_magicline_for(openfilestruct *const file) _NONNULL(1);
 void new_magicline(void);
@@ -518,6 +519,9 @@ void count_lines_words_and_characters(void);
 /* ----------------------------- Do formatter ----------------------------- */
 void do_formatter_for(CTX_ARGS, char *formatter);
 void do_formatter(void);
+/* ----------------------------- Do spell ----------------------------- */
+void do_spell_for(CTX_ARGS);
+void do_spell(void);
 /* ----------------------------- Find paragraph ----------------------------- */
 bool find_paragraph(linestruct **const first, Ulong *const count);
 /* ----------------------------- Do verbatim input ----------------------------- */
@@ -532,6 +536,9 @@ bool is_previous_char_one_of(linestruct *const line, Ulong xpos,
 /* ----------------------------- Is next char one of ----------------------------- */
 bool is_next_char_one_of(linestruct *const line, Ulong xpos,
   const char *const restrict matches, linestruct **const outline, Ulong *const outxpos);
+/* ----------------------------- Get previous char match ----------------------------- */
+char *get_previous_char_match(linestruct *line, Ulong xpos, const char *const restrict matches,
+  bool allow_literals, linestruct **const outline, Ulong *const outxpos);
 /* ----------------------------- Tab helper ----------------------------- */
 bool tab_helper(openfilestruct *const file);
 
@@ -836,14 +843,18 @@ void do_execute(void);
 /* ---------------------------------------------------------- chars.c ---------------------------------------------------------- */
 
 
+/* ----------------------------- Utf8 init ----------------------------- */
 void utf8_init(void);
+/* ----------------------------- Using utf8 ----------------------------- */
 bool using_utf8(void);
 bool is_language_word_char(const char *pointer, Ulong index);
 bool is_lang_word_char(openfilestruct *const file);
 bool is_cursor_language_word_char(void);
 bool is_enclose_char(char ch);
-bool is_alpha_char(const char *const c);
-bool is_alnum_char(const char *const c);
+/* ----------------------------- Is alpha char ----------------------------- */
+bool is_alpha_char(const char *const restrict c);
+/* ----------------------------- Is alnum char ----------------------------- */
+bool is_alnum_char(const char *const restrict c) _NODISCARD;
 /* ----------------------------- Is blank char ----------------------------- */
 bool is_blank_char(const char *const restrict c) _NODISCARD;
 bool is_prev_blank_char(const char *pointer, Ulong index);
@@ -894,6 +905,7 @@ char *mbstrcasestr(const char *haystack, const char *const needle);
 char *revstrstr(const char *const haystack, const char *const needle, const char *pointer) __THROW _NODISCARD _NONNULL(1, 2, 3);
 char *mbrevstrcasestr(const char *const haystack, const char *const needle, const char *pointer) _NODISCARD;
 char *mbstrchr(const char *string, const char *const chr);
+/* ----------------------------- Mbstrpbrk ----------------------------- */
 char *mbstrpbrk(const char *str, const char *accept);
 /* ----------------------------- Mbrevstrpbrk ----------------------------- */
 char *mbrevstrpbrk(const char *const head, const char *const accept, const char *pointer);
@@ -1223,32 +1235,54 @@ void precalc_multicolorinfo(void);
 
 /* static */ int do_statusbar_mouse(void);
 
-void  lop_the_answer(void);
-void  copy_the_answer(void);
-void  paste_into_answer(void);
-void  absorb_character(int input, functionptrtype function);
-void  statusbar_discard_all_undo_redo(void);
-void  do_statusbar_undo(void);
-void  do_statusbar_redo(void);
-void  do_statusbar_home(void);
-void  do_statusbar_end(void);
-void  do_statusbar_prev_word(void);
-void  do_statusbar_next_word(void);
-void  do_statusbar_left(void);
-void  do_statusbar_right(void);
-void  do_statusbar_backspace(bool with_undo);
-void  do_statusbar_delete(void);
-void  inject_into_answer(char *burst, Ulong count);
-void  do_statusbar_chop_next_word(void);
-void  do_statusbar_chop_prev_word(void);
+/* ----------------------------- Lop the answer ----------------------------- */
+void lop_the_answer(void);
+/* ----------------------------- Copy the answer ----------------------------- */
+void copy_the_answer(void);
+/* ----------------------------- Paste into answer ----------------------------- */
+void paste_into_answer(void);
+/* ----------------------------- Absorb character ----------------------------- */
+void absorb_character(int input, functionptrtype function);
+/* ----------------------------- Statusbar discard all undo redo ----------------------------- */
+void statusbar_discard_all_undo_redo(void);
+/* ----------------------------- Do statusbar undo ----------------------------- */
+void do_statusbar_undo(void);
+/* ----------------------------- Do statusbar redo ----------------------------- */
+void do_statusbar_redo(void);
+/* ----------------------------- Do statusbar home ----------------------------- */
+void do_statusbar_home(void);
+/* ----------------------------- Do statusbar end ----------------------------- */
+void do_statusbar_end(void);
+/* ----------------------------- Do statusbar prev word ----------------------------- */
+void do_statusbar_prev_word(void);
+/* ----------------------------- Do statusbar next word ----------------------------- */
+void do_statusbar_next_word(void);
+/* ----------------------------- Do statusbar left ----------------------------- */
+void do_statusbar_left(void);
+/* ----------------------------- Do statusbar right ----------------------------- */
+void do_statusbar_right(void);
+/* ----------------------------- Do statusbar backspace ----------------------------- */
+void do_statusbar_backspace(bool with_undo);
+/* ----------------------------- Do statusbar delete ----------------------------- */
+void do_statusbar_delete(void);
+/* ----------------------------- Inject into answer ----------------------------- */
+void inject_into_answer(char *burst, Ulong count);
+/* ----------------------------- Do statusbar chop next word ----------------------------- */
+void do_statusbar_chop_next_word(void);
+/* ----------------------------- Do statusbar chop prev word ----------------------------- */
+void do_statusbar_chop_prev_word(void);
+/* ----------------------------- Get statusbar page start ----------------------------- */
 Ulong get_statusbar_page_start(Ulong base, Ulong column);
-void  put_cursor_at_end_of_answer(void);
-void  add_or_remove_pipe_symbol_from_answer(void);
-void  draw_the_promptbar(void);
-int   ask_user(bool withall, const char *const restrict question);
-
-int do_prompt(
-  int menu, const char *const provided, linestruct **const histlist,
+/* ----------------------------- Put cursor at the end of answer ----------------------------- */
+void put_cursor_at_end_of_answer(void);
+/* ----------------------------- Add or remove pipe symbol from answer ----------------------------- */
+void add_or_remove_pipe_symbol_from_answer(void);
+/* ----------------------------- Draw the promptbar ----------------------------- */
+void draw_the_promptbar(void);
+/* ----------------------------- Ask user ----------------------------- */
+int ask_user(bool withall, const char *const restrict question);
+/* ----------------------------- Do prompt ----------------------------- */
+int do_prompt(int menu, const char *const provided, linestruct **const histlist,
   functionptrtype refresh_func, const char *const format, ...) _PRINTFLIKE(5, 6);
 
 

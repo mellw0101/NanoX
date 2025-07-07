@@ -2958,44 +2958,44 @@ void do_full_justify(void) {
 // }
 
 /* Spell check the current file.  If an alternate spell checker is specified, use it.  Otherwise, use the internal spell checker. */
-void do_spell(void) {
-  FILE *stream;
-  char *temp_name;
-  bool  okay;
-  ran_a_tool = TRUE;
-  if (in_restricted_mode()) {
-    return;
-  }
-  temp_name = safe_tempfile(&stream);
-  if (!temp_name) {
-    statusline(ALERT, _("Error writing temp file: %s"), strerror(errno));
-    return;
-  }
-  if (openfile->mark) {
-    okay = write_region_to_file(temp_name, stream, TEMPORARY, OVERWRITE);
-  }
-  else {
-    okay = write_file(temp_name, stream, TEMPORARY, OVERWRITE, NONOTES);
-  }
-  if (!okay) {
-    statusline(ALERT, _("Error writing temp file: %s"), strerror(errno));
-    unlink(temp_name);
-    free(temp_name);
-    return;
-  }
-  blank_bottombars();
-  if (alt_speller && *alt_speller) {
-    treat(temp_name, alt_speller, TRUE);
-  }
-  else {
-    do_int_speller(temp_name);
-  }
-  unlink(temp_name);
-  free(temp_name);
-  /* Ensure the help lines will be redrawn and a selection is retained. */
-  currmenu   = MMOST;
-  shift_held = TRUE;
-}
+// void do_spell(void) {
+//   FILE *stream;
+//   char *temp_name;
+//   bool  okay;
+//   ran_a_tool = TRUE;
+//   if (in_restricted_mode()) {
+//     return;
+//   }
+//   temp_name = safe_tempfile(&stream);
+//   if (!temp_name) {
+//     statusline(ALERT, _("Error writing temp file: %s"), strerror(errno));
+//     return;
+//   }
+//   if (openfile->mark) {
+//     okay = write_region_to_file(temp_name, stream, TEMPORARY, OVERWRITE);
+//   }
+//   else {
+//     okay = write_file(temp_name, stream, TEMPORARY, OVERWRITE, NONOTES);
+//   }
+//   if (!okay) {
+//     statusline(ALERT, _("Error writing temp file: %s"), strerror(errno));
+//     unlink(temp_name);
+//     free(temp_name);
+//     return;
+//   }
+//   blank_bottombars();
+//   if (alt_speller && *alt_speller) {
+//     treat(temp_name, alt_speller, TRUE);
+//   }
+//   else {
+//     do_int_speller(temp_name);
+//   }
+//   unlink(temp_name);
+//   free(temp_name);
+//   /* Ensure the help lines will be redrawn and a selection is retained. */
+//   currmenu   = MMOST;
+//   shift_held = TRUE;
+// }
 
 /* Run a linting program on the current buffer. */
 void do_linter(void) {

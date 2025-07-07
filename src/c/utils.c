@@ -185,7 +185,7 @@ void free_chararray(char **array, Ulong len) {
 void recode_NUL_to_LF(char *string, Ulong length) {
   while (length > 0) {
     if (!*string) {
-      *string = '\n';
+      *string = LF;
     }
     --length;
     ++string;
@@ -196,8 +196,8 @@ void recode_NUL_to_LF(char *string, Ulong length) {
 Ulong recode_LF_to_NUL(char *string) {
   char *beginning = string;
   while (*string) {
-    if (*string == '\n') {
-      *string = '\0';
+    if (*string == LF) {
+      *string = NUL;
     }
     ++string;
   }
@@ -207,15 +207,15 @@ Ulong recode_LF_to_NUL(char *string) {
 /* When not softwrapping, nano scrolls the current line horizontally by
  * chunks ("pages").  Return the column number of the first character
  * displayed in the edit window when the cursor is at the given column. */
-Ulong get_page_start(Ulong column, int total_cols) {
-  if (!column || (int)(column + 2) < total_cols || ISSET(SOFTWRAP)) {
+Ulong get_page_start(Ulong column, int cols) {
+  if (!column || (int)(column + 2) < cols || ISSET(SOFTWRAP)) {
     return 0;
   }
-  else if (total_cols > 8) {
-    return (column - 6 - ((column - 6) % (total_cols - 8)));
+  else if (cols > 8) {
+    return (column - 6 - ((column - 6) % (cols - 8)));
   }
   else {
-    return (column - (total_cols - 2));
+    return (column - (cols - 2));
   }
 }
 
@@ -264,6 +264,8 @@ Ulong breadth(const char *text) {
   return span;
 }
 
+/* ----------------------------- Number of characters in ----------------------------- */
+
 /* Count the number of characters from begin to end, and return it. */
 Ulong number_of_characters_in(const linestruct *const begin, const linestruct *const end) {
   ASSERT(begin);
@@ -271,6 +273,8 @@ Ulong number_of_characters_in(const linestruct *const begin, const linestruct *c
   Ulong count = 0;
   /* Sum the number of characters (plus a newline) in each line. */
   DLIST_FOR_NEXT_END(begin, end->next, line) {
+    PREFETCH(line->data, 0, 3);
+    PREFETCH(line->next, 0, 3);
     count += (mbstrlen(line->data) + 1);
   }
   /* Do not count the final newline. */

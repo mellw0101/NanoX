@@ -381,6 +381,8 @@ static functionptrtype acquire_an_answer(int *const actual, bool *listed, linest
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
+/* ----------------------------- Lop the answer ----------------------------- */
+
 /* Zap the part of the answer after the cursor, or the whole answer. */
 void lop_the_answer(void) {
   if (!answer[typing_x]) {
@@ -388,6 +390,8 @@ void lop_the_answer(void) {
   }
   answer[typing_x] = '\0';
 }
+
+/* ----------------------------- Copy the answer ----------------------------- */
 
 /* Copy the current answer (if any) into the cutbuffer. */
 void copy_the_answer(void) {
@@ -399,6 +403,8 @@ void copy_the_answer(void) {
   }
 }
 
+/* ----------------------------- Paste into answer ----------------------------- */
+
 /* Paste the first line of the cutbuffer into the current answer. */
 void paste_into_answer(void) {
   Ulong pastelen = strlen(cutbuffer->data);
@@ -408,6 +414,8 @@ void paste_into_answer(void) {
   answer = xstrninj(answer, cutbuffer->data, pastelen, typing_x);
   typing_x += pastelen;
 }
+
+/* ----------------------------- Absorb character ----------------------------- */
 
 /* Add the given input to the input buffer when it's a normal byte, and inject the gathered bytes into the answer when ready. */
 void absorb_character(int input, functionptrtype function) {
@@ -443,6 +451,8 @@ void absorb_character(int input, functionptrtype function) {
   }
 }
 
+/* ----------------------------- Statusbar discard all undo redo ----------------------------- */
+
 /* Discard both the current undo stack and redo stack, used for clearing all undo-redo items. */
 void statusbar_discard_all_undo_redo(void) {
   /* Start at the very top of the undo stack. */
@@ -458,6 +468,8 @@ void statusbar_discard_all_undo_redo(void) {
   statusbar_current_undo = NULL;
   statusbar_last_action  = STATUSBAR_OTHER;
 }
+
+/* ----------------------------- Do statusbar undo ----------------------------- */
 
 /* Perform the undo at the top of the undo-stack. */
 void do_statusbar_undo(void) {
@@ -499,6 +511,8 @@ void do_statusbar_undo(void) {
   statusbar_current_undo = statusbar_current_undo->next;
   statusbar_last_action  = STATUSBAR_OTHER;
 }
+
+/* ----------------------------- Do statusbar redo ----------------------------- */
 
 /* Redo the last undid item. */
 void do_statusbar_redo(void) {
@@ -542,15 +556,21 @@ void do_statusbar_redo(void) {
   statusbar_last_action  = STATUSBAR_OTHER;
 }
 
+/* ----------------------------- Do statusbar home ----------------------------- */
+
 /* Move to the beginning of the answer. */
 void do_statusbar_home(void) {
   typing_x = 0;
 }
 
+/* ----------------------------- Do statusbar end ----------------------------- */
+
 /* Move to the end of the answer. */
 void do_statusbar_end(void) {
   typing_x = strlen(answer);
 }
+
+/* ----------------------------- Do statusbar prev word ----------------------------- */
 
 /* Move to the previous word in the answer. */
 void do_statusbar_prev_word(void) {
@@ -575,6 +595,8 @@ void do_statusbar_prev_word(void) {
     typing_x = step_right(answer, typing_x);
   }
 }
+
+/* ----------------------------- Do statusbar next word ----------------------------- */
 
 /* Move to the next word in the answer. */
 void do_statusbar_next_word(void) {
@@ -612,6 +634,8 @@ void do_statusbar_next_word(void) {
   }
 }
 
+/* ----------------------------- Do statusbar left ----------------------------- */
+
 /* Move left one character in the answer. */
 void do_statusbar_left(void) {
   if (typing_x > 0) {
@@ -622,6 +646,8 @@ void do_statusbar_left(void) {
   }
 }
 
+/* ----------------------------- Do statusbar right ----------------------------- */
+
 /* Move right one character in the answer. */
 void do_statusbar_right(void) {
   if (answer[typing_x]) {
@@ -631,6 +657,8 @@ void do_statusbar_right(void) {
     }
   }
 }
+
+/* ----------------------------- Do statusbar backspace ----------------------------- */
 
 /* Backspace over one character in the answer.  And if `with_undo` is `TRUE`, add a undo-object. */
 void do_statusbar_backspace(bool with_undo) {
@@ -652,6 +680,8 @@ void do_statusbar_backspace(bool with_undo) {
   }
 }
 
+/* ----------------------------- Do statusbar delete ----------------------------- */
+
 /* Delete one character in the answer. */
 void do_statusbar_delete(void) {
   if (answer[typing_x]) {
@@ -665,6 +695,8 @@ void do_statusbar_delete(void) {
   }
 }
 
+/* ----------------------------- Inject into answer ----------------------------- */
+
 /* Insert the given short burst of bytes into the answer. */
 void inject_into_answer(char *burst, Ulong count) {
   /* First encode any embedded NUL byte as 0x0A. */
@@ -677,6 +709,8 @@ void inject_into_answer(char *burst, Ulong count) {
   typing_x += count;
   statusbar_update_undo(STATUSBAR_ADD);
 }
+
+/* ----------------------------- Do statusbar chop next word ----------------------------- */
 
 /* Chop next word. */
 void do_statusbar_chop_next_word(void) {
@@ -712,6 +746,8 @@ void do_statusbar_chop_next_word(void) {
   }
 }
 
+/* ----------------------------- Do statusbar chop prev word ----------------------------- */
+
 /* Chop prev word. */
 void do_statusbar_chop_prev_word(void) {
   Ulong steps = 0;
@@ -744,6 +780,8 @@ void do_statusbar_chop_prev_word(void) {
   }
 }
 
+/* ----------------------------- Get statusbar page start ----------------------------- */
+
 /* Return the column number of the first character of the answer that is displayed in the status bar when the cursor is at the given
  * column, with the available room for the answer starting at base.  Note that (0 <= column - get_statusbar_page_start(column) < COLS). */
 Ulong get_statusbar_page_start(Ulong base, Ulong column) {
@@ -758,10 +796,14 @@ Ulong get_statusbar_page_start(Ulong base, Ulong column) {
   }
 }
 
+/* ----------------------------- Put cursor at the end of answer ----------------------------- */
+
 /* Reinitialize the cursor position in the answer. */
 void put_cursor_at_end_of_answer(void) {
   typing_x = HIGHEST_POSITIVE;
 }
+
+/* ----------------------------- Add or remove pipe symbol from answer ----------------------------- */
 
 /* Remove or add the pipe character at the answer's head. */
 void add_or_remove_pipe_symbol_from_answer(void) {
@@ -778,6 +820,8 @@ void add_or_remove_pipe_symbol_from_answer(void) {
     ++typing_x;
   }
 }
+
+/* ----------------------------- Draw the promptbar ----------------------------- */
 
 /* Redraw the prompt bar and place the cursor at the right spot. */
 void draw_the_promptbar(void) {
@@ -810,6 +854,8 @@ void draw_the_promptbar(void) {
   wmove(footwin, 0, (column - the_page));
   wnoutrefresh(footwin);
 }
+
+/* ----------------------------- Ask user ----------------------------- */
 
 /* Ask a simple `Yes/No (and optionally All)` question on the status bar and return the choice --
  * either `YES`, `NO`, `ALL`, or `CANCEL`.  Note that this always returns `NO` when in `gui` mode. */

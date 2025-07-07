@@ -60,10 +60,14 @@ static char * revstrcasestr(const char *const haystack, const char *const needle
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
+/* ----------------------------- Utf8 init ----------------------------- */
+
 /* Enable UTF-8 support.  Set the 'use_utf8' variable to 'TRUE'. */
 void utf8_init(void) {
   use_utf8 = TRUE;
 }
+
+/* ----------------------------- Using utf8 ----------------------------- */
 
 /* Checks if UTF-8 support has been enabled. */
 bool using_utf8(void) {
@@ -116,18 +120,22 @@ bool is_enclose_char(char ch) {
   return (ch == '"' || ch == '\'' || ch == '(' || ch == '{' || ch == '[' || ch == '<');
 }
 
+/* ----------------------------- Is alpha char ----------------------------- */
+
 /* Return 'TRUE' when the given character is some kind of letter. */
-bool is_alpha_char(const char *const c) {
-  wchar_t wc;
+bool is_alpha_char(const char *const restrict c) {
+  wchar wc;
   if (mbtowide(&wc, c) < 0) {
     return FALSE;
   }
   return iswalpha(wc);
 }
 
+/* ----------------------------- Is alnum char ----------------------------- */
+
 /* Return 'TRUE' when the given character is some kind of letter or a digit. */
-bool is_alnum_char(const char *const c) {
-  wchar_t wc;
+bool is_alnum_char(const char *const restrict c) {
+  wchar wc;
   if (mbtowide(&wc, c) < 0) {
     return FALSE;
   }
@@ -169,7 +177,7 @@ bool is_cursor_blank_char(void) {
 /* Return 'TRUE' when the given character is a control character. */
 bool is_cntrl_char(const char *const c) {
   if (use_utf8) {
-    return (!(c[0] & 0xE0) || c[0] == DEL_CODE || ((Schar)c[0] == -62 && (Schar)c[1] < -96));
+    return (!(*c & 0xE0) || *c == DEL_CODE || ((Schar)*c == -62 && (Schar)c[1] < -96));
   }
   else {
     return (!(*c & 0x60) || *c == DEL_CODE);
@@ -684,8 +692,12 @@ int mbstrcasecmp(const char *s1, const char *s2) {
 
 /* This function is equivalent to strncasecmp() for multibyte strings. */
 int mbstrncasecmp(const char *s1, const char *s2, Ulong n) {
+  wchar wc1;
+  wchar wc2;
+  bool bad1;
+  bool bad2;
+  int difference;
   if (use_utf8) {
-    wchar_t wc1, wc2;
     while (*s1 && *s2 && n > 0) {
       if (*s1 >= 0 && *s2 >= 0) {
         if ('A' <= (*s1 & 0x5F) && (*s1 & 0x5F) <= 'Z') {
@@ -709,8 +721,8 @@ int mbstrncasecmp(const char *s1, const char *s2, Ulong n) {
         --n;
         continue;
       }
-      bool bad1 = (mbtowide(&wc1, s1) < 0);
-      bool bad2 = (mbtowide(&wc2, s2) < 0);
+      bad1 = (mbtowide(&wc1, s1) < 0);
+      bad2 = (mbtowide(&wc2, s2) < 0);
       if (bad1 || bad2) {
         if (*s1 != *s2) {
           return (int)((Uchar)*s1 - (Uchar)*s2);
@@ -720,7 +732,7 @@ int mbstrncasecmp(const char *s1, const char *s2, Ulong n) {
         }
       }
       else {
-        const int difference = (int)towlower((wint_t)wc1) - (int)towlower((wint_t)wc2);
+        difference = (int)towlower((wint_t)wc1) - (int)towlower((wint_t)wc2);
         if (difference) {
           return difference;
         }
@@ -829,6 +841,8 @@ char *mbstrchr(const char *string, const char *const chr) {
   }
 }
 
+/* ----------------------------- Mbstrpbrk ----------------------------- */
+
 /* Locate, in the given string, the first occurrence of any of the characters in accept, searching forward. */
 char *mbstrpbrk(const char *str, const char *accept) {
   while (*str) {
@@ -882,6 +896,34 @@ bool white_string(const char *restrict str) {
   }
   return !*str;
 }
+
+/* ----------------------------- Get bracket match ----------------------------- */
+
+char get_bracket_match(const char ch) {
+  switch (ch) {
+    case '{': {
+      return '}';
+    }
+    case '}': {
+      return '{';
+    }
+    case '[': {
+      return ']';
+    }
+    case ']': {
+      return '[';
+    }
+    case '(': {
+      return ')';
+    }
+    case ')': {
+      return '(';
+    }
+    default: {
+      return NUL;
+    }
+  }
+} 
 
 /**
   This is the original code from 'nano', and I must say, this is fucking horible.
