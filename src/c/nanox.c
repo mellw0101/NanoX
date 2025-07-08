@@ -270,6 +270,8 @@ static void die_curses(void) {
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
+/* ----------------------------- Make new node ----------------------------- */
+
 /* Create a new linestruct node.  Note that we do NOT set 'prevnode->next'. */
 linestruct *make_new_node(linestruct *prevnode)  {
   linestruct *newnode = xmalloc(sizeof(*newnode));

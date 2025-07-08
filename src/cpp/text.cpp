@@ -2309,254 +2309,254 @@
 
 /* Justify the current paragraph, or the entire buffer when whole_buffer is
  * 'TRUE'.  But if the mark is on, justify only the marked text instead. */
-static void justify_text(bool whole_buffer) {
-  /* The number of lines in the original paragraph. */
-  Ulong linecount;
-  /* The line where the paragraph or region starts. */
-  linestruct *startline;
-  /* The line where the paragraph or region ends. */
-  linestruct *endline;
-  /* The x position where the paragraph or region starts. */
-  Ulong start_x;
-  /* The x position where the paragraph or region ends. */
-  Ulong end_x;
-  /* The old cutbuffer, so we can justify in the current cutbuffer. */
-  linestruct *was_cutbuffer = cutbuffer;
-  /* The line that we're justifying in the current cutbuffer. */
-  linestruct *jusline;
-  /* Whether the end of a marked region is before the end of its line. */
-  bool before_eol = FALSE;
-  /* The leading part (quoting + indentation) of the first line of the paragraph where the marked region begins. */
-  char *primary_lead = NULL;
-  /* The length (in bytes) of the above first-line leading part. */
-  Ulong primary_len = 0;
-  /* The leading part for lines after the first one. */
-  char *secondary_lead = NULL;
-  /* The length of that later lead. */
-  Ulong secondary_len = 0;
-  /* The line to return to after a full justification. */
-  long was_the_linenumber = openfile->current->lineno;
-  bool marked_backward    = (openfile->mark && !mark_is_before_cursor());
-  /* TRANSLATORS: This one goes with Undid/Redid messages. */
-  add_undo(COUPLE_BEGIN, N_("justification"));
-  /* If the mark is on, do as Pico: treat all marked text as one paragraph. */
-  if (openfile->mark) {
-    Ulong       quot_len, fore_len, other_quot_len, other_white_len;
-    linestruct *sampleline;
-    get_region(&startline, &start_x, &endline, &end_x);
-    /* When the marked region is empty, do nothing. */
-    if (startline == endline && start_x == end_x) {
-      statusline(AHEM, _("Selection is empty"));
-      discard_until(openfile->undotop->next);
-      return;
-    }
-    quot_len = quote_length(startline->data);
-    fore_len = quot_len + indent_length(startline->data + quot_len);
-    /* When the region starts IN the lead, take the whole lead. */
-    if (start_x <= fore_len) {
-      start_x = 0;
-    }
-    /* Recede over blanks before the region.  This effectively snips
-     * trailing blanks from what will become the preceding paragraph. */
-    while (start_x > 0 && is_blank_char(&startline->data[start_x - 1])) {
-      start_x = step_left(startline->data, start_x);
-    }
-    quot_len = quote_length(endline->data);
-    fore_len = quot_len + indent_length(endline->data + quot_len);
-    /* When the region ends IN the lead, take the whole lead. */
-    if (0 < end_x && end_x < fore_len) {
-      end_x = fore_len;
-    }
-    /* When not at the left edge, advance over blanks after the region. */
-    while (end_x > 0 && is_blank_char(&endline->data[end_x])) {
-      end_x = step_right(endline->data, end_x);
-    }
-    sampleline = startline;
-    /* Find the first line of the paragraph in which the region starts. */
-    while (sampleline->prev && inpar(sampleline) && !begpar(sampleline, 0)) {
-      sampleline = sampleline->prev;
-    }
-    /* Ignore lines that contain no text. */
-    while (sampleline->next && !inpar(sampleline)) {
-      sampleline = sampleline->next;
-    }
-    /* Store the leading part that is to be used for the new paragraph. */
-    quot_len     = quote_length(sampleline->data);
-    primary_len  = quot_len + indent_length(sampleline->data + quot_len);
-    primary_lead = measured_copy(sampleline->data, primary_len);
-    if (sampleline->next && startline != endline) {
-      sampleline = sampleline->next;
-    }
-    /* Copy the leading part that is to be used for the new paragraph after its first line
-     * (if any):  the quoting of the first line, plus the indentation of the second line. */
-    other_quot_len  = quote_length(sampleline->data);
-    other_white_len = indent_length(sampleline->data + other_quot_len);
-    secondary_len   = (quot_len + other_white_len);
-    secondary_lead  = (char *)nmalloc(secondary_len + 1);
-    strncpy(secondary_lead, startline->data, quot_len);
-    strncpy((secondary_lead + quot_len), (sampleline->data + other_quot_len), other_white_len);
-    secondary_lead[secondary_len] = '\0';
-    /* Include preceding and succeeding leads into the marked region. */
-    openfile->mark      = startline;
-    openfile->mark_x    = start_x;
-    openfile->current   = endline;
-    openfile->current_x = end_x;
-    linecount           = endline->lineno - startline->lineno + (end_x > 0 ? 1 : 0);
-    /* Remember whether the end of the region was before the end-of-line. */
-    before_eol = endline->data[end_x] != '\0';
-  }
-  else {
-    /* When justifying the entire buffer, start at the top.  Otherwise, when
-     * in a paragraph but not at its beginning, move back to its first line. */
-    if (whole_buffer) {
-      openfile->current = openfile->filetop;
-    }
-    else if (inpar(openfile->current) && !begpar(openfile->current, 0)) {
-      do_para_begin(&openfile->current);
-    }
-    /* Find the first line of the paragraph(s) to be justified.  If the
-     * search fails, there is nothing to justify, and we will be on the
-     * last line of the file, so put the cursor at the end of it. */
-    if (!find_paragraph(&openfile->current, &linecount)) {
-      openfile->current_x = strlen(openfile->filebot->data);
-      discard_until(openfile->undotop->next);
-      refresh_needed = TRUE;
-      return;
-    }
-    else {
-      openfile->current_x = 0;
-    }
-    /* Set the starting point of the paragraph. */
-    startline = openfile->current;
-    start_x   = 0;
-    /* Set the end point of the paragraph. */
-    if (whole_buffer) {
-      endline = openfile->filebot;
-    }
-    else {
-      endline = startline;
-      for (Ulong count = linecount; count > 1; count--) {
-        endline = endline->next;
-      }
-    }
-    /* When possible, step one line further; otherwise, to line's end. */
-    if (endline->next) {
-      endline = endline->next;
-      end_x   = 0;
-    }
-    else {
-      end_x = strlen(endline->data);
-    }
-  }
-  add_undo(CUT, NULL);
-  /* Do the equivalent of a marked cut into an empty cutbuffer. */
-  cutbuffer = NULL;
-  extract_segment(startline, start_x, endline, end_x);
-  update_undo(CUT);
-  if (openfile->mark) {
-    linestruct *line     = cutbuffer;
-    Ulong       quot_len = quote_length(line->data);
-    Ulong       fore_len = quot_len + indent_length(line->data + quot_len);
-    Ulong       text_len = strlen(line->data) - fore_len;
-    /* If the extracted region begins with any leading part, trim it. */
-    if (fore_len > 0) {
-      memmove(line->data, line->data + fore_len, text_len + 1);
-    }
-    /* Then copy back in the leading part that it should have. */
-    if (primary_len > 0) {
-      line->data = (char *)nrealloc(line->data, primary_len + text_len + 1);
-      memmove(line->data + primary_len, line->data, text_len + 1);
-      strncpy(line->data, primary_lead, primary_len);
-    }
-    /* Now justify the extracted region. */
-    concat_paragraph(cutbuffer, linecount);
-    squeeze(cutbuffer, primary_len);
-    rewrap_paragraph(&line, secondary_lead, secondary_len);
-    /* If the marked region started in the middle of a line,
-     * insert a newline before the new paragraph. */
-    if (start_x > 0) {
-      cutbuffer->prev       = make_new_node(NULL);
-      cutbuffer->prev->data = copy_of("");
-      cutbuffer->prev->next = cutbuffer;
-      cutbuffer             = cutbuffer->prev;
-    }
-    /* If the marked region ended in the middle of a line,
-     * insert a newline after the new paragraph. */
-    if (end_x > 0 && before_eol) {
-      line->next       = make_new_node(line);
-      line->next->data = copy_of(primary_lead);
-    }
-    free(secondary_lead);
-    free(primary_lead);
-    /* Keep as much of the marked region onscreen as possible. */
-    focusing = FALSE;
-  }
-  else {
-    /* Prepare to justify the text we just put in the cutbuffer. */
-    jusline = cutbuffer;
-    /* Justify the current paragraph. */
-    justify_paragraph(&jusline, linecount);
-    /* When justifying the entire buffer, find and justify all paragraphs. */
-    if (whole_buffer) {
-      while (find_paragraph(&jusline, &linecount)) {
-        justify_paragraph(&jusline, linecount);
-        if (!jusline->next) {
-          break;
-        }
-      }
-    }
-  }
-  /* Wipe an anchor on the first paragraph if it was only inherited. */
-  if (whole_buffer && !openfile->mark && !cutbuffer->has_anchor) {
-    openfile->current->has_anchor = FALSE;
-  }
-  add_undo(PASTE, NULL);
-  /* Do the equivalent of a paste of the justified text. */
-  ingraft_buffer(cutbuffer);
-  update_undo(PASTE);
-  /* After justifying a backward-marked text, swap mark and cursor. */
-  if (marked_backward) {
-    linestruct *bottom   = openfile->current;
-    Ulong       bottom_x = openfile->current_x;
-    openfile->current    = openfile->mark;
-    openfile->current_x  = openfile->mark_x;
-    openfile->mark       = bottom;
-    openfile->mark_x     = bottom_x;
-  }
-  else if (whole_buffer && !openfile->mark) {
-    goto_line_posx(was_the_linenumber, 0);
-  }
-  add_undo(COUPLE_END, N_("justification"));
-  /* Report on the status bar what we justified. */
-  if (openfile->mark) {
-    statusline(REMARK, _("Justified selection"));
-  }
-  else if (whole_buffer) {
-    statusline(REMARK, _("Justified file"));
-  }
-  else {
-    statusbar_all(_("Justified paragraph"));
-  }
-  /* We're done justifying.  Restore the cutbuffer. */
-  cutbuffer = was_cutbuffer;
-  /* Set the desired screen column (always zero, except at EOF). */
-  openfile->placewewant = xplustabs();
-  set_modified();
-  refresh_needed = TRUE;
-  shift_held     = TRUE;
-}
+// static void justify_text(bool whole_buffer) {
+//   /* The number of lines in the original paragraph. */
+//   Ulong linecount;
+//   /* The line where the paragraph or region starts. */
+//   linestruct *startline;
+//   /* The line where the paragraph or region ends. */
+//   linestruct *endline;
+//   /* The x position where the paragraph or region starts. */
+//   Ulong start_x;
+//   /* The x position where the paragraph or region ends. */
+//   Ulong end_x;
+//   /* The old cutbuffer, so we can justify in the current cutbuffer. */
+//   linestruct *was_cutbuffer = cutbuffer;
+//   /* The line that we're justifying in the current cutbuffer. */
+//   linestruct *jusline;
+//   /* Whether the end of a marked region is before the end of its line. */
+//   bool before_eol = FALSE;
+//   /* The leading part (quoting + indentation) of the first line of the paragraph where the marked region begins. */
+//   char *primary_lead = NULL;
+//   /* The length (in bytes) of the above first-line leading part. */
+//   Ulong primary_len = 0;
+//   /* The leading part for lines after the first one. */
+//   char *secondary_lead = NULL;
+//   /* The length of that later lead. */
+//   Ulong secondary_len = 0;
+//   /* The line to return to after a full justification. */
+//   long was_the_linenumber = openfile->current->lineno;
+//   bool marked_backward    = (openfile->mark && !mark_is_before_cursor());
+//   /* TRANSLATORS: This one goes with Undid/Redid messages. */
+//   add_undo(COUPLE_BEGIN, N_("justification"));
+//   /* If the mark is on, do as Pico: treat all marked text as one paragraph. */
+//   if (openfile->mark) {
+//     Ulong       quot_len, fore_len, other_quot_len, other_white_len;
+//     linestruct *sampleline;
+//     get_region(&startline, &start_x, &endline, &end_x);
+//     /* When the marked region is empty, do nothing. */
+//     if (startline == endline && start_x == end_x) {
+//       statusline(AHEM, _("Selection is empty"));
+//       discard_until(openfile->undotop->next);
+//       return;
+//     }
+//     quot_len = quote_length(startline->data);
+//     fore_len = quot_len + indent_length(startline->data + quot_len);
+//     /* When the region starts IN the lead, take the whole lead. */
+//     if (start_x <= fore_len) {
+//       start_x = 0;
+//     }
+//     /* Recede over blanks before the region.  This effectively snips
+//      * trailing blanks from what will become the preceding paragraph. */
+//     while (start_x > 0 && is_blank_char(&startline->data[start_x - 1])) {
+//       start_x = step_left(startline->data, start_x);
+//     }
+//     quot_len = quote_length(endline->data);
+//     fore_len = quot_len + indent_length(endline->data + quot_len);
+//     /* When the region ends IN the lead, take the whole lead. */
+//     if (0 < end_x && end_x < fore_len) {
+//       end_x = fore_len;
+//     }
+//     /* When not at the left edge, advance over blanks after the region. */
+//     while (end_x > 0 && is_blank_char(&endline->data[end_x])) {
+//       end_x = step_right(endline->data, end_x);
+//     }
+//     sampleline = startline;
+//     /* Find the first line of the paragraph in which the region starts. */
+//     while (sampleline->prev && inpar(sampleline) && !begpar(sampleline, 0)) {
+//       sampleline = sampleline->prev;
+//     }
+//     /* Ignore lines that contain no text. */
+//     while (sampleline->next && !inpar(sampleline)) {
+//       sampleline = sampleline->next;
+//     }
+//     /* Store the leading part that is to be used for the new paragraph. */
+//     quot_len     = quote_length(sampleline->data);
+//     primary_len  = quot_len + indent_length(sampleline->data + quot_len);
+//     primary_lead = measured_copy(sampleline->data, primary_len);
+//     if (sampleline->next && startline != endline) {
+//       sampleline = sampleline->next;
+//     }
+//     /* Copy the leading part that is to be used for the new paragraph after its first line
+//      * (if any):  the quoting of the first line, plus the indentation of the second line. */
+//     other_quot_len  = quote_length(sampleline->data);
+//     other_white_len = indent_length(sampleline->data + other_quot_len);
+//     secondary_len   = (quot_len + other_white_len);
+//     secondary_lead  = (char *)nmalloc(secondary_len + 1);
+//     strncpy(secondary_lead, startline->data, quot_len);
+//     strncpy((secondary_lead + quot_len), (sampleline->data + other_quot_len), other_white_len);
+//     secondary_lead[secondary_len] = '\0';
+//     /* Include preceding and succeeding leads into the marked region. */
+//     openfile->mark      = startline;
+//     openfile->mark_x    = start_x;
+//     openfile->current   = endline;
+//     openfile->current_x = end_x;
+//     linecount           = endline->lineno - startline->lineno + (end_x > 0 ? 1 : 0);
+//     /* Remember whether the end of the region was before the end-of-line. */
+//     before_eol = endline->data[end_x] != '\0';
+//   }
+//   else {
+//     /* When justifying the entire buffer, start at the top.  Otherwise, when
+//      * in a paragraph but not at its beginning, move back to its first line. */
+//     if (whole_buffer) {
+//       openfile->current = openfile->filetop;
+//     }
+//     else if (inpar(openfile->current) && !begpar(openfile->current, 0)) {
+//       do_para_begin(&openfile->current);
+//     }
+//     /* Find the first line of the paragraph(s) to be justified.  If the
+//      * search fails, there is nothing to justify, and we will be on the
+//      * last line of the file, so put the cursor at the end of it. */
+//     if (!find_paragraph(&openfile->current, &linecount)) {
+//       openfile->current_x = strlen(openfile->filebot->data);
+//       discard_until(openfile->undotop->next);
+//       refresh_needed = TRUE;
+//       return;
+//     }
+//     else {
+//       openfile->current_x = 0;
+//     }
+//     /* Set the starting point of the paragraph. */
+//     startline = openfile->current;
+//     start_x   = 0;
+//     /* Set the end point of the paragraph. */
+//     if (whole_buffer) {
+//       endline = openfile->filebot;
+//     }
+//     else {
+//       endline = startline;
+//       for (Ulong count = linecount; count > 1; count--) {
+//         endline = endline->next;
+//       }
+//     }
+//     /* When possible, step one line further; otherwise, to line's end. */
+//     if (endline->next) {
+//       endline = endline->next;
+//       end_x   = 0;
+//     }
+//     else {
+//       end_x = strlen(endline->data);
+//     }
+//   }
+//   add_undo(CUT, NULL);
+//   /* Do the equivalent of a marked cut into an empty cutbuffer. */
+//   cutbuffer = NULL;
+//   extract_segment(startline, start_x, endline, end_x);
+//   update_undo(CUT);
+//   if (openfile->mark) {
+//     linestruct *line     = cutbuffer;
+//     Ulong       quot_len = quote_length(line->data);
+//     Ulong       fore_len = quot_len + indent_length(line->data + quot_len);
+//     Ulong       text_len = strlen(line->data) - fore_len;
+//     /* If the extracted region begins with any leading part, trim it. */
+//     if (fore_len > 0) {
+//       memmove(line->data, line->data + fore_len, text_len + 1);
+//     }
+//     /* Then copy back in the leading part that it should have. */
+//     if (primary_len > 0) {
+//       line->data = (char *)nrealloc(line->data, primary_len + text_len + 1);
+//       memmove(line->data + primary_len, line->data, text_len + 1);
+//       strncpy(line->data, primary_lead, primary_len);
+//     }
+//     /* Now justify the extracted region. */
+//     concat_paragraph(cutbuffer, linecount);
+//     squeeze(cutbuffer, primary_len);
+//     rewrap_paragraph(&line, secondary_lead, secondary_len);
+//     /* If the marked region started in the middle of a line,
+//      * insert a newline before the new paragraph. */
+//     if (start_x > 0) {
+//       cutbuffer->prev       = make_new_node(NULL);
+//       cutbuffer->prev->data = copy_of("");
+//       cutbuffer->prev->next = cutbuffer;
+//       cutbuffer             = cutbuffer->prev;
+//     }
+//     /* If the marked region ended in the middle of a line,
+//      * insert a newline after the new paragraph. */
+//     if (end_x > 0 && before_eol) {
+//       line->next       = make_new_node(line);
+//       line->next->data = copy_of(primary_lead);
+//     }
+//     free(secondary_lead);
+//     free(primary_lead);
+//     /* Keep as much of the marked region onscreen as possible. */
+//     focusing = FALSE;
+//   }
+//   else {
+//     /* Prepare to justify the text we just put in the cutbuffer. */
+//     jusline = cutbuffer;
+//     /* Justify the current paragraph. */
+//     justify_paragraph(&jusline, linecount);
+//     /* When justifying the entire buffer, find and justify all paragraphs. */
+//     if (whole_buffer) {
+//       while (find_paragraph(&jusline, &linecount)) {
+//         justify_paragraph(&jusline, linecount);
+//         if (!jusline->next) {
+//           break;
+//         }
+//       }
+//     }
+//   }
+//   /* Wipe an anchor on the first paragraph if it was only inherited. */
+//   if (whole_buffer && !openfile->mark && !cutbuffer->has_anchor) {
+//     openfile->current->has_anchor = FALSE;
+//   }
+//   add_undo(PASTE, NULL);
+//   /* Do the equivalent of a paste of the justified text. */
+//   ingraft_buffer(cutbuffer);
+//   update_undo(PASTE);
+//   /* After justifying a backward-marked text, swap mark and cursor. */
+//   if (marked_backward) {
+//     linestruct *bottom   = openfile->current;
+//     Ulong       bottom_x = openfile->current_x;
+//     openfile->current    = openfile->mark;
+//     openfile->current_x  = openfile->mark_x;
+//     openfile->mark       = bottom;
+//     openfile->mark_x     = bottom_x;
+//   }
+//   else if (whole_buffer && !openfile->mark) {
+//     goto_line_posx(was_the_linenumber, 0);
+//   }
+//   add_undo(COUPLE_END, N_("justification"));
+//   /* Report on the status bar what we justified. */
+//   if (openfile->mark) {
+//     statusline(REMARK, _("Justified selection"));
+//   }
+//   else if (whole_buffer) {
+//     statusline(REMARK, _("Justified file"));
+//   }
+//   else {
+//     statusbar_all(_("Justified paragraph"));
+//   }
+//   /* We're done justifying.  Restore the cutbuffer. */
+//   cutbuffer = was_cutbuffer;
+//   /* Set the desired screen column (always zero, except at EOF). */
+//   openfile->placewewant = xplustabs();
+//   set_modified();
+//   refresh_needed = TRUE;
+//   shift_held     = TRUE;
+// }
 
 /* Justify the current paragraph. */
-void do_justify(void) {
-  justify_text(ONE_PARAGRAPH);
-}
+// void do_justify(void) {
+//   justify_text(ONE_PARAGRAPH);
+// }
 
 /* Justify the entire file. */
-void do_full_justify(void) {
-  justify_text(WHOLE_BUFFER);
-  ran_a_tool = TRUE;
-  recook     = TRUE;
-}
+// void do_full_justify(void) {
+//   justify_text(WHOLE_BUFFER);
+//   ran_a_tool = TRUE;
+//   recook     = TRUE;
+// }
 
 /* Set up an argument list for executing the given command. */
 // static void construct_argument_list(char ***arguments, char *command, char *filename) {
