@@ -509,28 +509,56 @@ void disable_extended_io(void) {
 
 /* ----------------------------- Confirm margin ----------------------------- */
 
-/* Ensure that the margin can accommodate the buffer's highest line number. */
-void confirm_margin(void) {
+void confirm_margin_for(openfilestruct *const file, int *const cols) {
+  ASSERT(file);
+  ASSERT(cols);
   bool keep_focus;
   int needed_margin;
   /* Only perform any action when in curses-mode. */
   if (IN_CURSES_CTX) {
-    needed_margin = (digits(openfile->filebot->lineno) + 1);
-    /* When not requested or space is too tight, suppress line numbers. */
+    needed_margin = (digits(file->filebot->lineno) + 1);
+    /* When not requested or space is to tight, suppress line numbers. */
     if (!ISSET(LINE_NUMBERS) || needed_margin > (COLS - 4)) {
       needed_margin = 0;
     }
     if (needed_margin != margin) {
-      keep_focus  = ((margin > 0) && focusing);
-      margin      = needed_margin;
-      editwincols = (COLS - margin - sidebar);
+      keep_focus = ((margin > 0) && focusing);
+      margin     = needed_margin;
+      *cols      = (COLS - margin - sidebar);
       /* Ensure a proper starting column for the first screen row. */
-      ensure_firstcolumn_is_aligned();
+      ensure_firstcolumn_is_aligned_for(file, *cols);
       focusing = keep_focus;
-      /* The margin has changed -- schedule a full refresh. */
+      /* The margin has changed -- schedual a full refresh. */
       refresh_needed = TRUE;
     }
   }
+}
+
+/* Ensure that the margin can accommodate the buffer's highest line number. */
+void confirm_margin(void) {
+  if (IN_CURSES_CTX) {
+    confirm_margin_for(TUI_OF, &TUI_COLS);
+  }
+  // bool keep_focus;
+  // int needed_margin;
+  // /* Only perform any action when in curses-mode. */
+  // if (IN_CURSES_CTX) {
+  //   needed_margin = (digits(openfile->filebot->lineno) + 1);
+  //   /* When not requested or space is too tight, suppress line numbers. */
+  //   if (!ISSET(LINE_NUMBERS) || needed_margin > (COLS - 4)) {
+  //     needed_margin = 0;
+  //   }
+  //   if (needed_margin != margin) {
+  //     keep_focus  = ((margin > 0) && focusing);
+  //     margin      = needed_margin;
+  //     editwincols = (COLS - margin - sidebar);
+  //     /* Ensure a proper starting column for the first screen row. */
+  //     ensure_firstcolumn_is_aligned();
+  //     focusing = keep_focus;
+  //     /* The margin has changed -- schedule a full refresh. */
+  //     refresh_needed = TRUE;
+  //   }
+  // }
 }
 
 /* ----------------------------- Disable kb interrupt ----------------------------- */

@@ -3822,67 +3822,267 @@ void do_full_justify(void) {
 
 /* ----------------------------- Do linter ----------------------------- */
 
-// void do_linter_for(CTX_ARGS, const char *const restrict linter) {
-//   ASSERT(file);
-//   char *lintings;
-//   char *pointer;
-//   char *onelint;
-//   char *filename;
-//   char *linestring;
-//   char *colstring;
-//   char *complaint;
-//   char *spacer;
-//   char *dontwantfile;
-//   char **lintargs;
-//   int choice;
-//   int kbinput;
-//   int lint_status;
-//   int lint_fd[2];
-//   functionptrtype function;
-//   struct stat info;
-//   const openfilestruct *started_at;
-//   long pipesize;
-//   Ulong bufsize;
-//   Ulong bytesread;
-//   Ulong totalread = 0;
-//   pid_t pid_lint;
-//   lintstruct *lints   = NULL;
-//   lintstruct *tmplint = NULL;
-//   lintstruct *curlint = NULL;
-//   lintstruct *reslint = NULL;
-//   time_t last_wait  = 0;
-//   bool parsesuccess = FALSE;
-//   bool helpless     = ISSET(NO_HELP);
-//   ran_a_tool = TRUE;
-//   /* Do not allow this to perform any actions in restricted-mode, or when not in curses-mode (for now). */
-//   if (in_restricted_mode() || !IN_CURSES_CTX) {
-//     return;
-//   }
-//   /* If the linter passed is not a valid string, or its empty inform the user and return. */
-//   if (!linter || !*linter) {
-//     statusline(AHEM, _("No linter is defined for this type of file"));
-//     return;
-//   }
-//   file->mark = NULL;
-//   edit_refresh_for(STACK_CTX);
-//   if (file->modified) {
-//     choice = ask_user(YESORNO, _("Save modified buffer before linting?"));
-//     if (choice == CANCEL) {
-//       statusbar_all(_("Cancelled"));
-//       return;
-//     }
-//     else if (choice == YES && write_it_out_for(file, FALSE, FALSE) != 1) {
-//       return;
-//     }
-//   }
-//   /* Create a pipe up front...like always before using it... */
-//   if (pipe(lint_fd) == -1) {
-//     statusline(ALERT, _("Could not create pipe: %s"), strerror(errno));
-//     return;
-//   }
-//   blank_bottombars();
-//   currmenu = MLINTER;
-// }
+void do_linter_for(CTX_ARGS_REF_OF, char *const linter) {
+  ASSERT(file);
+  char *lintings;
+  char *pointer;
+  char *onelint;
+  char *filename;
+  char *linestring;
+  char *colstring;
+  char *complaint;
+  char *spacer;
+  char *dontwantfile;
+  char *msg;
+  char **lintargs;
+  int choice;
+  int kbinput;
+  int lint_status;
+  int lint_fd[2];
+  functionptrtype function;
+  struct stat info;
+  const openfilestruct *started_at;
+  long pipesize;
+  long lineno;
+  long colno;
+  Ulong bufsize;
+  Ulong bytesread;
+  Ulong totalread = 0;
+  pid_t pid_lint;
+  lintstruct *lints   = NULL;
+  lintstruct *tmplint = NULL;
+  lintstruct *curlint = NULL;
+  lintstruct *reslint = NULL;
+  time_t last_wait  = 0;
+  bool parsesuccess = FALSE;
+  bool helpless     = ISSET(NO_HELP);
+  ran_a_tool = TRUE;
+  /* Do not allow this to perform any actions in restricted-mode, or when not in curses-mode (for now). */
+  if (in_restricted_mode() || !IN_CURSES_CTX) {
+    return;
+  }
+  /* If the linter passed is not a valid string, or its empty inform the user and return. */
+  if (!linter || !*linter) {
+    statusline(AHEM, _("No linter is defined for this type of file"));
+    return;
+  }
+  (*file)->mark = NULL;
+  edit_refresh_for(STACK_CTX_DF);
+  if ((*file)->modified) {
+    choice = ask_user(YESORNO, _("Save modified buffer before linting?"));
+    if (choice == CANCEL) {
+      statusbar_all(_("Cancelled"));
+      return;
+    }
+    else if (choice == YES && write_it_out_for(*file, FALSE, FALSE) != 1) {
+      return;
+    }
+  }
+  /* Create a pipe up front...like always before using it... */
+  if (pipe(lint_fd) == -1) {
+    statusline(ALERT, _("Could not create pipe: %s"), strerror(errno));
+    return;
+  }
+  blank_bottombars();
+  currmenu = MLINTER;
+  statusbar_all(_("Invoking linter..."));
+  /* If we fail to fork, inform the user and return. */
+  if ((pid_lint = fork()) == -1) {
+    statusline(ALERT, _("Could not fork: %s"), strerror(errno));
+    close(lint_fd[0]);
+    close(lint_fd[1]);
+    return;
+  }
+  /* Child */
+  else if (pid_lint == 0) {
+    /* Child: Redirect standard output/error into the pipe. */
+    if (dup2(lint_fd[1], STDOUT_FILENO) < 0) {
+      exit(7);
+    }
+    if (dup2(lint_fd[1], STDERR_FILENO) < 0) {
+      exit(8);
+    }
+    close(lint_fd[0]);
+    close(lint_fd[1]);
+    construct_argument_list(&lintargs, linter, (*file)->filename);
+    /* Child: Start the linter program.  Note that we are using $PATH. */
+    execvp(lintargs[0], lintargs);
+    /* Child: This is only reached when the linter is not found. */
+    exit(9);
+  }
+  /* Parent */
+  else {
+    /* Parent: Close the unused write end of the pipe. */
+    close(lint_fd[1]);
+    /* Get the system pipe buffer size. */
+    pipesize = fpathconf(lint_fd[0], _PC_PIPE_BUF);
+    if (pipesize < 1) {
+      statusline(ALERT, _("Could not get size of pipe buffer"));
+      close(lint_fd[0]);
+      return;
+    }
+    /* Block resizing signals while reading from a pipe. */
+    BLOCK_SIGWINCH_ACTION(
+      /* Read in the returned syntax errors. */
+      bufsize  = (pipesize + 1);
+      lintings = xmalloc(bufsize);
+      pointer  = lintings;
+      while ((bytesread = read(lint_fd[0], pointer, pipesize)) > 0) {
+        totalread += bytesread;
+        bufsize   += pipesize;
+        lintings   = xrealloc(lintings, bufsize);
+        pointer    = (lintings + totalread);
+      }
+      *pointer = NUL;
+      close(lint_fd[0]);
+    );
+    pointer = lintings;
+    onelint = lintings;
+    /* Now parse the output of the linter. */
+    while (*pointer) {
+      if (*pointer == CR || *pointer == LF) {
+        *pointer = NUL;
+        if (onelint != pointer) {
+          complaint = copy_of(onelint);
+          /* Why is not strchr used here...? */
+          spacer = strstr(complaint, " ");
+          /* The recognized format is 'filename:line:column: message',
+           * where ':column' may be absent or be ',column' instead. */
+          if ((filename = strtok(onelint, ":")) && spacer) {
+            if ((linestring = strtok(NULL, ":"))) {
+              if ((colstring = strtok(NULL, " "))) {
+                lineno = strtol(linestring, NULL, 10);
+                colno  = strtol(colstring,  NULL, 10);
+                if (lineno <= 0) {
+                  free(complaint);
+                  ++pointer;
+                  return;
+                }
+                else if (colno <= 0) {
+                  colno = 1;
+                  strtok(linestring, ",");
+                  if ((colstring = strtok(NULL, ","))) {
+                    colno = strtol(colstring, NULL, 10);
+                  }
+                }
+                parsesuccess = TRUE;
+                tmplint = curlint;
+                curlint = xmalloc(sizeof(*curlint));
+                curlint->next = NULL;
+                curlint->prev = tmplint;
+                if (curlint->prev) {
+                  curlint->prev->next = curlint;
+                }
+                curlint->filename = copy_of(filename);
+                curlint->lineno   = lineno;
+                curlint->colno    = colno;
+                curlint->msg      = copy_of(spacer + 1);
+                if (!lints) {
+                  lints = curlint;
+                }
+              }
+            }
+          }
+          free(complaint);
+        }
+        onelint = (pointer + 1);
+      }
+      ++pointer;
+    }
+    free(lintings);
+    /* Process the end of the linting process. */
+    waitpid(pid_lint, &lint_status, 0);
+    if (!WIFEXITED(lint_status) || WEXITSTATUS(lint_status) > 2) {
+      statusline(ALERT, _("Error invoking '%s'"), linter);
+      return;
+    }
+    else if (!parsesuccess) {
+      statusline(REMARK, _("Got 0 parsable lines from command: %s"), linter);
+      return;
+    }
+    if (helpless && LINES > 5) {
+      UNSET(NO_HELP);
+      window_init();
+    }
+    /* Show that we are in the linter now. */
+    titlebar(NULL);
+    bottombars(MLINTER);
+    tmplint = NULL;
+    curlint = lints;
+    while (1) {
+      if (stat(curlint->filename, &info) != -1 && (!(*file)->statinfo || (*file)->statinfo->st_ino != info.st_ino)) {
+        started_at = (*file);
+        DLIST_ADV_NEXT(*file);
+        while (*file != started_at && (!(*file)->statinfo || (*file)->statinfo->st_ino != info.st_ino)) {
+          DLIST_ADV_NEXT(*file);
+        }
+        if (!(*file)->statinfo || (*file)->statinfo->st_ino != info.st_ino) {
+          msg    = fmtstr(_("This message is for an unopened file %s, open it in a new buffer?"), curlint->filename);
+          choice = ask_user(YESORNO, msg);
+          free(msg);
+          currmenu = MLINTER;
+          if (choice == CANCEL) {
+            statusbar_all(_("Cancelled"));
+            break;
+          }
+          else if (choice == YES) {
+            open_buffer(curlint->filename, TRUE);
+          }
+          else {
+            dontwantfile = copy_of(curlint->filename);
+            reslint      = NULL;
+            while (curlint) {
+              if (strcmp(curlint->filename, dontwantfile) == 0) {
+                if (curlint == lints) {
+                  lints = curlint->next;
+                }
+                else {
+                  curlint->prev->next = curlint->next;
+                }
+                if (curlint->next) {
+                  curlint->next->prev = curlint->prev;
+                }
+                tmplint = curlint;
+                DLIST_ADV_NEXT(curlint);
+                free(tmplint->msg);
+                free(tmplint->filename);
+                free(tmplint);
+              }
+              else {
+                if (!reslint) {
+                  reslint = curlint;
+                }
+                DLIST_ADV_NEXT(curlint);
+              }
+            }
+            free(dontwantfile);
+            if (!reslint) {
+              statusline(REMARK, _("No messages for this file"));
+              break;
+            }
+            else {
+              curlint = reslint;
+              continue;
+            }
+          }
+        }
+      }
+      if (tmplint != curlint) {
+        /* Put the cursor at the repoted position, but don't go beyond EOL
+         * when the second number is a column number instead of an index. */
+        goto_line_posx_for(*file, rows, curlint->lineno, (curlint->colno - 1));
+        (*file)->current_x = actual_x((*file)->current->data, (*file)->placewewant);
+        titlebar(NULL);
+        adjust_viewport_for(STACK_CTX_DF, CENTERING);
+        confirm_margin_for(*file, &TUI_COLS);
+        edit_refresh_for(STACK_CTX_DF);
+        statusline(NOTICE, "%s", curlint->msg);
+        bottombars(MLINTER);
+      }
+      
+    }
+  }
+}
 
 /* ----------------------------- Find paragraph ----------------------------- */
 

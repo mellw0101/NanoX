@@ -673,6 +673,15 @@ static const short bg_vs_code_color_array[] = {
     restore_handler_for_Ctrl_C();         \
   )
 
+#define BLOCK_SIGWINCH_ACTION(...)  \
+  /* Perform some action while      \
+   * blocking sigwinch signals. */  \
+  DO_WHILE(                         \
+    block_sigwinch(TRUE);           \
+    DO_WHILE(__VA_ARGS__);          \
+    block_sigwinch(FALSE);          \
+  )
+
 
 /* ---------------------------------------------------------- Typedef's ---------------------------------------------------------- */
 

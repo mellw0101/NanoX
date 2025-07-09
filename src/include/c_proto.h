@@ -1495,6 +1495,7 @@ void enable_flow_control(void);
 /* ----------------------------- Disable extended io ----------------------------- */
 void disable_extended_io(void);
 /* ----------------------------- Confirm margin ----------------------------- */
+void confirm_margin_for(openfilestruct *const file, int *const cols);
 void confirm_margin(void);
 /* ----------------------------- Disable kb interrupt ----------------------------- */
 void disable_kb_interrupt(void);
