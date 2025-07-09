@@ -4079,8 +4079,73 @@ void do_linter_for(CTX_ARGS_REF_OF, char *const linter) {
         statusline(NOTICE, "%s", curlint->msg);
         bottombars(MLINTER);
       }
-      
+      /* Place the cursor to indecate the affected line. */
+      place_the_cursor_for(*file);
+      wnoutrefresh(midwin);
+      kbinput = get_kbinput(footwin, VISIBLE);
+      if (kbinput == KEY_WINCH) {
+        continue;
+      }
+      function = func_from_key(kbinput);
+      tmplint  = curlint;
+      if (function == do_cancel || function == do_enter) {
+        wipe_statusbar();
+        break;
+      }
+      else if (function == do_help) {
+        tmplint = NULL;
+        do_help();
+      }
+      else if (function == do_page_up || function == to_prev_block) {
+        if (curlint->prev) {
+          DLIST_ADV_PREV(curlint);
+        }
+        else if (last_wait != time(NULL)) {
+          statusbar_all(_("At first message"));
+          beep();
+          napms(600);
+          last_wait = time(NULL);
+          statusline(NOTICE, "%s", curlint->msg);
+        }
+      }
+      else if (function == do_page_down || function == to_next_block) {
+        if (curlint->next) {
+          DLIST_ADV_NEXT(curlint);
+        }
+        else if (last_wait != time(NULL)) {
+          statusbar_all(_("At last message"));
+          beep();
+          napms(600);
+          last_wait = time(NULL);
+          statusline(NOTICE, "%s", curlint->msg);
+        }
+      }
+      else {
+        beep();
+      }
     }
+    for (curlint=lints; curlint;) {
+      tmplint = curlint;
+      DLIST_ADV_NEXT(curlint);
+      free(tmplint->msg);
+      free(tmplint->filename);
+      free(tmplint);
+    }
+    if (helpless) {
+      SET(NO_HELP);
+      window_init();
+      refresh_needed = TRUE;
+    }
+    lastmessage = VACUUM;
+    currmenu    = MMOST;
+    titlebar(NULL);
+  }
+}
+
+/* Run a linting program on the `currently open buffer`.  Note that this only works in curses-mode for now. */
+void do_linter(void) {
+  if (IN_CURSES_CTX) {
+    do_linter_for(&TUI_OF, TUI_RC, PASS_FIELD_IF_VALID(TUI_OF->syntax, linter, NULL));
   }
 }
 

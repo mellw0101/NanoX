@@ -553,6 +553,9 @@ void do_justify(void);
 /* ----------------------------- Do full justify ----------------------------- */
 void do_full_justify_for(CTX_ARGS);
 void do_full_justify(void);
+/* ----------------------------- Do linter ----------------------------- */
+void do_linter_for(CTX_ARGS_REF_OF, char *const linter);
+void do_linter(void);
 /* ----------------------------- Find paragraph ----------------------------- */
 bool find_paragraph(linestruct **const first, Ulong *const count);
 /* ----------------------------- Do verbatim input ----------------------------- */

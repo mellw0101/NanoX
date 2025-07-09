@@ -2998,315 +2998,315 @@
 // }
 
 /* Run a linting program on the current buffer. */
-void do_linter(void) {
-  char       *lintings, *pointer, *onelint;
-  long        pipesize;
-  Ulong       buffersize, bytesread, totalread;
-  bool        parsesuccess, helpless;
-  int         lint_status, lint_fd[2];
-  pid_t       pid_lint;
-  lintstruct *lints, *tmplint, *curlint;
-  time_t      last_wait;
-  parsesuccess = FALSE;
-  helpless     = ISSET(NO_HELP);
-  lints        = NULL;
-  tmplint      = NULL;
-  curlint      = NULL;
-  last_wait    = 0;
-  ran_a_tool   = TRUE;
-  if (in_restricted_mode()) {
-    return;
-  }
-  if (!openfile->syntax || !openfile->syntax->linter || !*openfile->syntax->linter) {
-    statusline(AHEM, _("No linter is defined for this type of file"));
-    return;
-  }
-  openfile->mark = NULL;
-  edit_refresh();
-  if (openfile->modified) {
-    int choice = ask_user(YESORNO, _("Save modified buffer before linting?"));
-    if (choice == CANCEL) {
-      statusbar_all(_("Cancelled"));
-      return;
-    }
-    else if (choice == YES && (write_it_out(FALSE, FALSE) != 1)) {
-      return;
-    }
-  }
-  /* Create a pipe up front. */
-  if (pipe(lint_fd) == -1) {
-    statusline(ALERT, _("Could not create pipe: %s"), strerror(errno));
-    return;
-  }
-  blank_bottombars();
-  currmenu = MLINTER;
-  statusbar_all(_("Invoking linter..."));
-  /* Fork a process to run the linter in. */
-  if ((pid_lint = fork()) == 0) {
-    char **lintargs = NULL;
-    /* Redirect standard output and standard error into the pipe. */
-    if (dup2(lint_fd[1], STDOUT_FILENO) < 0) {
-      exit(7);
-    }
-    if (dup2(lint_fd[1], STDERR_FILENO) < 0) {
-      exit(8);
-    }
-    close(lint_fd[0]);
-    close(lint_fd[1]);
-    construct_argument_list(&lintargs, openfile->syntax->linter, openfile->filename);
-    /* Start the linter program; we are using $PATH. */
-    execvp(lintargs[0], lintargs);
-    /* This is only reached when the linter is not found. */
-    exit(9);
-  }
-  /* Parent continues here. */
-  close(lint_fd[1]);
-  /* If the child process was not forked successfully... */
-  if (pid_lint < 0) {
-    statusline(ALERT, _("Could not fork: %s"), strerror(errno));
-    close(lint_fd[0]);
-    return;
-  }
-  /* Get the system pipe buffer size. */
-  pipesize = fpathconf(lint_fd[0], _PC_PIPE_BUF);
-  if (pipesize < 1) {
-    statusline(ALERT, _("Could not get size of pipe buffer"));
-    close(lint_fd[0]);
-    return;
-  }
-  /* Block resizing signals while reading from the pipe. */
-  block_sigwinch(TRUE);
-  /* Read in the returned syntax errors. */
-  totalread  = 0;
-  buffersize = (pipesize + 1);
-  lintings   = (char *)nmalloc(buffersize);
-  pointer    = lintings;
-  while ((bytesread = read(lint_fd[0], pointer, pipesize)) > 0) {
-    totalread += bytesread;
-    buffersize += pipesize;
-    lintings = (char *)nrealloc(lintings, buffersize);
-    pointer  = lintings + totalread;
-  }
-  *pointer = '\0';
-  close(lint_fd[0]);
-  block_sigwinch(FALSE);
-  pointer = lintings;
-  onelint = lintings;
-  /* Now parse the output of the linter. */
-  while (*pointer) {
-    if ((*pointer == '\r') || (*pointer == '\n')) {
-      *pointer = '\0';
-      if (onelint != pointer) {
-        char *filename, *linestring, *colstring;
-        char *complaint = copy_of(onelint);
-        char *spacer    = strstr(complaint, " ");
-        /* The recognized format is "filename:line:column: message", where ":column" may be absent or be ",column" instead. */
-        if ((filename = strtok(onelint, ":")) && spacer) {
-          if ((linestring = strtok(NULL, ":"))) {
-            if ((colstring = strtok(NULL, " "))) {
-              long linenumber = strtol(linestring, NULL, 10);
-              long colnumber  = strtol(colstring, NULL, 10);
-              if (linenumber <= 0) {
-                free(complaint);
-                ++pointer;
-                continue;
-              }
-              if (colnumber <= 0) {
-                colnumber = 1;
-                strtok(linestring, ",");
-                if ((colstring = strtok(NULL, ","))) {
-                  colnumber = strtol(colstring, NULL, 10);
-                }
-              }
-              parsesuccess  = TRUE;
-              tmplint       = curlint;
-              curlint       = (lintstruct *)nmalloc(sizeof(lintstruct));
-              curlint->next = NULL;
-              curlint->prev = tmplint;
-              if (curlint->prev != NULL) {
-                curlint->prev->next = curlint;
-              }
-              curlint->filename = copy_of(filename);
-              curlint->lineno   = linenumber;
-              curlint->colno    = colnumber;
-              curlint->msg      = copy_of(spacer + 1);
-              if (lints == NULL) {
-                lints = curlint;
-              }
-            }
-          }
-        }
-        free(complaint);
-      }
-      onelint = (pointer + 1);
-    }
-    ++pointer;
-  }
-  free(lintings);
-  /* Process the end of the linting process. */
-  waitpid(pid_lint, &lint_status, 0);
-  if (!WIFEXITED(lint_status) || WEXITSTATUS(lint_status) > 2) {
-    statusline(ALERT, _("Error invoking '%s'"), openfile->syntax->linter);
-    return;
-  }
-  if (!parsesuccess) {
-    statusline(REMARK, _("Got 0 parsable lines from command: %s"), openfile->syntax->linter);
-    return;
-  }
-  if (helpless && LINES > 5) {
-    UNSET(NO_HELP);
-    if (ISSET(NO_NCURSES)) {
-      window_init();
-    }
-    else {
-      window_init();
-    }
-  }
-  /* Show that we are in the linter now. */
-  titlebar(NULL);
-  bottombars(MLINTER);
-  tmplint = NULL;
-  curlint = lints;
-  while (TRUE) {
-    int kbinput;
-    functionptrtype function;
-    struct stat lintfileinfo;
-    if (stat(curlint->filename, &lintfileinfo) != -1 && (!openfile->statinfo || openfile->statinfo->st_ino != lintfileinfo.st_ino)) {
-      const openfilestruct *started_at = openfile;
-      openfile = openfile->next;
-      while (openfile != started_at && (!openfile->statinfo || openfile->statinfo->st_ino != lintfileinfo.st_ino)) {
-        openfile = openfile->next;
-      }
-      if (!openfile->statinfo || openfile->statinfo->st_ino != lintfileinfo.st_ino) {
-        char *msg = (char *)nmalloc(1024 + strlen(curlint->filename));
-        sprintf(msg, _("This message is for unopened file %s, open it in a new buffer?"), curlint->filename);
-        int choice = ask_user(YESORNO, msg);
-        free(msg);
-        currmenu = MLINTER;
-        if (choice == CANCEL) {
-          statusbar_all(_("Cancelled"));
-          break;
-        }
-        else if (choice == YES) {
-          open_buffer(curlint->filename, TRUE);
-        }
-        else {
-          char *dontwantfile = copy_of(curlint->filename);
-          lintstruct *restlint = NULL;
-          while (curlint) {
-            if (strcmp(curlint->filename, dontwantfile) == 0) {
-              if (curlint == lints) {
-                lints = curlint->next;
-              }
-              else {
-                curlint->prev->next = curlint->next;
-              }
-              if (curlint->next) {
-                curlint->next->prev = curlint->prev;
-              }
-              tmplint = curlint;
-              curlint = curlint->next;
-              free(tmplint->msg);
-              free(tmplint->filename);
-              free(tmplint);
-            }
-            else {
-              if (!restlint) {
-                restlint = curlint;
-              }
-              curlint = curlint->next;
-            }
-          }
-          free(dontwantfile);
-          if (!restlint) {
-            statusline(REMARK, _("No messages for this file"));
-            break;
-          }
-          else {
-            curlint = restlint;
-            continue;
-          }
-        }
-      }
-    }
-    if (tmplint != curlint) {
-      /* Put the cursor at the reported position, but don't go beyond EOL
-       * when the second number is a column number instead of an index. */
-      goto_line_posx(curlint->lineno, (curlint->colno - 1));
-      openfile->current_x = actual_x(openfile->current->data, openfile->placewewant);
-      titlebar(NULL);
-      adjust_viewport(CENTERING);
-      confirm_margin();
-      edit_refresh();
-      statusline(NOTICE, "%s", curlint->msg);
-      bottombars(MLINTER);
-    }
-    /* Place the cursor to indicate the affected line. */
-    place_the_cursor();
-    wnoutrefresh(midwin);
-    kbinput = get_kbinput(footwin, VISIBLE);
-    if (kbinput == KEY_WINCH) {
-      continue;
-    }
-    function = func_from_key(kbinput);
-    tmplint  = curlint;
-    if (function == do_cancel || function == do_enter) {
-      wipe_statusbar();
-      break;
-    }
-    else if (function == do_help) {
-      tmplint = NULL;
-      do_help();
-    }
-    else if (function == do_page_up || function == to_prev_block) {
-      if (curlint->prev != NULL) {
-        curlint = curlint->prev;
-      }
-      else if (last_wait != time(NULL)) {
-        statusbar_all(_("At first message"));
-        beep();
-        napms(600);
-        last_wait = time(NULL);
-        statusline(NOTICE, "%s", curlint->msg);
-      }
-    }
-    else if (function == do_page_down || function == to_next_block) {
-      if (curlint->next) {
-        curlint = curlint->next;
-      }
-      else if (last_wait != time(NULL)) {
-        statusbar_all(_("At last message"));
-        beep();
-        napms(600);
-        last_wait = time(NULL);
-        statusline(NOTICE, "%s", curlint->msg);
-      }
-    }
-    else {
-      beep();
-    }
-  }
-  for (curlint = lints; curlint;) {
-    tmplint = curlint;
-    curlint = curlint->next;
-    free(tmplint->msg);
-    free(tmplint->filename);
-    free(tmplint);
-  }
-  if (helpless) {
-    SET(NO_HELP);
-    if (ISSET(NO_NCURSES)) {
-      window_init();
-    }
-    else {
-      window_init();
-    }
-    refresh_needed = TRUE;
-  }
-  lastmessage = VACUUM;
-  currmenu    = MMOST;
-  titlebar(NULL);
-}
+// void do_linter(void) {
+//   char       *lintings, *pointer, *onelint;
+//   long        pipesize;
+//   Ulong       buffersize, bytesread, totalread;
+//   bool        parsesuccess, helpless;
+//   int         lint_status, lint_fd[2];
+//   pid_t       pid_lint;
+//   lintstruct *lints, *tmplint, *curlint;
+//   time_t      last_wait;
+//   parsesuccess = FALSE;
+//   helpless     = ISSET(NO_HELP);
+//   lints        = NULL;
+//   tmplint      = NULL;
+//   curlint      = NULL;
+//   last_wait    = 0;
+//   ran_a_tool   = TRUE;
+//   if (in_restricted_mode()) {
+//     return;
+//   }
+//   if (!openfile->syntax || !openfile->syntax->linter || !*openfile->syntax->linter) {
+//     statusline(AHEM, _("No linter is defined for this type of file"));
+//     return;
+//   }
+//   openfile->mark = NULL;
+//   edit_refresh();
+//   if (openfile->modified) {
+//     int choice = ask_user(YESORNO, _("Save modified buffer before linting?"));
+//     if (choice == CANCEL) {
+//       statusbar_all(_("Cancelled"));
+//       return;
+//     }
+//     else if (choice == YES && (write_it_out(FALSE, FALSE) != 1)) {
+//       return;
+//     }
+//   }
+//   /* Create a pipe up front. */
+//   if (pipe(lint_fd) == -1) {
+//     statusline(ALERT, _("Could not create pipe: %s"), strerror(errno));
+//     return;
+//   }
+//   blank_bottombars();
+//   currmenu = MLINTER;
+//   statusbar_all(_("Invoking linter..."));
+//   /* Fork a process to run the linter in. */
+//   if ((pid_lint = fork()) == 0) {
+//     char **lintargs = NULL;
+//     /* Redirect standard output and standard error into the pipe. */
+//     if (dup2(lint_fd[1], STDOUT_FILENO) < 0) {
+//       exit(7);
+//     }
+//     if (dup2(lint_fd[1], STDERR_FILENO) < 0) {
+//       exit(8);
+//     }
+//     close(lint_fd[0]);
+//     close(lint_fd[1]);
+//     construct_argument_list(&lintargs, openfile->syntax->linter, openfile->filename);
+//     /* Start the linter program; we are using $PATH. */
+//     execvp(lintargs[0], lintargs);
+//     /* This is only reached when the linter is not found. */
+//     exit(9);
+//   }
+//   /* Parent continues here. */
+//   close(lint_fd[1]);
+//   /* If the child process was not forked successfully... */
+//   if (pid_lint < 0) {
+//     statusline(ALERT, _("Could not fork: %s"), strerror(errno));
+//     close(lint_fd[0]);
+//     return;
+//   }
+//   /* Get the system pipe buffer size. */
+//   pipesize = fpathconf(lint_fd[0], _PC_PIPE_BUF);
+//   if (pipesize < 1) {
+//     statusline(ALERT, _("Could not get size of pipe buffer"));
+//     close(lint_fd[0]);
+//     return;
+//   }
+//   /* Block resizing signals while reading from the pipe. */
+//   block_sigwinch(TRUE);
+//   /* Read in the returned syntax errors. */
+//   totalread  = 0;
+//   buffersize = (pipesize + 1);
+//   lintings   = (char *)nmalloc(buffersize);
+//   pointer    = lintings;
+//   while ((bytesread = read(lint_fd[0], pointer, pipesize)) > 0) {
+//     totalread += bytesread;
+//     buffersize += pipesize;
+//     lintings = (char *)nrealloc(lintings, buffersize);
+//     pointer  = lintings + totalread;
+//   }
+//   *pointer = '\0';
+//   close(lint_fd[0]);
+//   block_sigwinch(FALSE);
+//   pointer = lintings;
+//   onelint = lintings;
+//   /* Now parse the output of the linter. */
+//   while (*pointer) {
+//     if ((*pointer == '\r') || (*pointer == '\n')) {
+//       *pointer = '\0';
+//       if (onelint != pointer) {
+//         char *filename, *linestring, *colstring;
+//         char *complaint = copy_of(onelint);
+//         char *spacer    = strstr(complaint, " ");
+//         /* The recognized format is "filename:line:column: message", where ":column" may be absent or be ",column" instead. */
+//         if ((filename = strtok(onelint, ":")) && spacer) {
+//           if ((linestring = strtok(NULL, ":"))) {
+//             if ((colstring = strtok(NULL, " "))) {
+//               long linenumber = strtol(linestring, NULL, 10);
+//               long colnumber  = strtol(colstring, NULL, 10);
+//               if (linenumber <= 0) {
+//                 free(complaint);
+//                 ++pointer;
+//                 continue;
+//               }
+//               if (colnumber <= 0) {
+//                 colnumber = 1;
+//                 strtok(linestring, ",");
+//                 if ((colstring = strtok(NULL, ","))) {
+//                   colnumber = strtol(colstring, NULL, 10);
+//                 }
+//               }
+//               parsesuccess  = TRUE;
+//               tmplint       = curlint;
+//               curlint       = (lintstruct *)nmalloc(sizeof(lintstruct));
+//               curlint->next = NULL;
+//               curlint->prev = tmplint;
+//               if (curlint->prev != NULL) {
+//                 curlint->prev->next = curlint;
+//               }
+//               curlint->filename = copy_of(filename);
+//               curlint->lineno   = linenumber;
+//               curlint->colno    = colnumber;
+//               curlint->msg      = copy_of(spacer + 1);
+//               if (lints == NULL) {
+//                 lints = curlint;
+//               }
+//             }
+//           }
+//         }
+//         free(complaint);
+//       }
+//       onelint = (pointer + 1);
+//     }
+//     ++pointer;
+//   }
+//   free(lintings);
+//   /* Process the end of the linting process. */
+//   waitpid(pid_lint, &lint_status, 0);
+//   if (!WIFEXITED(lint_status) || WEXITSTATUS(lint_status) > 2) {
+//     statusline(ALERT, _("Error invoking '%s'"), openfile->syntax->linter);
+//     return;
+//   }
+//   if (!parsesuccess) {
+//     statusline(REMARK, _("Got 0 parsable lines from command: %s"), openfile->syntax->linter);
+//     return;
+//   }
+//   if (helpless && LINES > 5) {
+//     UNSET(NO_HELP);
+//     if (ISSET(NO_NCURSES)) {
+//       window_init();
+//     }
+//     else {
+//       window_init();
+//     }
+//   }
+//   /* Show that we are in the linter now. */
+//   titlebar(NULL);
+//   bottombars(MLINTER);
+//   tmplint = NULL;
+//   curlint = lints;
+//   while (TRUE) {
+//     int kbinput;
+//     functionptrtype function;
+//     struct stat lintfileinfo;
+//     if (stat(curlint->filename, &lintfileinfo) != -1 && (!openfile->statinfo || openfile->statinfo->st_ino != lintfileinfo.st_ino)) {
+//       const openfilestruct *started_at = openfile;
+//       openfile = openfile->next;
+//       while (openfile != started_at && (!openfile->statinfo || openfile->statinfo->st_ino != lintfileinfo.st_ino)) {
+//         openfile = openfile->next;
+//       }
+//       if (!openfile->statinfo || openfile->statinfo->st_ino != lintfileinfo.st_ino) {
+//         char *msg = (char *)nmalloc(1024 + strlen(curlint->filename));
+//         sprintf(msg, _("This message is for unopened file %s, open it in a new buffer?"), curlint->filename);
+//         int choice = ask_user(YESORNO, msg);
+//         free(msg);
+//         currmenu = MLINTER;
+//         if (choice == CANCEL) {
+//           statusbar_all(_("Cancelled"));
+//           break;
+//         }
+//         else if (choice == YES) {
+//           open_buffer(curlint->filename, TRUE);
+//         }
+//         else {
+//           char *dontwantfile = copy_of(curlint->filename);
+//           lintstruct *restlint = NULL;
+//           while (curlint) {
+//             if (strcmp(curlint->filename, dontwantfile) == 0) {
+//               if (curlint == lints) {
+//                 lints = curlint->next;
+//               }
+//               else {
+//                 curlint->prev->next = curlint->next;
+//               }
+//               if (curlint->next) {
+//                 curlint->next->prev = curlint->prev;
+//               }
+//               tmplint = curlint;
+//               curlint = curlint->next;
+//               free(tmplint->msg);
+//               free(tmplint->filename);
+//               free(tmplint);
+//             }
+//             else {
+//               if (!restlint) {
+//                 restlint = curlint;
+//               }
+//               curlint = curlint->next;
+//             }
+//           }
+//           free(dontwantfile);
+//           if (!restlint) {
+//             statusline(REMARK, _("No messages for this file"));
+//             break;
+//           }
+//           else {
+//             curlint = restlint;
+//             continue;
+//           }
+//         }
+//       }
+//     }
+//     if (tmplint != curlint) {
+//       /* Put the cursor at the reported position, but don't go beyond EOL
+//        * when the second number is a column number instead of an index. */
+//       goto_line_posx(curlint->lineno, (curlint->colno - 1));
+//       openfile->current_x = actual_x(openfile->current->data, openfile->placewewant);
+//       titlebar(NULL);
+//       adjust_viewport(CENTERING);
+//       confirm_margin();
+//       edit_refresh();
+//       statusline(NOTICE, "%s", curlint->msg);
+//       bottombars(MLINTER);
+//     }
+//     /* Place the cursor to indicate the affected line. */
+//     place_the_cursor();
+//     wnoutrefresh(midwin);
+//     kbinput = get_kbinput(footwin, VISIBLE);
+//     if (kbinput == KEY_WINCH) {
+//       continue;
+//     }
+//     function = func_from_key(kbinput);
+//     tmplint  = curlint;
+//     if (function == do_cancel || function == do_enter) {
+//       wipe_statusbar();
+//       break;
+//     }
+//     else if (function == do_help) {
+//       tmplint = NULL;
+//       do_help();
+//     }
+//     else if (function == do_page_up || function == to_prev_block) {
+//       if (curlint->prev != NULL) {
+//         curlint = curlint->prev;
+//       }
+//       else if (last_wait != time(NULL)) {
+//         statusbar_all(_("At first message"));
+//         beep();
+//         napms(600);
+//         last_wait = time(NULL);
+//         statusline(NOTICE, "%s", curlint->msg);
+//       }
+//     }
+//     else if (function == do_page_down || function == to_next_block) {
+//       if (curlint->next) {
+//         curlint = curlint->next;
+//       }
+//       else if (last_wait != time(NULL)) {
+//         statusbar_all(_("At last message"));
+//         beep();
+//         napms(600);
+//         last_wait = time(NULL);
+//         statusline(NOTICE, "%s", curlint->msg);
+//       }
+//     }
+//     else {
+//       beep();
+//     }
+//   }
+//   for (curlint = lints; curlint;) {
+//     tmplint = curlint;
+//     curlint = curlint->next;
+//     free(tmplint->msg);
+//     free(tmplint->filename);
+//     free(tmplint);
+//   }
+//   if (helpless) {
+//     SET(NO_HELP);
+//     if (ISSET(NO_NCURSES)) {
+//       window_init();
+//     }
+//     else {
+//       window_init();
+//     }
+//     refresh_needed = TRUE;
+//   }
+//   lastmessage = VACUUM;
+//   currmenu    = MMOST;
+//   titlebar(NULL);
+// }
 
 /* Run a manipulation program on the contents of the buffer. */
 // void do_formatter(void) {
