@@ -3820,6 +3820,70 @@ void do_full_justify(void) {
   CTX_CALL(do_full_justify_for);
 }
 
+/* ----------------------------- Do linter ----------------------------- */
+
+// void do_linter_for(CTX_ARGS, const char *const restrict linter) {
+//   ASSERT(file);
+//   char *lintings;
+//   char *pointer;
+//   char *onelint;
+//   char *filename;
+//   char *linestring;
+//   char *colstring;
+//   char *complaint;
+//   char *spacer;
+//   char *dontwantfile;
+//   char **lintargs;
+//   int choice;
+//   int kbinput;
+//   int lint_status;
+//   int lint_fd[2];
+//   functionptrtype function;
+//   struct stat info;
+//   const openfilestruct *started_at;
+//   long pipesize;
+//   Ulong bufsize;
+//   Ulong bytesread;
+//   Ulong totalread = 0;
+//   pid_t pid_lint;
+//   lintstruct *lints   = NULL;
+//   lintstruct *tmplint = NULL;
+//   lintstruct *curlint = NULL;
+//   lintstruct *reslint = NULL;
+//   time_t last_wait  = 0;
+//   bool parsesuccess = FALSE;
+//   bool helpless     = ISSET(NO_HELP);
+//   ran_a_tool = TRUE;
+//   /* Do not allow this to perform any actions in restricted-mode, or when not in curses-mode (for now). */
+//   if (in_restricted_mode() || !IN_CURSES_CTX) {
+//     return;
+//   }
+//   /* If the linter passed is not a valid string, or its empty inform the user and return. */
+//   if (!linter || !*linter) {
+//     statusline(AHEM, _("No linter is defined for this type of file"));
+//     return;
+//   }
+//   file->mark = NULL;
+//   edit_refresh_for(STACK_CTX);
+//   if (file->modified) {
+//     choice = ask_user(YESORNO, _("Save modified buffer before linting?"));
+//     if (choice == CANCEL) {
+//       statusbar_all(_("Cancelled"));
+//       return;
+//     }
+//     else if (choice == YES && write_it_out_for(file, FALSE, FALSE) != 1) {
+//       return;
+//     }
+//   }
+//   /* Create a pipe up front...like always before using it... */
+//   if (pipe(lint_fd) == -1) {
+//     statusline(ALERT, _("Could not create pipe: %s"), strerror(errno));
+//     return;
+//   }
+//   blank_bottombars();
+//   currmenu = MLINTER;
+// }
+
 /* ----------------------------- Find paragraph ----------------------------- */
 
 /* Find the first occurring paragraph in the forward direction.  Return `TRUE` when a paragraph was found,
@@ -4060,7 +4124,7 @@ bool tab_helper(openfilestruct *const file) {
     indent = indent_length(line->data);
     data   = line_indent_plus_tab(line->data, &full_length);
     /* If there is no indent for the given line, or we are already past the full length, just return false. */
-    if (!indent || file->current_x >= full_length) {
+    if (file->current_x >= full_length) {
       free(data);
       return FALSE;
     }
