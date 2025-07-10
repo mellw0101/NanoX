@@ -47,6 +47,7 @@ extern bool bracketed_paste;
 extern bool keep_cutbuffer;
 extern bool ran_a_tool;
 extern bool last_key_was_bracket;
+extern bool ignore_rcfiles;
 
 extern char *word_chars;
 extern char *whitespace;
@@ -580,6 +581,7 @@ bool tab_helper(openfilestruct *const file);
 /* ---------------------------------------------------------- arg.c ---------------------------------------------------------- */
 
 
+/* ----------------------------- Arguments proccess flags ----------------------------- */
 void arguments_proccess_flags(int *const argc, char **argv);
 
 
@@ -1546,6 +1548,8 @@ void close_and_go_for(openfilestruct **const start, openfilestruct **const open,
 void close_and_go(void);
 /* ----------------------------- Die ----------------------------- */
 void die(const char *const restrict format, ...) _NO_RETURN;
+/* ----------------------------- Version ----------------------------- */
+void version(void) _NO_RETURN;
 
 
 /* ---------------------------------------------------------- Defined in C++ ---------------------------------------------------------- */

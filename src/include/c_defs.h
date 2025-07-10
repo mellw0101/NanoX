@@ -5,6 +5,7 @@
 
 #include <stdbool.h>
 #include "../../config.h"
+#include "revision.h"
 
 #include "c/ascii_defs.h"
 #include <fcio/proto.h>
@@ -1085,6 +1086,44 @@ typedef enum {
 # define USING_GUI                      USING_GUI
 # define NO_NCURSES                     NO_NCURSES
 } flag_type;
+
+/* Identifiers for command line options. */
+typedef enum {
+  CLIOPT_IGNORERCFILE,
+  CLIOPT_VERSION,
+  CLIOPT_HELP,
+  CLIOPT_SYNTAX,
+  CLIOPT_RCFILE,
+  CLIOPT_GUIDESTRIPE,
+  CLIOPT_WORDCHARS,
+  CLIOPT_TABSIZE,
+  CLIOPT_OPERATINGDIR,
+  CLIOPT_FILL,
+  CLIOPT_SPELLER,
+  CLIOPT_LISTSYNTAX,
+  CLIOPT_BACKUPDIR,
+  CLIOPT_BREAKLONGLINES,
+  CLIOPT_GUI,
+  CLIOPT_SAFE,
+  CLIOPT_TEST,
+# define CLIOPT_IGNORERCFILE    CLIOPT_IGNORERCFILE
+# define CLIOPT_VERSION         CLIOPT_VERSION
+# define CLIOPT_HELP            CLIOPT_HELP
+# define CLIOPT_SYNTAX          CLIOPT_SYNTAX
+# define CLIOPT_RCFILE          CLIOPT_RCFILE
+# define CLIOPT_GUIDESTRIPE     CLIOPT_GUIDESTRIPE
+# define CLIOPT_WORDCHARS       CLIOPT_WORDCHARS
+# define CLIOPT_TABSIZE         CLIOPT_TABSIZE
+# define CLIOPT_OPERATINGDIR    CLIOPT_OPERATINGDIR
+# define CLIOPT_FILL            CLIOPT_FILL
+# define CLIOPT_SPELLER         CLIOPT_SPELLER
+# define CLIOPT_LISTSYNTAX      CLIOPT_LISTSYNTAX
+# define CLIOPT_BACKUPDIR       CLIOPT_BACKUPDIR
+# define CLIOPT_BREAKLONGLINES  CLIOPT_BREAKLONGLINES
+# define CLIOPT_GUI             CLIOPT_GUI
+# define CLIOPT_SAFE            CLIOPT_SAFE
+# define CLIOPT_TEST            CLIOPT_TEST
+} cliopt_type;
 
 typedef enum {
   TITLE_BAR = 0,

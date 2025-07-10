@@ -72,6 +72,8 @@ bool keep_cutbuffer = FALSE;
 bool ran_a_tool = FALSE;
 /* If closing bracket char was printed then this is TRUE until another key input has been prossesed. */
 bool last_key_was_bracket = FALSE;
+/* Whether to ignore the nanoxrc files. */
+bool ignore_rcfiles = FALSE;
 
 /* ----------------------------- char * ----------------------------- */
 

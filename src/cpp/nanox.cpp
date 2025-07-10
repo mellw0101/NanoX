@@ -540,19 +540,19 @@ static void _NO_RETURN usage(void) {
 
 /* Display the version number of this nano, a copyright notice, some contact
  * information, and the configuration options this nano was compiled with. */
-static void _NO_RETURN version(void) _NOTHROW {
-  printf(_(" NanoX, version %s\n"), VERSION);
-  printf(" 'NanoX %s' is a Fork of 'GNU nano v8.0-44-gef1c9b9f' from git source code.\n"
-         "  converted into C++, then converted back into c.\n", REVISION);
-  /* TRANSLATORS: The %s is the year of the latest release. */
-  printf(_(" (C) %s the Free Software Foundation and various contributors\n"), "2024");
-#ifdef DEBUG
-  printf(_(" Compiled options:"));
-  printf(" --enable-debug");
-#endif
-  printf("\n");
-  exit(0);
-}
+// static void _NO_RETURN version(void) _NOTHROW {
+//   printf(_(" NanoX, version %s\n"), VERSION);
+//   printf(" 'NanoX %s' is a Fork of 'GNU nano v8.0-44-gef1c9b9f' from git source code.\n"
+//          "  converted into C++, then converted back into c.\n", REVISION);
+//   /* TRANSLATORS: The %s is the year of the latest release. */
+//   printf(_(" (C) %s the Free Software Foundation and various contributors\n"), "2024");
+// #ifdef DEBUG
+//   printf(_(" Compiled options:"));
+//   printf(" --enable-debug");
+// #endif
+//   printf("\n");
+//   exit(0);
+// }
 
 /* List the names of the available syntaxes. */
 static void list_syntax_names(void) _NOTHROW {
@@ -1602,7 +1602,7 @@ int main(int argc, char **argv) {
   init_cfg();
   // set_c_die_callback(die);
   int  stdin_flags;
-  bool ignore_rcfiles = FALSE; /* Whether to ignore the nanorc files. */
+  // bool ignore_rcfiles = FALSE; /* Whether to ignore the nanorc files. */
   bool fill_used      = FALSE; /* Was the fill option used on the command line? */
   int  hardwrap       = -2;    /* Becomes 0 when --nowrap and 1 when --breaklonglines is used. */
   int  quoterc;                /* Whether the quoting regex was compiled successfully. */
@@ -2045,11 +2045,11 @@ int main(int argc, char **argv) {
     }
     else {
       /* Consume any flags in cmd line. */
-      const Uint flag = retriveFlagFromStr(argv[optind]);
-      if (flag) {
-        ++optind;
-        continue;
-      }
+      // const Uint flag = retriveFlagFromStr(argv[optind]);
+      // if (flag) {
+      //   ++optind;
+      //   continue;
+      // }
       /* Consume any options in cmd line. */
       const Uint cliCmd = retriveCliOptionFromStr(argv[optind]);
       if (cliCmd) {
