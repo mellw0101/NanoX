@@ -1069,3 +1069,4 @@ void version(void) {
   writef("\n");
   exit(0);
 }
+

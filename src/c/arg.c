@@ -199,174 +199,195 @@ static void consume_argument(int *const argc, char **argv, int i) {
   --(*argc);
 }
 
+/* ----------------------------- Not a flag ----------------------------- */
+
+/* Returns `TRUE` when `value` is not a flag.  Otherwise, this will print an error and terminate. */
+static bool not_a_flag(const char *const restrict value, const char *const restrict requesting_flag) {
+  ASSERT(flagmap);
+  ASSERT(clioptmap);
+  ASSERT(value);
+  ASSERT(requesting_flag);
+  if (hashmap_get(flagmap, value) || hashmap_get(clioptmap, value)) {
+    fprintf(stderr, _("The argument `%s` needs a value\n"), requesting_flag);
+    exit(1);
+  }
+  else {
+    return TRUE;
+  }
+}
+
+/* ----------------------------- Has next argument ----------------------------- */
+
+/* Returns `TRUE` when the argument at index `i` is not the last
+ * argument.  Otherwise, this will print a message and terminate. */
+static bool has_next_argument(int i, int argc, const char *const restrict requesting_flag) {
+  ASSERT(requesting_flag);
+  if ((i + 1) >= argc) {
+    fprintf(stderr, _("The argument `%s` needs a value\n"), requesting_flag);
+    exit(1);
+  }
+  else {
+    return TRUE;
+  }
+}
+
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
-/* ----------------------------- Arguments proccess flags ----------------------------- */
+/* ----------------------------- Proccess cli arguments ----------------------------- */
 
-/* Set flags based on the passed arguments, while consuming all arguments that are flag related. */
-void arguments_proccess_flags(int *const argc, char **argv) {
+/* Process all command line arguments, and consume and correct check all parsed options. */
+void proccess_cli_arguments(int *const argc, char **argv) {
   ASSERT(argc);
   ASSERT(argv);
-  /* A ptr containing the flag.  */
+  /* A ptr containing the flag value of a successfully parsed flag opt. */
   flag_type *fptr;
-  /* Only perform any action when there are actual arguments. */
+  /* A ptr containing the flag value of a successfully parsed flag opt. */
+  cliopt_type *cptr;
   if (*argc > 1) {
     flagmap_create();
+    clioptmap_create();
     for (int i=1; i<(*argc); ++i) {
       fptr = hashmap_get(flagmap, argv[i]);
       /* If the passed argument has some flag value. */
       if (fptr) {
         /* Set tha value its pointing to. */
         SET(*fptr);
-        /* And comsume the argument. */
-        memmove((argv + i), (argv + i + 1), ((*argc - i - 1) * _PTRSIZE));
-        --i;
-        --(*argc);
+        consume_argument(argc, argv, i--);
       }
-    }
-    flagmap_free();
-  }
-}
-
-/* ----------------------------- Arguments proccess cliopts ----------------------------- */
-
-void arguments_proccess_cliopts(int *const argc, char **argv) {
-  ASSERT(argc);
-  ASSERT(argv);
-  cliopt_type *c;
-  /* Only perform any action when there is actualy arguments. */
-  if (*argc > 1) {
-    clioptmap_create();
-    for (int i=1; i<(*argc); ++i) {
-      c = hashmap_get(clioptmap, argv[i]);
-      if (c) {
-        switch (*c) {
-          case CLIOPT_IGNORERCFILE: {
-            ignore_rcfiles = TRUE;
-            consume_argument(argc, argv, i--);
-            break;
-          }
-          case CLIOPT_VERSION: {
-            version();
-          }
-          case CLIOPT_HELP: {
-            usage();
-          }
-          case CLIOPT_SYNTAX: {
-            if ((i + 1) < *argc) {
-              syntaxstr = xstrcpy(syntaxstr, argv[i + 1]);
-              consume_argument(argc, argv, i);
+      /* Otherwise, check for cli options with or without arguments. */
+      else {
+        cptr = hashmap_get(clioptmap, argv[i]);
+        if (cptr) {
+          switch (*cptr) {
+            case CLIOPT_IGNORERCFILE: {
+              ignore_rcfiles = TRUE;
+              consume_argument(argc, argv, i--);
+              break;
             }
-            consume_argument(argc, argv, i--);
-            break;
-          }
-          case CLIOPT_WORDCHARS: {
-            if ((i + 1) < *argc) {
-              word_chars = xstrcpy(word_chars, argv[i + 1]);
-              consume_argument(argc, argv, i);
+            case CLIOPT_VERSION: {
+              version();
             }
-            consume_argument(argc, argv, i--);
-            break;
-          }
-          case CLIOPT_RCFILE: {
-            if ((i + 1) < *argc) {
-              custom_nanorc = xstrcpy(custom_nanorc, argv[i + 1]);
-              consume_argument(argc, argv, i);
+            case CLIOPT_HELP: {
+              usage();
             }
-            consume_argument(argc, argv, i--);
-            break;
-          }
-          case CLIOPT_BREAKLONGLINES: {
-            hardwrap = 1;
-            break;
-          }
-          case CLIOPT_SPELLER: {
-            if ((i + 1) < *argc) {
-              alt_speller = xstrcpy(alt_speller, argv[i + 1]);
-              consume_argument(argc, argv, i);
-            }
-            consume_argument(argc, argv, i--);
-            break;
-          }
-          case CLIOPT_OPERATINGDIR: {
-            if ((i + 1) < *argc) {
-              operating_dir = xstrcpy(operating_dir, argv[i + 1]);
-              consume_argument(argc, argv, i);
-            }
-            consume_argument(argc, argv, i--);
-            break;
-          }
-          case CLIOPT_TABSIZE: {
-            if ((i + 1) < *argc) {
-              if (!parse_num(argv[i + 1], &tabsize) || tabsize <= 0) {
-                fprintf(stderr, _("Requested tab size \"%s\" is invalid\n"), argv[i + 1]);
-                exit(1);
-              }
-              else {
+            case CLIOPT_SYNTAX: {
+              if (has_next_argument(i, *argc, argv[i]) && not_a_flag(argv[i + 1], argv[i])) {
+                syntaxstr = xstrcpy(syntaxstr, argv[i + 1]);
                 consume_argument(argc, argv, i);
               }
+              consume_argument(argc, argv, i--);
+              break;
             }
-            consume_argument(argc, argv, i--);
-            break;
-          }
-          case CLIOPT_FILL: {
-            if ((i + 1) < *argc) {
-              if (!parse_num(argv[i + 1], &fill) || fill <= 0) {
-                fprintf(stderr, _("Requested fill size \"%s\" is invalid\n"), argv[i + 1]);
-                exit(1);
-              }
-              else {
-                fill_used = TRUE;
+            case CLIOPT_WORDCHARS: {
+              if (has_next_argument(i, *argc, argv[i]) && not_a_flag(argv[i + 1], argv[i])) {
+                word_chars = xstrcpy(word_chars, argv[i + 1]);
                 consume_argument(argc, argv, i);
               }
+              consume_argument(argc, argv, i--);
+              break;
             }
-            consume_argument(argc, argv, i--);
-            break;
-          }
-          case CLIOPT_LISTSYNTAX: {
-            /* No-op for now. */
-            break;
-          }
-          case CLIOPT_BACKUPDIR: {
-            if ((i + 1) < *argc) {
-              backup_dir = xstrcpy(backup_dir, argv[i + 1]);
-              consume_argument(argc, argv, i);
-            }
-            consume_argument(argc, argv, i--);
-            break;
-          }
-          case CLIOPT_GUIDESTRIPE: {
-            if ((i + 1) < *argc) {
-              if (!parse_num(argv[i + 1], &stripe_column) || stripe_column <= 0) {
-                fprintf(stderr, _("Guide column \"%s\" is invalid\n"), argv[i + 1]);
-                exit(1);
-              }
-              else {
+            case CLIOPT_RCFILE: {
+              if (has_next_argument(i, *argc, argv[i]) && not_a_flag(argv[i + 1], argv[i])) {
+                custom_nanorc = xstrcpy(custom_nanorc, argv[i + 1]);
                 consume_argument(argc, argv, i);
               }
+              consume_argument(argc, argv, i--);
+              break;
             }
-            break;
-          }
-          case CLIOPT_GUI: {
-            SET(USING_GUI);
-            consume_argument(argc, argv, i--);
-            break;
-          }
-          case CLIOPT_SAFE: {
-            UNSET(EXPERIMENTAL_FAST_LIVE_SYNTAX);
-            consume_argument(argc, argv, i--);
-            break;
-          }
-          case CLIOPT_TEST: {
-            SET(NO_NCURSES);
-            consume_argument(argc, argv, i--);
-            break;
+            case CLIOPT_BREAKLONGLINES: {
+              hardwrap = 1;
+              break;
+            }
+            case CLIOPT_SPELLER: {
+              if (has_next_argument(i, *argc, argv[i]) && not_a_flag(argv[i + 1], argv[i])) {
+                alt_speller = xstrcpy(alt_speller, argv[i + 1]);
+                consume_argument(argc, argv, i);
+              }
+              consume_argument(argc, argv, i--);
+              break;
+            }
+            case CLIOPT_OPERATINGDIR: {
+              if (has_next_argument(i, *argc, argv[i]) && not_a_flag(argv[i + 1], argv[i])) {
+                operating_dir = xstrcpy(operating_dir, argv[i + 1]);
+                consume_argument(argc, argv, i);
+              }
+              consume_argument(argc, argv, i--);
+              break;
+            }
+            case CLIOPT_TABSIZE: {
+              if (has_next_argument(i, *argc, argv[i]) && not_a_flag(argv[i + 1], argv[i])) {
+                if (!parse_num(argv[i + 1], &tabsize) || tabsize <= 0) {
+                  fprintf(stderr, _("Requested tab size \"%s\" is invalid\n"), argv[i + 1]);
+                  exit(1);
+                }
+                else {
+                  consume_argument(argc, argv, i);
+                }
+              }
+              consume_argument(argc, argv, i--);
+              break;
+            }
+            case CLIOPT_FILL: {
+              if (has_next_argument(i, *argc, argv[i]) && not_a_flag(argv[i + 1], argv[i])) {
+                if (!parse_num(argv[i + 1], &fill) || fill <= 0) {
+                  fprintf(stderr, _("Requested fill size \"%s\" is invalid\n"), argv[i + 1]);
+                  exit(1);
+                }
+                else {
+                  fill_used = TRUE;
+                  consume_argument(argc, argv, i);
+                }
+              }
+              consume_argument(argc, argv, i--);
+              break;
+            }
+            case CLIOPT_LISTSYNTAX: {
+              /* No-op for now. */
+              consume_argument(argc, argv, i--);
+              break;
+            }
+            case CLIOPT_BACKUPDIR: {
+              if (has_next_argument(i, *argc, argv[i]) && not_a_flag(argv[i + 1], argv[i])) {
+                backup_dir = xstrcpy(backup_dir, argv[i + 1]);
+                consume_argument(argc, argv, i);
+              }
+              consume_argument(argc, argv, i--);
+              break;
+            }
+            case CLIOPT_GUIDESTRIPE: {
+              if (has_next_argument(i, *argc, argv[i]) && not_a_flag(argv[i + 1], argv[i])) {
+                if (!parse_num(argv[i + 1], &stripe_column) || stripe_column <= 0) {
+                  fprintf(stderr, _("Guide column \"%s\" is invalid\n"), argv[i + 1]);
+                  exit(1);
+                }
+                else {
+                  consume_argument(argc, argv, i);
+                }
+              }
+              break;
+            }
+            case CLIOPT_GUI: {
+              SET(USING_GUI);
+              consume_argument(argc, argv, i--);
+              break;
+            }
+            case CLIOPT_SAFE: {
+              UNSET(EXPERIMENTAL_FAST_LIVE_SYNTAX);
+              consume_argument(argc, argv, i--);
+              break;
+            }
+            case CLIOPT_TEST: {
+              SET(NO_NCURSES);
+              consume_argument(argc, argv, i--);
+              break;
+            }
           }
         }
       }
     }
+    flagmap_free();
     clioptmap_free();
   }
 }

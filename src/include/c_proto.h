@@ -583,10 +583,8 @@ bool tab_helper(openfilestruct *const file);
 /* ---------------------------------------------------------- arg.c ---------------------------------------------------------- */
 
 
-/* ----------------------------- Arguments proccess flags ----------------------------- */
-void arguments_proccess_flags(int *const argc, char **argv);
-/* ----------------------------- Arguments proccess cliopts ----------------------------- */
-void arguments_proccess_cliopts(int *const argc, char **argv);
+/* ----------------------------- Proccess cli arguments ----------------------------- */
+void proccess_cli_arguments(int *const argc, char **argv);
 
 
 /* ---------------------------------------------------------- suggestion.c ---------------------------------------------------------- */

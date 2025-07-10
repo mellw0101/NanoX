@@ -1646,8 +1646,9 @@ int main(int argc, char **argv) {
   if (*(tail(argv[0])) == 'r') {
     SET(RESTRICTED);
   }
-  arguments_proccess_flags(&argc, argv);
-  arguments_proccess_cliopts(&argc, argv);
+  proccess_cli_arguments(&argc, argv);
+  // arguments_proccess_flags(&argc, argv);
+  // arguments_proccess_cliopts(&argc, argv);
   /* Check for cmd flags. */
   // for (int i = 1; i < argc; ++i) {
   //   // const Uint flag = retriveFlagFromStr(argv[i]);
