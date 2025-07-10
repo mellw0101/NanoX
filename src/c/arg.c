@@ -137,22 +137,18 @@ static void flagmap_free(void) {
 
 
 /*  */
-void arguments_proccess_flags(int argc, char **argv) {
+void arguments_proccess_flags(int *const argc, char **argv) {
   ASSERT(argv);
   /* A ptr containing the flag.  */
   flag_type *fptr;
   flagmap_create();
-  for (int i=argc; i<argc; ++i) {
+  for (int i=0; i<(*argc); ++i) {
     fptr = hashmap_get(flagmap, argv[i]);
     if (fptr) {
-      switch (*fptr) {
-        case SMART_HOME: {
-          break;
-        }
-        default: {
-          break;
-        }
-      }
+      SET(*fptr);
+      memmove((argv + i), (argv + i + 1), ((*argc - i - 1) * _PTRSIZE));
+      --i;
+      --(*argc);
     }
   }
   flagmap_free();
