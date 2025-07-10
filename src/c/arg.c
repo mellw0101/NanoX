@@ -85,8 +85,6 @@ static void flagmap_create(void) {
   flagmap_entry_add(     "--emptyline", EMPTY_LINE     );
   flagmap_entry_add(              "-g", SHOW_CURSOR    );
   flagmap_entry_add(    "--showcursor", SHOW_CURSOR    );
-  flagmap_entry_add(              "-h", NO_HELP        );
-  flagmap_entry_add(          "--help", NO_HELP        );
   flagmap_entry_add(              "-i", AUTOINDENT     );
   flagmap_entry_add(    "--autoindent", AUTOINDENT     );
   flagmap_entry_add(              "-j", JUMPY_SCROLLING);

@@ -1059,8 +1059,9 @@ void version(void) {
   writef(_("NanoX (nx), version %s\n"), VERSION);
   writef("  'NanoX %s' is a fork of `GNU nano v8.0-44-gef1c9b9f` from git source code.\n", REVISION);
   writef("  First converted from 'C' into 'C++', and modernized to include mush more\n");
-  writef("  modern features, sush as (whole line moving / selection region moving),");
-  writef("  mush better mark state tracking, and also a new openGL based gui and mush more.");
+  writef("  modern features, sush as (whole line moving / selection region moving),\n");
+  writef("  mush better mark state tracking, and also a new openGL based gui and mush more.\n");
+  writef("  Then converted back into 'C' once again.\n");
   writef(_("  (C) %s the Free Software Foundation and various contributors\n"), "2024");
 # ifdef DEBUG
   writef(_("  Compiled options:"));
