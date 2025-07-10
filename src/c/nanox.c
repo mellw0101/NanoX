@@ -1071,3 +1071,38 @@ void version(void) {
   exit(0);
 }
 
+/* ----------------------------- Usage ----------------------------- */
+
+void usage(void) {
+  writef(_("Usage: %s [OPTIONS] [[+LINE[,COLUMN]] FILE]...\n\n"));
+  /* TRANSLARORS: The next two strings are part of the --help
+   * output.  It's best to keep it's lines within 80 characters. */
+  writef(_("To place the cursor on a specific line of a file, put the line number with\n"
+           "a '+' before the filename.  The column number can be added after a comma.\n"));
+  /* TRANSLATORS: Then next  */
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
