@@ -453,7 +453,7 @@ void do_exit(void) {
 // }
 
 /* Explain how to properly use NanoX and its command-line options. */
-static void _NO_RETURN usage(void) {
+void usage(void) {
   printf(_("Usage: %s [OPTIONS] [[+LINE[,COLUMN]] FILE]...\n\n"), PROJECT_NAME);
   /* TRANSLATORS: The next two strings are part of the --help output.
    * It's best to keep its lines within 80 characters. */
@@ -555,19 +555,19 @@ static void _NO_RETURN usage(void) {
 // }
 
 /* List the names of the available syntaxes. */
-static void list_syntax_names(void) _NOTHROW {
-  int width = 0;
-  printf(_("Available syntaxes:\n"));
-  for (syntaxtype *sntx = syntaxes; sntx; sntx = sntx->next) {
-    if (width > 45) {
-      printf("\n");
-      width = 0;
-    }
-    printf(" %s", sntx->name);
-    width += wideness(sntx->name, (45 * 4));
-  }
-  printf("\n");
-}
+// static void list_syntax_names(void) _NOTHROW {
+//   int width = 0;
+//   printf(_("Available syntaxes:\n"));
+//   for (syntaxtype *sntx = syntaxes; sntx; sntx = sntx->next) {
+//     if (width > 45) {
+//       printf("\n");
+//       width = 0;
+//     }
+//     printf(" %s", sntx->name);
+//     width += wideness(sntx->name, (45 * 4));
+//   }
+//   printf("\n");
+// }
 
 /* Register that Ctrl+C was pressed during some system call. */
 // static void make_a_note(int signal) _NOTHROW {
@@ -1603,8 +1603,8 @@ int main(int argc, char **argv) {
   // set_c_die_callback(die);
   int  stdin_flags;
   // bool ignore_rcfiles = FALSE; /* Whether to ignore the nanorc files. */
-  bool fill_used      = FALSE; /* Was the fill option used on the command line? */
-  int  hardwrap       = -2;    /* Becomes 0 when --nowrap and 1 when --breaklonglines is used. */
+  // bool fill_used      = FALSE; /* Was the fill option used on the command line? */
+  // int  hardwrap       = -2;    /* Becomes 0 when --nowrap and 1 when --breaklonglines is used. */
   int  quoterc;                /* Whether the quoting regex was compiled successfully. */
   vt_stat dummy;
   /* Check whether we're running on a Linux console. */
@@ -1647,78 +1647,79 @@ int main(int argc, char **argv) {
     SET(RESTRICTED);
   }
   arguments_proccess_flags(&argc, argv);
+  arguments_proccess_cliopts(&argc, argv);
   /* Check for cmd flags. */
-  for (int i = 1; i < argc; ++i) {
-    // const Uint flag = retriveFlagFromStr(argv[i]);
-    // flag ? SET(flag) : 0;
-    const Uint cliCmd = retriveCliOptionFromStr(argv[i]);
-    cliCmd &CLI_OPT_VERSION ? version() : void();
-    cliCmd &CLI_OPT_HELP ? usage() : void();
-    cliCmd &CLI_OPT_IGNORERCFILE ? ignore_rcfiles = TRUE : 0;
-    cliCmd &CLI_OPT_BACKUPDIR ? (i++ < argc) ? backup_dir = realloc_strcpy(backup_dir, argv[i]) : 0 : 0;
-    cliCmd &CLI_OPT_WORDCHARS ? (i++ < argc) ? word_chars = realloc_strcpy(word_chars, argv[i]) : 0 : 0;
-    cliCmd &CLI_OPT_SYNTAX ? (i++ < argc) ? syntaxstr = realloc_strcpy(syntaxstr, argv[i]) : 0 : 0;
-    cliCmd &CLI_OPT_RCFILE ? (i++ < argc) ? custom_nanorc = realloc_strcpy(custom_nanorc, argv[i]) : 0 : 0;
-    cliCmd &CLI_OPT_BREAKLONGLINES ? hardwrap = 1 : 0;
-    cliCmd &CLI_OPT_SPELLER ? (i++ < argc) ? alt_speller = realloc_strcpy(alt_speller, argv[i]) : 0 : 0;
-    cliCmd &CLI_OPT_SYNTAX ? (i++ < argc) ? syntaxstr = realloc_strcpy(syntaxstr, argv[i]) : 0 : 0;
-    if (cliCmd & CLI_OPT_OPERATINGDIR) {
-      if (++i < argc) {
-        operating_dir = realloc_strcpy(operating_dir, argv[i]);
-      }
-    }
-    if (cliCmd & CLI_OPT_LISTSYNTAX) {
-      if (!ignore_rcfiles) {
-        do_rcfiles();
-      }
-      if (syntaxes) {
-        list_syntax_names();
-      }
-      exit(0);
-    }
-    if (cliCmd & CLI_OPT_FILL) {
-      if (++i < argc) {
-        if (!parse_num(argv[i], &fill) || fill <= 0) {
-          fprintf(stderr, _("Requested fill size \"%s\" is invalid"), optarg);
-          fprintf(stderr, "\n");
-          exit(1);
-        }
-        fill_used = TRUE;
-      }
-    }
-    if (cliCmd & CLI_OPT_TABSIZE) {
-      if (++i < argc) {
-        if (!parse_num(argv[i], &tabsize) || tabsize <= 0) {
-          fprintf(stderr, _("Requested tab size \"%s\" is invalid"), argv[i]);
-          fprintf(stderr, "\n");
-          exit(1);
-        }
-        continue;
-      }
-    }
-    if (cliCmd & CLI_OPT_GUIDESTRIPE) {
-      if (++i < argc) {
-        if (!parse_num(argv[i], &stripe_column) || stripe_column <= 0) {
-          fprintf(stderr, _("Guide column \"%s\" is invalid"), optarg);
-          fprintf(stderr, "\n");
-          exit(1);
-        }
-      }
-    }
-    if (cliCmd & CLI_OPT_GUI) {
-    #ifdef HAVE_GLFW
-      SET(USING_GUI);
-    #else
-      die("NanoX was compiled without gui support.\n");
-    #endif
-    }
-    if (cliCmd & CLI_OPT_SAFE) {
-      UNSET(EXPERIMENTAL_FAST_LIVE_SYNTAX);
-    }
-    if (cliCmd & CLI_OPT_TEST) {
-      SET(NO_NCURSES);
-    }
-  }
+  // for (int i = 1; i < argc; ++i) {
+  //   // const Uint flag = retriveFlagFromStr(argv[i]);
+  //   // flag ? SET(flag) : 0;
+  //   const Uint cliCmd = retriveCliOptionFromStr(argv[i]);
+  //   cliCmd &CLI_OPT_VERSION ? version() : void();
+  //   cliCmd &CLI_OPT_HELP ? usage() : void();
+  //   cliCmd &CLI_OPT_IGNORERCFILE ? ignore_rcfiles = TRUE : 0;
+  //   cliCmd &CLI_OPT_BACKUPDIR ? (i++ < argc) ? backup_dir = realloc_strcpy(backup_dir, argv[i]) : 0 : 0;
+  //   cliCmd &CLI_OPT_WORDCHARS ? (i++ < argc) ? word_chars = realloc_strcpy(word_chars, argv[i]) : 0 : 0;
+  //   cliCmd &CLI_OPT_SYNTAX ? (i++ < argc) ? syntaxstr = realloc_strcpy(syntaxstr, argv[i]) : 0 : 0;
+  //   cliCmd &CLI_OPT_RCFILE ? (i++ < argc) ? custom_nanorc = realloc_strcpy(custom_nanorc, argv[i]) : 0 : 0;
+  //   cliCmd &CLI_OPT_BREAKLONGLINES ? hardwrap = 1 : 0;
+  //   cliCmd &CLI_OPT_SPELLER ? (i++ < argc) ? alt_speller = realloc_strcpy(alt_speller, argv[i]) : 0 : 0;
+  //   cliCmd &CLI_OPT_SYNTAX ? (i++ < argc) ? syntaxstr = realloc_strcpy(syntaxstr, argv[i]) : 0 : 0;
+  //   if (cliCmd & CLI_OPT_OPERATINGDIR) {
+  //     if (++i < argc) {
+  //       operating_dir = realloc_strcpy(operating_dir, argv[i]);
+  //     }
+  //   }
+  //   if (cliCmd & CLI_OPT_LISTSYNTAX) {
+  //     if (!ignore_rcfiles) {
+  //       do_rcfiles();
+  //     }
+  //     if (syntaxes) {
+  //       list_syntax_names();
+  //     }
+  //     exit(0);
+  //   }
+  //   if (cliCmd & CLI_OPT_FILL) {
+  //     if (++i < argc) {
+  //       if (!parse_num(argv[i], &fill) || fill <= 0) {
+  //         fprintf(stderr, _("Requested fill size \"%s\" is invalid"), optarg);
+  //         fprintf(stderr, "\n");
+  //         exit(1);
+  //       }
+  //       fill_used = TRUE;
+  //     }
+  //   }
+  //   if (cliCmd & CLI_OPT_TABSIZE) {
+  //     if (++i < argc) {
+  //       if (!parse_num(argv[i], &tabsize) || tabsize <= 0) {
+  //         fprintf(stderr, _("Requested tab size \"%s\" is invalid"), argv[i]);
+  //         fprintf(stderr, "\n");
+  //         exit(1);
+  //       }
+  //       continue;
+  //     }
+  //   }
+  //   if (cliCmd & CLI_OPT_GUIDESTRIPE) {
+  //     if (++i < argc) {
+  //       if (!parse_num(argv[i], &stripe_column) || stripe_column <= 0) {
+  //         fprintf(stderr, _("Guide column \"%s\" is invalid"), optarg);
+  //         fprintf(stderr, "\n");
+  //         exit(1);
+  //       }
+  //     }
+  //   }
+  //   if (cliCmd & CLI_OPT_GUI) {
+  //   #ifdef HAVE_GLFW
+  //     SET(USING_GUI);
+  //   #else
+  //     die("NanoX was compiled without gui support.\n");
+  //   #endif
+  //   }
+  //   if (cliCmd & CLI_OPT_SAFE) {
+  //     UNSET(EXPERIMENTAL_FAST_LIVE_SYNTAX);
+  //   }
+  //   if (cliCmd & CLI_OPT_TEST) {
+  //     SET(NO_NCURSES);
+  //   }
+  // }
   /* Curses needs TERM; if it is unset, try falling back to a VT220. */
   if (!getenv("TERM")) {
     putenv((char *)"TERM=vt220");
@@ -2051,16 +2052,16 @@ int main(int argc, char **argv) {
       //   continue;
       // }
       /* Consume any options in cmd line. */
-      const Uint cliCmd = retriveCliOptionFromStr(argv[optind]);
-      if (cliCmd) {
-        if (cliCmd & CLI_OPT_GUI || cliCmd & CLI_OPT_SAFE || cliCmd & CLI_OPT_TEST) {
-          optind += 1;
-        }
-        else {
-          optind += 2;
-        }
-        continue;
-      }
+      // const Uint cliCmd = retriveCliOptionFromStr(argv[optind]);
+      // if (cliCmd) {
+      //   if (cliCmd & CLI_OPT_GUI || cliCmd & CLI_OPT_SAFE || cliCmd & CLI_OPT_TEST) {
+      //     optind += 1;
+      //   }
+      //   else {
+      //     optind += 2;
+      //   }
+      //   continue;
+      // }
       char *filename = argv[optind++];
       struct stat fileinfo;
       /* If the filename contains a colon and this file does not exist, then check if the filename ends with digits

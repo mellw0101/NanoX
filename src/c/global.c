@@ -74,6 +74,8 @@ bool ran_a_tool = FALSE;
 bool last_key_was_bracket = FALSE;
 /* Whether to ignore the nanoxrc files. */
 bool ignore_rcfiles = FALSE;
+/* Was the fill option used on the command line? */
+bool fill_used = FALSE;
 
 /* ----------------------------- char * ----------------------------- */
 
@@ -156,6 +158,8 @@ int suggest_len = 0;
 int cycling_aim = 0;
 /* Whether the last search found something. */
 int didfind = 0;
+/* Becomes 0 when --nowrap and 1 when --breaklonglines is used. */
+int hardwrap = -2;
 /* Extended ncurses key code for `Ctrl+Left`. */
 int controlleft;
 /* Extended ncurses key code for `Ctrl+Right`. */

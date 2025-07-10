@@ -1069,9 +1069,3 @@ void version(void) {
   writef("\n");
   exit(0);
 }
-
-/* ----------------------------- Usage ----------------------------- */
-
-void usage(void) {
-  writef(_("Usage: %s [OPTIONS] [[+LINE[,COLUMN]] FILE]...\n\n"));
-}

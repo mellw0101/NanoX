@@ -48,6 +48,7 @@ extern bool keep_cutbuffer;
 extern bool ran_a_tool;
 extern bool last_key_was_bracket;
 extern bool ignore_rcfiles;
+extern bool fill_used;
 
 extern char *word_chars;
 extern char *whitespace;
@@ -87,6 +88,7 @@ extern int hilite_attribute;
 extern int suggest_len;
 extern int cycling_aim;
 extern int didfind;
+extern int hardwrap;
 extern int controlleft;
 extern int controlright;
 extern int controlup;
@@ -583,6 +585,8 @@ bool tab_helper(openfilestruct *const file);
 
 /* ----------------------------- Arguments proccess flags ----------------------------- */
 void arguments_proccess_flags(int *const argc, char **argv);
+/* ----------------------------- Arguments proccess cliopts ----------------------------- */
+void arguments_proccess_cliopts(int *const argc, char **argv);
 
 
 /* ---------------------------------------------------------- suggestion.c ---------------------------------------------------------- */
@@ -1565,6 +1569,7 @@ bool wanted_to_move(functionptrtype f);
 bool changes_something(functionptrtype f);
 void do_exit(void);
 
+void usage(void) _NO_RETURN;
 
 _END_C_LINKAGE
 
