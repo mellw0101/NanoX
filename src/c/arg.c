@@ -136,16 +136,19 @@ static void flagmap_free(void) {
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
-/*  */
+/* Set flags based on the passed arguments, while consuming all arguments that are flag related. */
 void arguments_proccess_flags(int *const argc, char **argv) {
   ASSERT(argv);
   /* A ptr containing the flag.  */
   flag_type *fptr;
   flagmap_create();
-  for (int i=0; i<(*argc); ++i) {
+  for (int i=1; i<(*argc); ++i) {
     fptr = hashmap_get(flagmap, argv[i]);
+    /* If the passed argument has some flag value. */
     if (fptr) {
+      /* Set tha value its pointing to. */
       SET(*fptr);
+      /* And comsume the argument. */
       memmove((argv + i), (argv + i + 1), ((*argc - i - 1) * _PTRSIZE));
       --i;
       --(*argc);

@@ -577,6 +577,12 @@ char *get_previous_char_match(linestruct *line, Ulong xpos, const char *const re
 bool tab_helper(openfilestruct *const file);
 
 
+/* ---------------------------------------------------------- arg.c ---------------------------------------------------------- */
+
+
+void arguments_proccess_flags(int *const argc, char **argv);
+
+
 /* ---------------------------------------------------------- suggestion.c ---------------------------------------------------------- */
 
 

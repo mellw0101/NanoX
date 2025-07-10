@@ -1646,10 +1646,11 @@ int main(int argc, char **argv) {
   if (*(tail(argv[0])) == 'r') {
     SET(RESTRICTED);
   }
+  arguments_proccess_flags(&argc, argv);
   /* Check for cmd flags. */
   for (int i = 1; i < argc; ++i) {
-    const Uint flag = retriveFlagFromStr(argv[i]);
-    flag ? SET(flag) : 0;
+    // const Uint flag = retriveFlagFromStr(argv[i]);
+    // flag ? SET(flag) : 0;
     const Uint cliCmd = retriveCliOptionFromStr(argv[i]);
     cliCmd &CLI_OPT_VERSION ? version() : void();
     cliCmd &CLI_OPT_HELP ? usage() : void();
