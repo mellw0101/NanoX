@@ -138,6 +138,63 @@ const char *term_env_var = NULL;
 /* Holds the `TERM_PROGRAM` environment variable, when it exists.  Otherwise `NULL`. */
 const char *term_program_env_var = NULL;
 
+/* ----------------------------- const char *[] ----------------------------- */
+
+/* A one-to-one array for the description of a flag or "Ehm..." when it should not have one. */
+const char *epithet_flag[] = {
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  "Constant cursor position display",
+  "Help mode",
+  DEFAULT_RESPONSE_ON_NONE,
+  "Auto indent",
+  DEFAULT_RESPONSE_ON_NONE,
+  "Mouse support",
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  "Cut to end",
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  "Color syntax highlighting",
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  "Smart home key",
+  "Whitespace display",
+  "Conversion of typed tabs to spaces",
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  "Soft wrapping of overlong lines",
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  "Line numbering",
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  "Hard wrapping of overlong lines",
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  DEFAULT_RESPONSE_ON_NONE,
+  "Hidden interface",
+  DEFAULT_RESPONSE_ON_NONE,
+};
+
 /* ----------------------------- int ----------------------------- */
 
 /* How many rows does the edit window take up? */

@@ -79,6 +79,8 @@ extern const char *close_tag;
 extern const char *term_env_var;
 extern const char *term_program_env_var;
 
+extern const char *epithet_flag[];
+
 extern int editwinrows;
 extern int editwincols;
 extern int margin;
@@ -225,6 +227,7 @@ extern Ulong typing_x;
 
 /* ----------------------------- help.c ----------------------------- */
 
+/* static */ extern char *help_text;
 extern char       *end_of_help_intro;
 extern const char *start_of_help_body;
 extern Ulong       help_location;
@@ -1362,8 +1365,11 @@ char *browse_in(const char *const restrict inpath);
 /* ---------------------------------------------------------- help.c ---------------------------------------------------------- */
 
 
+/* static */ void help_init(void);
+
+/* ----------------------------- Wrap help text into buffer ----------------------------- */
+void wrap_help_text_into_buffer_for(openfilestruct **const start, openfilestruct **const open, int rows, int cols);
 void wrap_help_text_into_buffer(void);
-void do_help(void);
 
 
 /* ---------------------------------------------------------- cut.c ---------------------------------------------------------- */
@@ -1552,6 +1558,8 @@ void close_and_go(void);
 void die(const char *const restrict format, ...) _NO_RETURN;
 /* ----------------------------- Version ----------------------------- */
 void version(void) _NO_RETURN;
+/* ----------------------------- Usage ----------------------------- */
+void usage(void) _NO_RETURN;
 
 
 /* ---------------------------------------------------------- Defined in C++ ---------------------------------------------------------- */
@@ -1566,8 +1574,8 @@ void syntax_check_file(openfilestruct *file);
 bool wanted_to_move(functionptrtype f);
 bool changes_something(functionptrtype f);
 void do_exit(void);
+void do_help(void);
 
-void usage(void) _NO_RETURN;
 
 _END_C_LINKAGE
 

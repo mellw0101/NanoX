@@ -453,90 +453,90 @@ void do_exit(void) {
 // }
 
 /* Explain how to properly use NanoX and its command-line options. */
-void usage(void) {
-  printf(_("Usage: %s [OPTIONS] [[+LINE[,COLUMN]] FILE]...\n\n"), PROJECT_NAME);
-  /* TRANSLATORS: The next two strings are part of the --help output.
-   * It's best to keep its lines within 80 characters. */
-  printf(_("To place the cursor on a specific line of a file, put the line number with\n"
-           "a '+' before the filename.  The column number can be added after a comma.\n"));
-  /* TRANSLATORS: The next three are column headers of the --help output. */
-  printf(_("When a filename is '-', nano reads data from standard input.\n\n"));
-  print_opt(_("Option"), _("Long option"), N_("Meaning"));
-  /* TRANSLATORS: The next forty or so strings are option descriptions
-   * for the --help output.  Try to keep them at most 40 characters. */
-  print_opt("-A", "--smarthome", N_("Enable smart home key"));
-  if (!ISSET(RESTRICTED)) {
-    print_opt("-B", "--backup", N_("Save backups of existing files"));
-    print_opt(_("-C <dir>"), _("--backupdir=<dir>"), N_("Directory for saving unique backup files"));
-  }
-  print_opt("-D", "--boldtext", N_("Use bold instead of reverse video text"));
-  print_opt("-E", "--tabstospaces", N_("Convert typed tabs to spaces"));
-  if (!ISSET(RESTRICTED)) {
-    print_opt("-F", "--multibuffer", N_("Read a file into a new buffer by default"));
-  }
-  print_opt("-G", "--locking", N_("Use (vim-style) lock files"));
-  if (!ISSET(RESTRICTED)) {
-    print_opt("-H", "--historylog", N_("Save & reload old search/replace strings"));
-  }
-  print_opt("-I", "--ignorercfiles", N_("Don't look at nanorc files"));
-  print_opt(_("-J <number>"), _("--guidestripe=<number>"), N_("Show a guiding bar at this column"));
-  print_opt("-K", "--rawsequences", N_("Fix numeric keypad key confusion problem"));
-  print_opt("-L", "--nonewlines", N_("Don't add an automatic newline"));
-  print_opt("-M", "--trimblanks", N_("Trim tail spaces when hard-wrapping"));
-  print_opt("-N", "--noconvert", N_("Don't convert files from DOS/Mac format"));
-  print_opt("-O", "--bookstyle", N_("Leading whitespace means new paragraph"));
-  if (!ISSET(RESTRICTED)) {
-    print_opt("-P", "--positionlog", N_("Save & restore position of the cursor"));
-  }
-  /* TRANSLATORS: This refers to email quoting, like the > in: > quoted text. */
-  print_opt(_("-Q <regex>"), _("--quotestr=<regex>"), N_("Regular expression to match quoting"));
-  if (!ISSET(RESTRICTED)) {
-    print_opt("-R", "--restricted", N_("Restrict access to the filesystem"));
-  }
-  print_opt("-S", "--softwrap", N_("Display overlong lines on multiple rows"));
-  print_opt(_("-T <number>"), _("--tabsize=<number>"), N_("Make a tab this number of columns wide"));
-  print_opt("-U", "--quickblank", N_("Wipe status bar upon next keystroke"));
-  print_opt("-V", "--version", N_("Print version information and exit"));
-  print_opt("-W", "--wordbounds", N_("Detect word boundaries more accurately"));
-  print_opt(_("-X <string>"), _("--wordchars=<string>"), N_("Which other characters are word parts"));
-  print_opt(_("-Y <name>"), _("--syntax=<name>"), N_("Syntax definition to use for coloring"));
-  print_opt("-Z", "--zap", N_("Let Bsp and Del erase a marked region"));
-  print_opt("-a", "--atblanks", N_("When soft-wrapping, do it at whitespace"));
-  print_opt("-b", "--breaklonglines", N_("Automatically hard-wrap overlong lines"));
-  print_opt("-c", "--constantshow", N_("Constantly show cursor position"));
-  print_opt("-d", "--rebinddelete", N_("Fix Backspace/Delete confusion problem"));
-  print_opt("-e", "--emptyline", N_("Keep the line below the title bar empty"));
-  print_opt(_("-f <file>"), _("--rcfile=<file>"), N_("Use only this file for configuring nano"));
-  print_opt("-g", "--showcursor", N_("Show cursor in file browser & help text"));
-  print_opt("-h", "--help", N_("Show this help text and exit"));
-  print_opt("-i", "--autoindent", N_("Automatically indent new lines"));
-  print_opt("-j", "--jumpyscrolling", N_("Scroll per half-screen, not per line"));
-  print_opt("-k", "--cutfromcursor", N_("Cut from cursor to end of line"));
-  print_opt("-l", "--linenumbers", N_("Show line numbers in front of the text"));
-  print_opt("-m", "--mouse", N_("Enable the use of the mouse"));
-  print_opt("-n", "--noread", N_("Do not read the file (only write it)"));
-  print_opt(_("-o <dir>"), _("--operatingdir=<dir>"), N_("Set operating directory"));
-  print_opt("-p", "--preserve", N_("Preserve XON (^Q) and XOFF (^S) keys"));
-  print_opt("-q", "--indicator", N_("Show a position+portion indicator"));
-  print_opt(_("-r <number>"), _("--fill=<number>"), N_("Set width for hard-wrap and justify"));
-  if (!ISSET(RESTRICTED)) {
-    print_opt(_("-s <program>"), _("--speller=<program>"), N_("Use this alternative spell checker"));
-  }
-  print_opt("-t", "--saveonexit", N_("Save changes on exit, don't prompt"));
-  print_opt("-u", "--unix", N_("Save a file by default in Unix format"));
-  print_opt("-v", "--view", N_("View mode (read-only)"));
-  print_opt("-w", "--nowrap", N_("Don't hard-wrap long lines [default]"));
-  print_opt("-x", "--nohelp", N_("Don't show the two help lines"));
-  print_opt("-y", "--afterends", N_("Make Ctrl+Right stop at word ends"));
-  print_opt("-z", "--listsyntaxes", N_("List the names of available syntaxes"));
-  print_opt("-!", "--magic", N_("Also try magic to determine syntax"));
-  print_opt("-@", "--colonparsing", N_("Accept 'filename:linenumber' notation"));
-  print_opt("-%", "--stateflags", N_("Show some states on the title bar"));
-  print_opt("-_", "--minibar", N_("Show a feedback bar at the bottom"));
-  print_opt("-0", "--zero", N_("Hide all bars, use whole terminal"));
-  print_opt("-/", "--modernbindings", N_("Use better-known key bindings"));
-  exit(0);
-}
+// void usage(void) {
+//   printf(_("Usage: %s [OPTIONS] [[+LINE[,COLUMN]] FILE]...\n\n"), PROJECT_NAME);
+//   /* TRANSLATORS: The next two strings are part of the --help output.
+//    * It's best to keep its lines within 80 characters. */
+//   printf(_("To place the cursor on a specific line of a file, put the line number with\n"
+//            "a '+' before the filename.  The column number can be added after a comma.\n"));
+//   /* TRANSLATORS: The next three are column headers of the --help output. */
+//   printf(_("When a filename is '-', nano reads data from standard input.\n\n"));
+//   print_opt(_("Option"), _("Long option"), N_("Meaning"));
+//   /* TRANSLATORS: The next forty or so strings are option descriptions
+//    * for the --help output.  Try to keep them at most 40 characters. */
+//   print_opt("-A", "--smarthome", N_("Enable smart home key"));
+//   if (!ISSET(RESTRICTED)) {
+//     print_opt("-B", "--backup", N_("Save backups of existing files"));
+//     print_opt(_("-C <dir>"), _("--backupdir=<dir>"), N_("Directory for saving unique backup files"));
+//   }
+//   print_opt("-D", "--boldtext", N_("Use bold instead of reverse video text"));
+//   print_opt("-E", "--tabstospaces", N_("Convert typed tabs to spaces"));
+//   if (!ISSET(RESTRICTED)) {
+//     print_opt("-F", "--multibuffer", N_("Read a file into a new buffer by default"));
+//   }
+//   print_opt("-G", "--locking", N_("Use (vim-style) lock files"));
+//   if (!ISSET(RESTRICTED)) {
+//     print_opt("-H", "--historylog", N_("Save & reload old search/replace strings"));
+//   }
+//   print_opt("-I", "--ignorercfiles", N_("Don't look at nanorc files"));
+//   print_opt(_("-J <number>"), _("--guidestripe=<number>"), N_("Show a guiding bar at this column"));
+//   print_opt("-K", "--rawsequences", N_("Fix numeric keypad key confusion problem"));
+//   print_opt("-L", "--nonewlines", N_("Don't add an automatic newline"));
+//   print_opt("-M", "--trimblanks", N_("Trim tail spaces when hard-wrapping"));
+//   print_opt("-N", "--noconvert", N_("Don't convert files from DOS/Mac format"));
+//   print_opt("-O", "--bookstyle", N_("Leading whitespace means new paragraph"));
+//   if (!ISSET(RESTRICTED)) {
+//     print_opt("-P", "--positionlog", N_("Save & restore position of the cursor"));
+//   }
+//   /* TRANSLATORS: This refers to email quoting, like the > in: > quoted text. */
+//   print_opt(_("-Q <regex>"), _("--quotestr=<regex>"), N_("Regular expression to match quoting"));
+//   if (!ISSET(RESTRICTED)) {
+//     print_opt("-R", "--restricted", N_("Restrict access to the filesystem"));
+//   }
+//   print_opt("-S", "--softwrap", N_("Display overlong lines on multiple rows"));
+//   print_opt(_("-T <number>"), _("--tabsize=<number>"), N_("Make a tab this number of columns wide"));
+//   print_opt("-U", "--quickblank", N_("Wipe status bar upon next keystroke"));
+//   print_opt("-V", "--version", N_("Print version information and exit"));
+//   print_opt("-W", "--wordbounds", N_("Detect word boundaries more accurately"));
+//   print_opt(_("-X <string>"), _("--wordchars=<string>"), N_("Which other characters are word parts"));
+//   print_opt(_("-Y <name>"), _("--syntax=<name>"), N_("Syntax definition to use for coloring"));
+//   print_opt("-Z", "--zap", N_("Let Bsp and Del erase a marked region"));
+//   print_opt("-a", "--atblanks", N_("When soft-wrapping, do it at whitespace"));
+//   print_opt("-b", "--breaklonglines", N_("Automatically hard-wrap overlong lines"));
+//   print_opt("-c", "--constantshow", N_("Constantly show cursor position"));
+//   print_opt("-d", "--rebinddelete", N_("Fix Backspace/Delete confusion problem"));
+//   print_opt("-e", "--emptyline", N_("Keep the line below the title bar empty"));
+//   print_opt(_("-f <file>"), _("--rcfile=<file>"), N_("Use only this file for configuring nano"));
+//   print_opt("-g", "--showcursor", N_("Show cursor in file browser & help text"));
+//   print_opt("-h", "--help", N_("Show this help text and exit"));
+//   print_opt("-i", "--autoindent", N_("Automatically indent new lines"));
+//   print_opt("-j", "--jumpyscrolling", N_("Scroll per half-screen, not per line"));
+//   print_opt("-k", "--cutfromcursor", N_("Cut from cursor to end of line"));
+//   print_opt("-l", "--linenumbers", N_("Show line numbers in front of the text"));
+//   print_opt("-m", "--mouse", N_("Enable the use of the mouse"));
+//   print_opt("-n", "--noread", N_("Do not read the file (only write it)"));
+//   print_opt(_("-o <dir>"), _("--operatingdir=<dir>"), N_("Set operating directory"));
+//   print_opt("-p", "--preserve", N_("Preserve XON (^Q) and XOFF (^S) keys"));
+//   print_opt("-q", "--indicator", N_("Show a position+portion indicator"));
+//   print_opt(_("-r <number>"), _("--fill=<number>"), N_("Set width for hard-wrap and justify"));
+//   if (!ISSET(RESTRICTED)) {
+//     print_opt(_("-s <program>"), _("--speller=<program>"), N_("Use this alternative spell checker"));
+//   }
+//   print_opt("-t", "--saveonexit", N_("Save changes on exit, don't prompt"));
+//   print_opt("-u", "--unix", N_("Save a file by default in Unix format"));
+//   print_opt("-v", "--view", N_("View mode (read-only)"));
+//   print_opt("-w", "--nowrap", N_("Don't hard-wrap long lines [default]"));
+//   print_opt("-x", "--nohelp", N_("Don't show the two help lines"));
+//   print_opt("-y", "--afterends", N_("Make Ctrl+Right stop at word ends"));
+//   print_opt("-z", "--listsyntaxes", N_("List the names of available syntaxes"));
+//   print_opt("-!", "--magic", N_("Also try magic to determine syntax"));
+//   print_opt("-@", "--colonparsing", N_("Accept 'filename:linenumber' notation"));
+//   print_opt("-%", "--stateflags", N_("Show some states on the title bar"));
+//   print_opt("-_", "--minibar", N_("Show a feedback bar at the bottom"));
+//   print_opt("-0", "--zero", N_("Hide all bars, use whole terminal"));
+//   print_opt("-/", "--modernbindings", N_("Use better-known key bindings"));
+//   exit(0);
+// }
 
 /* Display the version number of this nano, a copyright notice, some contact
  * information, and the configuration options this nano was compiled with. */

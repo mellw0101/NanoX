@@ -9,6 +9,8 @@
 /* General setup. */
 #define LOCALEDIR             "/usr/share/locale"
 #define PROJECT_NAME          "NanoX"
+#define PROJECT_SHORTHAND_1   "nanox"
+#define PROJECT_SHORTHAND_2   "nx"
 #define SYSCONFDIR            "/etc"
 
 /* Define if building universal (internal helper macro) */
@@ -59,9 +61,9 @@
 /* #undef DIR_FD_MEMBER_NAME */
 
 #ifdef DIR_FD_MEMBER_NAME
-#  define DIR_TO_FD(Dir_p) ((Dir_p)->DIR_FD_MEMBER_NAME)
+# define DIR_TO_FD(Dir_p) ((Dir_p)->DIR_FD_MEMBER_NAME)
 #else
-#  define DIR_TO_FD(Dir_p) -1
+# define DIR_TO_FD(Dir_p) -1
 #endif
 
 // Define to 1 if // is a file system root distinct from /.

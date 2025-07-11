@@ -31,7 +31,14 @@ AmakeCpp --test
 sudo AmakeCpp --link --bin -lGLEW -lGL -lglfw -lfreetype -lunibilium\
  /usr/lib/Mlib.a /usr/lib/libftgl.a /usr/lib/libfcio.a /usr/lib/libz.a
 if [ -f build/bin/NanoX ]; then
-  sudo cp build/bin/NanoX /usr/bin/nanox
+  # # Create the shorthand nanox.
+  if [ ! -e /usr/bin/nanox ]; then
+    sudo ln -s /usr/bin/NanoX /usr/bin/nanox
+  fi
+  # Create the shorthand nx.
+  if [ ! -e /usr/bin/nx ]; then
+    sudo ln -s /usr/bin/NanoX /usr/bin/nx
+  fi
 fi
 
 sudo mkdir -p /etc/nanox/fonts/

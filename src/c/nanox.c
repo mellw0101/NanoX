@@ -7,6 +7,69 @@
 #include "../include/c_proto.h"
 
 
+/* ---------------------------------------------------------- Define's ---------------------------------------------------------- */
+
+
+#define SMART_HOME_OPT_STR      "-A",              "--smarthome",               N_("Enable smart-home key")
+#define BACKUP_OPT_STR          "-B",              "--backup",                  N_("Save backups of existing files")
+#define BACKUP_DIR_OPT_STR      _("-C <dir>"),     _("--backupdir=<dir>"),      N_("Directory for saving unique backup files")
+#define BOLD_TEXT_OPT_STR       "-D",              "--boldtext",                N_("Use bold instead of reverse video text")
+#define TABS_TO_SPACES_OPT_STR  "-E",              "--tabstospaces",            N_("Convert typed tabs to spaces")
+#define MULTIBUFFER_OPT_STR     "-F",              "--multibuffer",             N_("Read a file into a new buffer by default")
+#define LOCKING_OPT_STR         "-G",              "--locking",                 N_("Use (vim-style) lock files")
+#define HISTORYLOG_OPT_STR      "-H",              "--historylog",              N_("Save & reload old search/replace strings")
+#define IGNORERCFILES_OPT_STR   "-I",              "--ignorercfiles",           N_("Don't look at nanoxrc files")
+#define GUIDESTRIPE_OPT_STR     _("-J <number>"),  _("--guidestripe=<number>"), N_("Show a guiding bar at this column")
+#define RAW_SEQUENCES_OPT_STR   "-K",              "--rawsequences",            N_("Fix numeric keypad key confusion problem")
+#define NO_NEWLINES_OPT_STR     "-L",              "--nonewlines",              N_("Don't add an automatic newline")
+#define TRIM_BLANKS_OPT_STR     "-M",              "--trimblanks",              N_("Trim tail spaces when hard-wrapping")
+#define NO_CONVERT_OPT_STR      "-N",              "--noconvert",               N_("Don't convert files from DOS/Mac format")
+#define BOOK_STYLE_OPT_STR      "-O",              "--bookstyle",               N_("Leading whitespace means new paragraph")
+#define POSITIONLOG_OPT_STR     "-P",              "--positionlog",             N_("Save & restore position of the cursor")
+#define QUOTE_REGEX_OPT_STR     _("-Q <regex>"),   _("--quotestr=<regex>"),     N_("Regular expression to match quoting")
+#define RESTRICTED_OPT_STR      "-R",              "--restricted",              N_("Restrict access to the filesystem")
+#define SOFTWRAP_OPT_STR        "-S",              "--softwrap",                N_("Display overlong lines on multiple rows")
+#define TABSIZE_OPT_STR         _("-T <number>"),  _("--tabsize=<number>"),     N_("Make a tab this number of columns wide")
+#define QUICKBLANK_OPT_STR      "-U",              "--quickblank",              N_("Wipe status bar upon next keystroke")
+#define VERSION_OPT_STR         "-V",              "--version",                 N_("Print version information and exit")
+#define WORDBOUNDS_OPT_STR      "-W",              "--wordbounds",              N_("Detect word boundaries more accurately")
+#define WORDCHARS_OPT_STR       _("-X <string>"),  _("--wordchars=<string>"),   N_("Which other characters are word parts")
+#define SYNTAX_OPT_STR          _("-Y <name>"),    _("--syntax=<name>"),        N_("Syntax definition to use for coloring")
+#define ZAP_OPT_STR             "-Z",              "--zap",                     N_("Let Bsp and Del erase a marked region")
+#define ATBLANKS_OPT_STR        "-a",              "--atblanks",                N_("When soft-wrapping, do it at whitespace")
+#define BREAKLONGLINES_OPT_STR  "-b",              "--breaklonglines",          N_("Automatically hard-wrap overlong lines")
+#define CONSTANTSHOW_OPT_STR    "-c",              "--constantshow",            N_("Constantly show cursor position")
+#define REBINDDELETE_OPT_STR    "-d",              "--rebinddelete",            N_("Fix Backspace/Delete confusion problem")
+#define EMPTYLINE_OPT_STR       "-e",              "--emptyline",               N_("Keep the line below the title bar empty")
+#define RCFILE_OPT_STR          _("-f <file>"),    _("--rcfile=<file>"),        N_("Use only this file for configuring nano")
+#define SHOWCURSOR_OPT_STR      "-g",              "--showcursor",              N_("Show cursor in file browser & help text")
+#define HELP_OPT_STR            "-h",              "--help",                    N_("Show this help text and exit")
+#define AUTOINDENT_OPT_STR      "-i",              "--autoindent",              N_("Automatically indent new lines")
+#define JUMPYSCROLLING_OPT_STR  "-j",              "--jumpyscrolling",          N_("Scroll per half-screen, not per line")
+#define CUTFROMCURSOR_OPT_STR   "-k",              "--cutfromcursor",           N_("Cut from cursor to end of line")
+#define LINENUMBERS_OPT_STR     "-l",              "--linenumbers",             N_("Show line numbers in front of the text")
+#define MOUSE_OPT_STR           "-m",              "--mouse",                   N_("Enable the use of the mouse")
+#define NOREAD_OPT_STR          "-n",              "--noread",                  N_("Do not read the file (only write it)")
+#define OPERATINGDIR_OPT_STR    _("-o <dir>"),     _("--operatingdir=<dir>"),   N_("Set operating directory")
+#define PRESERVE_OPT_STR        "-p",              "--preserve",                N_("Preserve XON (^Q) and XOFF (^S) keys")
+#define INDICATOR_OPT_STR       "-q",              "--indicator",               N_("Show a position+portion indicator")
+#define FILL_OPT_STR            _("-r <number>"),  _("--fill=<number>"),        N_("Set width for hard-wrap and justify")
+#define SPELLER_OPT_STR         _("-s <program>"), _("--speller=<program>"),    N_("Use this alternative spell checker")
+#define SAVEONEXIT_OPT_STR      "-t",              "--saveonexit",              N_("Save changes on exit, don't prompt")
+#define UNIX_OPT_STR            "-u",              "--unix",                    N_("Save a file by default in Unix format")
+#define VIEW_OPT_STR            "-v",              "--view",                    N_("View mode (read-only)")
+#define NOWRAP_OPT_STR          "-w",              "--nowrap",                  N_("Don't hard-wrap long lines [default]")
+#define NOHELP_OPT_STR          "-x",              "--nohelp",                  N_("Don't show the two help lines")
+#define AFTERENDS_OPT_STR       "-y",              "--afterends",               N_("Make Ctrl+Right stop at word ends")
+#define LISTSYNTAXES_OPT_STR    "-z",              "--listsyntaxes",            N_("List the names of available syntaxes")
+#define MAGIC_OPT_STR           "-!",              "--magic",                   N_("Also try magic to determine syntax")
+#define COLONPARSING_OPT_STR    "-@",              "--colonparsing",            N_("Accept 'filename:linenumber' notation")
+#define STATEFLAGS_OPT_STR      "-%",              "--stateflags",              N_("Show some states on the title bar")
+#define MINIBAR_OPT_STR         "-_",              "--minibar",                 N_("Show a feedback bar at the bottom")
+#define ZERO_OPT_STR            "-0",              "--zero",                    N_("Hide all bars, use whole terminal")
+#define MODERNBINDINGS_OPT_STR  "-/",              "--modernbindings",          N_("Use better-known key bindings")
+
+
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
 
 
@@ -1057,11 +1120,12 @@ void die(const char *const restrict format, ...) {
  * of the forked version of `GNU nano`.  And also some information about this fork. */
 void version(void) {
   writef(_("NanoX (nx), version %s\n"), VERSION);
-  writef("  'NanoX %s' is a fork of `GNU nano v8.0-44-gef1c9b9f` from git source code.\n", REVISION);
-  writef("  First converted from 'C' into 'C++', and modernized to include mush more\n");
-  writef("  modern features, sush as (whole line moving / selection region moving),\n");
-  writef("  mush better mark state tracking, and also a new openGL based gui and mush more.\n");
-  writef("  Then converted back into 'C' once again.\n");
+  writef(VERSION_TEXT, REVISION);
+  // writef("  'NanoX %s' is a fork of `GNU nano v8.0-44-gef1c9b9f` from git source code.\n", REVISION);
+  // writef("  First converted from 'C' into 'C++', and modernized to include mush more\n");
+  // writef("  modern features, sush as (whole line moving / selection region moving),\n");
+  // writef("  mush better mark state tracking, and also a new openGL based gui and mush more.\n");
+  // writef("  Then converted back into 'C' once again.\n");
   writef(_("  (C) %s the Free Software Foundation and various contributors\n"), "2024");
 # ifdef DEBUG
   writef(_("  Compiled options:"));
@@ -1073,36 +1137,78 @@ void version(void) {
 
 /* ----------------------------- Usage ----------------------------- */
 
+/* Explain how to properly use `NanoX` and it's `command-line-options`. */
 void usage(void) {
-  writef(_("Usage: %s [OPTIONS] [[+LINE[,COLUMN]] FILE]...\n\n"));
+  writef(_("Usage: <%s|%s|%s> [OPTIONS] [[+LINE[,COLUMN]] FILE]...\n\n"), PROJECT_NAME, PROJECT_SHORTHAND_1, PROJECT_SHORTHAND_2);
   /* TRANSLARORS: The next two strings are part of the --help
    * output.  It's best to keep it's lines within 80 characters. */
   writef(_("To place the cursor on a specific line of a file, put the line number with\n"
            "a '+' before the filename.  The column number can be added after a comma.\n"));
-  /* TRANSLATORS: Then next  */
+  /* TRANSLATORS: Then next three are column headers of the --help output. */
+  writef(_("When a filename is '-', nx reads data from standard input.\n\n"));
+  print_opt(_("Option"), _("Long option"), N_("Meaning"));
+  /* TRANSLATORS: The next forty or so strings are option descriptions
+   * for the --help output.  Try to keep them at most 40 characters. */
+  print_opt(SMART_HOME_OPT_STR);
+  if (!ISSET(RESTRICTED)) {
+    print_opt(BACKUP_OPT_STR);
+    print_opt(BACKUP_DIR_OPT_STR);
+  }
+  print_opt(BOLD_TEXT_OPT_STR);
+  print_opt(TABS_TO_SPACES_OPT_STR);
+  if (!ISSET(RESTRICTED)) {
+    print_opt(MULTIBUFFER_OPT_STR);
+  }
+  print_opt(LOCKING_OPT_STR);
+  if (!ISSET(RESTRICTED)) {
+    print_opt(POSITIONLOG_OPT_STR);
+  }
+  /* TRANSLATORS: This refers to email quoting, line the > in: > quoted text.  What in the acutal fuck does this mean...? */
+  print_opt(QUOTE_REGEX_OPT_STR);
+  if (!ISSET(RESTRICTED)) {
+    print_opt(RESTRICTED_OPT_STR);
+  }
+  print_opt(SOFTWRAP_OPT_STR);
+  print_opt(TABSIZE_OPT_STR);
+  print_opt(QUICKBLANK_OPT_STR);
+  print_opt(VERSION_OPT_STR);
+  print_opt(WORDBOUNDS_OPT_STR);
+  print_opt(WORDCHARS_OPT_STR);
+  print_opt(SYNTAX_OPT_STR);
+  print_opt(ZAP_OPT_STR);
+  print_opt(ATBLANKS_OPT_STR);
+  print_opt(BREAKLONGLINES_OPT_STR);
+  print_opt(CONSTANTSHOW_OPT_STR);
+  print_opt(REBINDDELETE_OPT_STR);
+  print_opt(EMPTYLINE_OPT_STR);
+  print_opt(RCFILE_OPT_STR);
+  print_opt(SHOWCURSOR_OPT_STR);
+  print_opt(HELP_OPT_STR);
+  print_opt(AUTOINDENT_OPT_STR);
+  print_opt(JUMPYSCROLLING_OPT_STR);
+  print_opt(CUTFROMCURSOR_OPT_STR);
+  print_opt(LINENUMBERS_OPT_STR);
+  print_opt(MOUSE_OPT_STR);
+  print_opt(NOREAD_OPT_STR);
+  print_opt(OPERATINGDIR_OPT_STR);
+  print_opt(PRESERVE_OPT_STR);
+  print_opt(INDICATOR_OPT_STR);
+  print_opt(FILL_OPT_STR);
+  if (!RESTRICTED) {
+    print_opt(SPELLER_OPT_STR);
+  }
+  print_opt(SAVEONEXIT_OPT_STR);
+  print_opt(UNIX_OPT_STR);
+  print_opt(VIEW_OPT_STR);
+  print_opt(NOWRAP_OPT_STR);
+  print_opt(NOHELP_OPT_STR);
+  print_opt(AFTERENDS_OPT_STR);
+  print_opt(LISTSYNTAXES_OPT_STR);
+  print_opt(MAGIC_OPT_STR);
+  print_opt(COLONPARSING_OPT_STR);
+  print_opt(STATEFLAGS_OPT_STR);
+  print_opt(MINIBAR_OPT_STR);
+  print_opt(ZERO_OPT_STR);
+  print_opt(MODERNBINDINGS_OPT_STR);
+  exit(0);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

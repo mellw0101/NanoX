@@ -906,8 +906,8 @@ void prepare_for_display_for(openfilestruct *const file) {
       precalc_multicolorinfo_for(file);
     }
     have_palette   = FALSE;
-    refresh_needed = TRUE;
   }
+  refresh_needed = TRUE;
 }
 
 /* Update the title bar and the multiline cache to match the current buffer. */

@@ -113,17 +113,17 @@ static void flagmap_create(void) {
   flagmap_entry_add(        "--nohelp", NO_HELP        );
   flagmap_entry_add(              "-y", AFTER_ENDS     );
   flagmap_entry_add(     "--afterends", AFTER_ENDS     );
-  flagmap_entry_add(               "/", MODERN_BINDINGS);
+  flagmap_entry_add(              "-/", MODERN_BINDINGS);
   flagmap_entry_add("--modernbindings", MODERN_BINDINGS);
-  flagmap_entry_add(               "@", COLON_PARSING  );
+  flagmap_entry_add(              "-@", COLON_PARSING  );
   flagmap_entry_add(  "--colonparsing", COLON_PARSING  );
-  flagmap_entry_add(               "%", STATEFLAGS     );
+  flagmap_entry_add(              "-%", STATEFLAGS     );
   flagmap_entry_add(    "--stateflags", STATEFLAGS     );
-  flagmap_entry_add(               "_", MINIBAR        );
+  flagmap_entry_add(              "-_", MINIBAR        );
   flagmap_entry_add(       "--minibar", MINIBAR        );
-  flagmap_entry_add(               "0", ZERO           );
+  flagmap_entry_add(              "-0", ZERO           );
   flagmap_entry_add(          "--zero", ZERO           );
-  flagmap_entry_add(               "!", USE_MAGIC      );
+  flagmap_entry_add(              "-!", USE_MAGIC      );
   flagmap_entry_add(         "--magic", USE_MAGIC      );
 }
 
@@ -188,6 +188,7 @@ static void clioptmap_free(void) {
 
 /* ----------------------------- Consume argument ----------------------------- */
 
+/* Consume an argument from `argv` at `i`. */
 static void consume_argument(int *const argc, char **argv, int i) {
   ASSERT(argc);
   ASSERT(argv);

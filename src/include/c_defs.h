@@ -253,6 +253,8 @@
 
 #define ROOT_UID  (0)
 
+#define DEFAULT_RESPONSE_ON_NONE  "Ehm..."
+
 /* Codes for "modified" Arrow keys, beyond KEY_MAX of ncurses. */
 #define CONTROL_LEFT         0x401
 #define CONTROL_RIGHT        0x402

@@ -392,7 +392,7 @@ constexpr Uint retriveCliOptionFromStr(string_view str) {
 }
 
 #define NUMBER_OF_FLAGS 51
-constexpr const char *const DEFAULT_RESPONSE_ON_NONE = "Ehm...";
+// constexpr const char *const DEFAULT_RESPONSE_ON_NONE = "Ehm...";
 
 /* This is a masterpiece of a map.
  * I have succesfully made the way to get the description of a flag,
@@ -402,7 +402,8 @@ constexpr const char *const DEFAULT_RESPONSE_ON_NONE = "Ehm...";
  * - (&epithetOfFlagMap[flag].value[0]) will return the underlying ptr to the
  * description of the flag The (flag / description) map. */
 constexpr_map<Uint, string_view, NUMBER_OF_FLAGS> epithetOfFlagMap = {
-  {{DONTUSE, DEFAULT_RESPONSE_ON_NONE},
+  {
+    {DONTUSE, DEFAULT_RESPONSE_ON_NONE},
     {CASE_SENSITIVE, DEFAULT_RESPONSE_ON_NONE},
     {CONSTANT_SHOW, "Constant cursor position display"},
     {NO_HELP, "Help mode"},
@@ -452,7 +453,8 @@ constexpr_map<Uint, string_view, NUMBER_OF_FLAGS> epithetOfFlagMap = {
     {USE_MAGIC, DEFAULT_RESPONSE_ON_NONE},
     {MINIBAR, DEFAULT_RESPONSE_ON_NONE},
     {ZERO, "Hidden interface"},
-    {MODERN_BINDINGS, DEFAULT_RESPONSE_ON_NONE}}
+    {MODERN_BINDINGS, DEFAULT_RESPONSE_ON_NONE},
+  }
 };
 /* Return the textual description that corresponds to the given flag. */
 constexpr const char *epithet_of_flag(const Uint flag) {
