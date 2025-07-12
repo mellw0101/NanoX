@@ -355,148 +355,148 @@
 // }
 
 /* Assemble a help text, display it, and allow scrolling through it.  TODO: (show_help) : Change to NanoX help text. */
-static void show_help(void) {
-  int kbinput = ERR;
-  /* The function of the key the user typed in. */
-  functionptrtype function;
-  /* The menu we were called from. */
-  int   oldmenu     = currmenu;
-  int   was_margin  = margin;
-  long  was_tabsize = tabsize;
-  char *was_syntax  = syntaxstr;
-  /* The current answer when the user invokes help at the prompt. */
-  char *saved_answer = (answer ? copy_of(answer) : NULL);
-  Ulong stash[ARRAY_SIZE(flags)];
-  /* A storage place for the current flag settings. */
-  linestruct *line;
-  int length;
-  /* Save the settings of all flags. */
-  memcpy(stash, flags, sizeof(flags));
-  /* Ensure that the help screen's shortcut list can be displayed. */
-  if (ISSET(NO_HELP) || ISSET(ZERO)) {
-    UNSET(NO_HELP);
-    UNSET(ZERO);
-    window_init();
-  }
-  else {
-    blank_statusbar();
-  }
-  /* When searching, do it forward, case insensitive, and without regexes. */
-  UNSET(BACKWARDS_SEARCH);
-  UNSET(CASE_SENSITIVE);
-  UNSET(USE_REGEXP);
-  UNSET(WHITESPACE_DISPLAY);
-  editwincols = (COLS - sidebar);
-  margin      = 0;
-  tabsize     = 8;
-  syntaxstr   = _("nanohelp");
-  curs_set(0);
-  /* Compose the help text from all the relevant pieces. */
-  help_init();
-  inhelp   = TRUE;
-  help_location = 0;
-  didfind  = 0;
-  bottombars(MHELP);
-  /* Extract the title from the head of the help text. */
-  length = break_line(help_text, HIGHEST_POSITIVE, TRUE);
-  title  = measured_copy(help_text, length);
-  titlebar(title);
-  /* Skip over the title to point at the start of the body text. */
-  start_of_help_body = (help_text + length);
-  while (*start_of_help_body == '\n') {
-    ++start_of_help_body;
-  }
-  wrap_help_text_into_buffer();
-  edit_refresh();
-  while (TRUE) {
-    lastmessage = VACUUM;
-    focusing    = TRUE;
-    /* Show the cursor when we searched and found something. */
-    kbinput     = get_kbinput(midwin, (didfind == 1 || ISSET(SHOW_CURSOR)));
-    didfind     = 0;
-    spotlighted = FALSE;
-    if (bracketed_paste || kbinput == BRACKETED_PASTE_MARKER) {
-      beep();
-      continue;
-    }
-    function = interpret(kbinput);
-    if (function == full_refresh) {
-      full_refresh();
-    }
-    else if (ISSET(SHOW_CURSOR) && (function == do_left || function == do_right || function == do_up || function == do_down)) {
-      function();
-    }
-    else if (function == do_up || function == do_scroll_up) {
-      do_scroll_up();
-    }
-    else if (function == do_down || function == do_scroll_down) {
-      if ((openfile->edittop->lineno + editwinrows - 1) < openfile->filebot->lineno) {
-        do_scroll_down();
-      }
-    }
-    else if (function == do_page_up || function == do_page_down || function == to_first_line || function == to_last_line) {
-      function();
-    }
-    else if (function == do_search_backward || function == do_search_forward || function == do_findprevious || function == do_findnext) {
-      function();
-      bottombars(MHELP);
-    }
-    else if (function == (functionptrtype)implant) {
-      implant(first_sc_for(MHELP, function)->expansion);
-    }
-    else if (kbinput == KEY_MOUSE) {
-      int dummy_row, dummy_col;
-      get_mouseinput(&dummy_row, &dummy_col, TRUE);
-    }
-    else if (kbinput == KEY_WINCH) {
-      ; /* Nothing to do. */
-    }
-    else if (function == do_exit) {
-      break;
-    }
-    else {
-      unbound_key(kbinput);
-    }
-    edit_refresh();
-    help_location = 0;
-    line     = openfile->filetop;
-    /* Count how far (in bytes) edittop is into the file. */
-    while (line != openfile->edittop) {
-      help_location += strlen(line->data);
-      line = line->next;
-    }
-  }
-  /* Discard the help-text buffer. */
-  close_buffer();
-  /* Restore the settings of all flags. */
-  memcpy(flags, stash, sizeof(flags));
-  margin       = was_margin;
-  editwincols  = (COLS - margin - sidebar);
-  tabsize      = was_tabsize;
-  syntaxstr    = was_syntax;
-  have_palette = FALSE;
-  free(title);
-  title = NULL;
-  free(answer);
-  answer = saved_answer;
-  free(help_text);
-  inhelp = FALSE;
-  curs_set(0);
-  if (ISSET(NO_HELP) || ISSET(ZERO)) {
-    window_init();
-  }
-  else {
-    blank_statusbar();
-  }
-  bottombars(oldmenu);
-  if (oldmenu & (MBROWSER | MWHEREISFILE | MGOTODIR)) {
-    browser_refresh();
-  }
-  else {
-    titlebar(NULL);
-    edit_refresh();
-  }
-}
+// static void show_help(void) {
+//   int kbinput = ERR;
+//   /* The function of the key the user typed in. */
+//   functionptrtype function;
+//   /* The menu we were called from. */
+//   int   oldmenu     = currmenu;
+//   int   was_margin  = margin;
+//   long  was_tabsize = tabsize;
+//   char *was_syntax  = syntaxstr;
+//   /* The current answer when the user invokes help at the prompt. */
+//   char *saved_answer = (answer ? copy_of(answer) : NULL);
+//   Ulong stash[ARRAY_SIZE(flags)];
+//   /* A storage place for the current flag settings. */
+//   linestruct *line;
+//   int length;
+//   /* Save the settings of all flags. */
+//   memcpy(stash, flags, sizeof(flags));
+//   /* Ensure that the help screen's shortcut list can be displayed. */
+//   if (ISSET(NO_HELP) || ISSET(ZERO)) {
+//     UNSET(NO_HELP);
+//     UNSET(ZERO);
+//     window_init();
+//   }
+//   else {
+//     blank_statusbar();
+//   }
+//   /* When searching, do it forward, case insensitive, and without regexes. */
+//   UNSET(BACKWARDS_SEARCH);
+//   UNSET(CASE_SENSITIVE);
+//   UNSET(USE_REGEXP);
+//   UNSET(WHITESPACE_DISPLAY);
+//   editwincols = (COLS - sidebar);
+//   margin      = 0;
+//   tabsize     = 8;
+//   syntaxstr   = _("nanohelp");
+//   curs_set(0);
+//   /* Compose the help text from all the relevant pieces. */
+//   help_init();
+//   inhelp   = TRUE;
+//   help_location = 0;
+//   didfind  = 0;
+//   bottombars(MHELP);
+//   /* Extract the title from the head of the help text. */
+//   length = break_line(help_text, HIGHEST_POSITIVE, TRUE);
+//   title  = measured_copy(help_text, length);
+//   titlebar(title);
+//   /* Skip over the title to point at the start of the body text. */
+//   start_of_help_body = (help_text + length);
+//   while (*start_of_help_body == '\n') {
+//     ++start_of_help_body;
+//   }
+//   wrap_help_text_into_buffer();
+//   edit_refresh();
+//   while (TRUE) {
+//     lastmessage = VACUUM;
+//     focusing    = TRUE;
+//     /* Show the cursor when we searched and found something. */
+//     kbinput     = get_kbinput(midwin, (didfind == 1 || ISSET(SHOW_CURSOR)));
+//     didfind     = 0;
+//     spotlighted = FALSE;
+//     if (bracketed_paste || kbinput == BRACKETED_PASTE_MARKER) {
+//       beep();
+//       continue;
+//     }
+//     function = interpret(kbinput);
+//     if (function == full_refresh) {
+//       full_refresh();
+//     }
+//     else if (ISSET(SHOW_CURSOR) && (function == do_left || function == do_right || function == do_up || function == do_down)) {
+//       function();
+//     }
+//     else if (function == do_up || function == do_scroll_up) {
+//       do_scroll_up();
+//     }
+//     else if (function == do_down || function == do_scroll_down) {
+//       if ((openfile->edittop->lineno + editwinrows - 1) < openfile->filebot->lineno) {
+//         do_scroll_down();
+//       }
+//     }
+//     else if (function == do_page_up || function == do_page_down || function == to_first_line || function == to_last_line) {
+//       function();
+//     }
+//     else if (function == do_search_backward || function == do_search_forward || function == do_findprevious || function == do_findnext) {
+//       function();
+//       bottombars(MHELP);
+//     }
+//     else if (function == (functionptrtype)implant) {
+//       implant(first_sc_for(MHELP, function)->expansion);
+//     }
+//     else if (kbinput == KEY_MOUSE) {
+//       int dummy_row, dummy_col;
+//       get_mouseinput(&dummy_row, &dummy_col, TRUE);
+//     }
+//     else if (kbinput == KEY_WINCH) {
+//       ; /* Nothing to do. */
+//     }
+//     else if (function == do_exit) {
+//       break;
+//     }
+//     else {
+//       unbound_key(kbinput);
+//     }
+//     edit_refresh();
+//     help_location = 0;
+//     line     = openfile->filetop;
+//     /* Count how far (in bytes) edittop is into the file. */
+//     while (line != openfile->edittop) {
+//       help_location += strlen(line->data);
+//       line = line->next;
+//     }
+//   }
+//   /* Discard the help-text buffer. */
+//   close_buffer();
+//   /* Restore the settings of all flags. */
+//   memcpy(flags, stash, sizeof(flags));
+//   margin       = was_margin;
+//   editwincols  = (COLS - margin - sidebar);
+//   tabsize      = was_tabsize;
+//   syntaxstr    = was_syntax;
+//   have_palette = FALSE;
+//   free(title);
+//   title = NULL;
+//   free(answer);
+//   answer = saved_answer;
+//   free(help_text);
+//   inhelp = FALSE;
+//   curs_set(0);
+//   if (ISSET(NO_HELP) || ISSET(ZERO)) {
+//     window_init();
+//   }
+//   else {
+//     blank_statusbar();
+//   }
+//   bottombars(oldmenu);
+//   if (oldmenu & (MBROWSER | MWHEREISFILE | MGOTODIR)) {
+//     browser_refresh();
+//   }
+//   else {
+//     titlebar(NULL);
+//     edit_refresh();
+//   }
+// }
 
 /* Start the help viewer, or indicate that there is no help. */
 void do_help(void) {

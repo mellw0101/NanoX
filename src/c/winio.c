@@ -3366,7 +3366,6 @@ void warn_and_briefly_pause_curses(const char *const restrict message) {
 /* Draw the marked region of `row`. */
 void draw_row_marked_region_for_curses(openfilestruct *const file, int row, const char *const restrict converted, linestruct *const line, Ulong from_col) {
   ASSERT(file);
-  ASSERT(row >= 0 && row < editwinrows);
   /* The lines where the marked region begins and ends. */
   linestruct *top;
   linestruct *bot;
@@ -3412,7 +3411,7 @@ void draw_row_marked_region_for_curses(openfilestruct *const file, int row, cons
 
 /* Draw the marked region of `row`. */
 void draw_row_marked_region_curses(int row, const char *const restrict converted, linestruct *const line, Ulong from_col) {
-  draw_row_marked_region_for_curses(openfile, row, converted, line, from_col);
+  draw_row_marked_region_for_curses(TUI_OF, row, converted, line, from_col);
 }
 
 /* Draw the given text on the given row of the edit window.  line is the line to be drawn, and converted

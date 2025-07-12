@@ -1367,6 +1367,9 @@ char *browse_in(const char *const restrict inpath);
 
 /* static */ void help_init(void);
 
+/* static */ void show_help_for(FULL_CTX_ARGS);
+/* static */ void show_help(void);
+
 /* ----------------------------- Wrap help text into buffer ----------------------------- */
 void wrap_help_text_into_buffer_for(openfilestruct **const start, openfilestruct **const open, int rows, int cols);
 void wrap_help_text_into_buffer(void);

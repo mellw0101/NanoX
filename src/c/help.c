@@ -317,6 +317,209 @@ Ulong help_location;
   }
 }
 
+/* ----------------------------- Show help ----------------------------- */
+
+/* static */ void show_help_for(FULL_CTX_ARGS) {
+  ASSERT(start);
+  ASSERT(open);
+  ASSERT(*start);
+  ASSERT(*open);
+  int kbinput = ERR;
+  int mrow;
+  int mcol;
+  /* The menu we were called from. */
+  int oldmenu = currmenu;
+  int was_margin = margin;
+  int length;
+  /* The function of the key the user typed in. */
+  functionptrtype function;
+  long was_tabsize = tabsize;
+  char *was_syntax = syntaxstr;
+  /* The current answer when the user invikes help at the prompt. */
+  char *was_answer;
+  /* A storage place for the current flag settings. */
+  Ulong stash[ARRAY_SIZE(flags)];
+  linestruct *line;
+  /* For now we only allow curses-mode operation.  TODO: Implement a help mode into the gui. */
+  if (IN_CURSES_CTX) {
+    was_answer = (answer ? copy_of(answer) : NULL);
+    /* Save the settings of all flags. */
+    MEMCPY(stash, flags, sizeof(flags));
+    /* Ensure that the help screen's shortcut list can be displayed. */
+    if (ISSET(NO_HELP) || ISSET(ZERO)) {
+      UNSET(NO_HELP);
+      UNSET(ZERO);
+      window_init();
+    }
+    else {
+      blank_statusbar();
+    }
+    /* When searching, do it forward, case insensitive, and without regexes. */
+    UNSET(BACKWARDS_SEARCH);
+    UNSET(CASE_SENSITIVE);
+    UNSET(USE_REGEXP);
+    margin    = 0;
+    tabsize   = 8;
+    syntaxstr = _("nxhelp");
+    curs_set(0);
+    /* Compose the help text from all the relevent pieces. */
+    help_init();
+    inhelp        = TRUE;
+    help_location = 0;
+    didfind       = 0;
+    bottombars(MHELP);
+    /* Extract the title from the head of the help text. */
+    length = break_line(help_text, HIGHEST_POSITIVE, TRUE);
+    title  = measured_copy(help_text, length);
+    titlebar(title);
+    /* Skip over the title to point at the start of the body text. */
+    start_of_help_body = (help_text + length);
+    while (*start_of_help_body == LF) {
+      ++start_of_help_body;
+    }
+    wrap_help_text_into_buffer_for(FULL_STACK_CTX);
+    edit_refresh_for(*open, rows, cols);
+    while (1) {
+      lastmessage = VACUUM;
+      focusing    = TRUE;
+      /* Show the cursor when we searched and found something. */
+      kbinput     = get_kbinput(midwin, (didfind == 1 || ISSET(SHOW_CURSOR)));
+      didfind     = 0;
+      spotlighted = FALSE;
+      if (bracketed_paste || kbinput == BRACKETED_PASTE_MARKER) {
+        beep();
+        continue;
+      }
+      function = interpret(kbinput);
+      /* Full-Refesh */
+      if (function == full_refresh) {
+        full_refresh();
+      }
+      /* Cursor based left movement. */
+      else if (ISSET(SHOW_CURSOR) && function == do_left) {
+        do_left_for(*open, rows, cols);
+      }
+      /* Cursor based right movement. */
+      else if (ISSET(SHOW_CURSOR) && function == do_right) {
+        do_right_for(*open, rows, cols);
+      }
+      /* Cursor based up movement. */
+      else if (ISSET(SHOW_CURSOR) && function == do_up) {
+        do_up_for(*open, rows, cols);
+      }
+      /* Cursor based down movement. */
+      else if (ISSET(SHOW_CURSOR) && function == do_down) {
+        do_down_for(*open, rows, cols);
+      }
+      /* Up-Movement */
+      else if (function == do_up || function == do_scroll_up) {
+        do_scroll_up_for(*open, rows, cols);
+      }
+      /* Down-Movement */
+      else if (function == do_down || function == do_scroll_down) {
+        if (((*open)->edittop->lineno + rows - 1) < (*open)->filebot->lineno) {
+          do_scroll_down_for(*open, rows, cols);
+        }
+      }
+      /* Page-Up */
+      else if (function == do_page_up) {
+        do_page_up_for(*open, rows, cols);
+      }
+      /* Page-Down */
+      else if (function == do_page_down) {
+        do_page_down_for(*open, rows, cols);
+      }
+      /* To-First-Line */
+      else if (function == to_first_line) {
+        to_first_line_for(*open);
+      }
+      /* To-Last-Line */
+      else if (function == to_last_line) {
+        to_last_line_for(*open, rows);
+      }
+      /* Do-Search-Backward */
+      else if (function == do_search_backward) {
+        do_search_backward_for(*open, rows, cols);
+        bottombars(MHELP);
+      }
+      /* Do-Search-Forward */
+      else if (function == do_search_forward) {
+        do_search_forward_for(*open, rows, cols);
+        bottombars(MHELP);  
+      }
+      /* Do-Findprevious */
+      else if (function == do_findprevious) {
+        do_findprevious_for(*open, rows, cols);
+        bottombars(MHELP);  
+      }
+      /* Do-Findnext */
+      else if (function == do_findnext) {
+        do_findnext_for(*open, rows, cols);
+        bottombars(MHELP);
+      }
+      /* Implant */
+      else if (function == (functionptrtype)implant) {
+        implant(first_sc_for(MHELP, function)->expansion);
+      }
+      /* Mouse */
+      else if (kbinput == KEY_MOUSE) {
+        get_mouseinput(&mrow, &mcol, TRUE);
+      }
+      /* Nothing to do. */
+      else if (kbinput == KEY_WINCH) {
+        ;
+      }
+      /* Do-Exit */
+      else if (function == do_exit) {
+        break;
+      }
+      /* Unbound-Key */
+      else {
+        unbound_key(kbinput);
+      }
+      edit_refresh_for(*open, rows, cols);
+      help_location = 0;
+      line          = (*open)->filetop;
+      /* Count how far (in bytes) edittop is into the file. */
+      while (line && line != (*open)->edittop) {
+        help_location += strlen(line->data);
+        DLIST_ADV_NEXT(line);
+      }
+    }
+    /* Discard the help-text buffer. */
+    close_buffer_for(*open, start, open);
+    /* Restore the settings of all flags. */
+    MEMCPY(flags, stash, sizeof(flags));
+    margin       = was_margin;
+    tabsize      = was_tabsize;
+    syntaxstr    = was_syntax;
+    have_palette = FALSE;
+    title        = free_and_assign(title, NULL);
+    answer       = free_and_assign(answer, was_answer);
+    help_text    = free_and_assign(help_text, NULL);
+    inhelp       = FALSE;
+    curs_set(FALSE);
+    if (ISSET(NO_HELP) || ISSET(ZERO)) {
+      window_init();
+    }
+    else {
+      blank_statusbar();
+    }
+    bottombars(oldmenu);
+    if (oldmenu & (MBROWSER | MWHEREISFILE | MGOTODIR)) {
+      browser_refresh();
+    }
+    else {
+      titlebar(NULL);
+      edit_refresh_for(*open, rows, cols);
+    }
+  }
+}
+
+/* static */ void show_help(void) {
+  FULL_CTX_CALL(show_help_for);
+}
+
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
@@ -324,9 +527,11 @@ Ulong help_location;
 /* ----------------------------- Wrap help text into buffer ----------------------------- */
 
 /* Hard-wrap the concatenated help text, and write it into a new buffer. */
-void wrap_help_text_into_buffer_for(openfilestruct **const start, openfilestruct **const open, int rows, int cols) {
+void wrap_help_text_into_buffer_for(FULL_CTX_ARGS) {
   ASSERT(start);
   ASSERT(open);
+  ASSERT(*start);
+  ASSERT(*open);
   int length;
   int shim;
   char *oneline;
