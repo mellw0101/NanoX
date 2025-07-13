@@ -10,7 +10,7 @@
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
 
 
-Uint element_rect_shader = 0;
+// Uint element_rect_shader = 0;
 
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
@@ -59,6 +59,8 @@ static Element *element_create_internal(void) {
   e->children = cvec_create();
   /* Cursor. */
   e->cursor = GLFW_ARROW_CURSOR;
+  /* Rect buffer. */
+  e->rect_buffer = vertex_buffer_new(RECT_VERTBUF);
   /* Layer. */
   e->layer = 0;
   return e;
@@ -128,7 +130,15 @@ static inline void element_draw_rect(Element *const e) {
   // glUniform2fv(p_loc, 1, (void *)STRUCT_FIELD_PTR(e, x));
   // glUniform2fv(s_loc, 1, (void *)STRUCT_FIELD_PTR(e, width));
   // glDrawArrays(GL_TRIANGLES, 0, 6);
-  draw_rect_rgba(e->x, e->y, e->width, e->height, UNPACK_UINT_FLOAT(e->color, 0), UNPACK_UINT_FLOAT(e->color, 1), UNPACK_UINT_FLOAT(e->color, 2), UNPACK_UINT_FLOAT(e->color, 3));
+  // draw_rect_rgba(e->x, e->y, e->width, e->height, UNPACK_UINT_FLOAT(e->color, 0), UNPACK_UINT_FLOAT(e->color, 1), UNPACK_UINT_FLOAT(e->color, 2), UNPACK_UINT_FLOAT(e->color, 3));
+  ASSERT(e);
+  RectVertex vert[4];
+  shader_rect_vertex_load(vert, e->x, e->y, e->width, e->height, e->color);
+  vertex_buffer_clear(e->rect_buffer);
+  vertex_buffer_push_back(e->rect_buffer, vert, 4, RECT_INDICES, RECT_INDICES_LEN);
+  glUseProgram(rect_shader); {
+    vertex_buffer_render(e->rect_buffer, GL_TRIANGLES);
+  }
 }
 
 
@@ -162,6 +172,7 @@ void element_free(Element *const e) {
   }
   element_grid_remove(e);
   free(e->lable);
+  vertex_buffer_delete(e->rect_buffer);
   free(e);
 }
 
@@ -169,7 +180,7 @@ void element_free(Element *const e) {
 void element_draw(Element *const e) {
   ASSERT(e);
   /* Only draw the element rect when the element is not hidden and the rect shader has been init. */
-  if (!e->hidden && element_rect_shader) {
+  if (!e->hidden && rect_shader) {
     element_draw_rect(e);
     /* If the element has borders, draw them to. */
     if (e->has_borders) {

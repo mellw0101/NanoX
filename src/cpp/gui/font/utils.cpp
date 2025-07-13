@@ -38,17 +38,17 @@ void line_add_cursor(long lineno, Font *const font, vertex_buffer_t *const buf, 
   Uint indices[] = { 0, 1, 2, 0, 2, 3 };
   vertex_t vertices[] = {
     // Position   Texture               Color
-    {  x0,y0,0,   glyph->s0, glyph->t0, color.r,color.g,color.b,color.a },
-    {  x0,y1,0,   glyph->s0, glyph->t1, color.r,color.g,color.b,color.a },
-    {  x1,y1,0,   glyph->s1, glyph->t1, color.r,color.g,color.b,color.a },
-    {  x1,y0,0,   glyph->s1, glyph->t0, color.r,color.g,color.b,color.a }
+    {  x0,y0,   glyph->s0, glyph->t0, color.r,color.g,color.b,color.a },
+    {  x0,y1,   glyph->s0, glyph->t1, color.r,color.g,color.b,color.a },
+    {  x1,y1,   glyph->s1, glyph->t1, color.r,color.g,color.b,color.a },
+    {  x1,y0,   glyph->s1, glyph->t0, color.r,color.g,color.b,color.a }
   };
   vertex_buffer_push_back(buf, vertices, 4, indices, 6);
 }
 
 /* Create a buffer using the structure of the font shader. */
 vertex_buffer_t *make_new_font_buffer(void) {
-  vertex_buffer_t *buf = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
+  vertex_buffer_t *buf = vertex_buffer_new(FONT_VERTBUF);
   ALWAYS_ASSERT(buf);
   return buf;
 }

@@ -894,7 +894,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   /* ---------------------------------------------------------- gui/guiwinio.cpp ---------------------------------------------------------- */
   
   
-  void draw_rect(vec2 pos, vec2 size, vec4 color);
+  // void draw_rect(vec2 pos, vec2 size, vec4 color);
   void render_vertex_buffer(Uint shader, vertex_buffer_t *buf);
   void show_statusmsg(message_type type, float seconds, const char *format, ...);
   void show_toggle_statusmsg(int flag);

@@ -47,19 +47,19 @@ void window_resize_callback(GLFWwindow *window, int width, int height) {
     /* Set the projection. */
     matrix4x4_set_orthographic(gui->projection, 0, gui->width, gui->height, 0, -1.0f, 1.0f);
     /* Upload it to both the shaders. */
-    update_projection_uniform(gui->font_shader);
-    update_projection_uniform(gui->rect_shader);
+    update_projection_uniform(font_shader);
+    update_projection_uniform(rect_shader);
     /* Calculate the rows for all editors. */
     CLIST_ITER(starteditor, editor,
-      if (texture_font_is_mono(gui_font_get_font(gui->font))) {
-        texture_glyph_t *glyph = texture_font_get_glyph(gui_font_get_font(gui->font), " ");
+      if (texture_font_is_mono(gui_font_get_font(textfont))) {
+        texture_glyph_t *glyph = texture_font_get_glyph(gui_font_get_font(textfont), " ");
         if (!glyph) {
           die("%s: Atlas is to small.\n", __func__);
         }
         editor->cols = (editor->text->width / glyph->advance_x);
       }
       else {
-        editor->cols = ((editor->text->width / FONT_WIDTH(gui_font_get_font(gui->font))) * 0.9f);
+        editor->cols = ((editor->text->width / FONT_WIDTH(gui_font_get_font(textfont))) * 0.9f);
       }
       editor_resize(editor);
     );
@@ -356,11 +356,11 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             //   writef("Line is not begpar.\n");
             // }
             // Ulong len;
-            // float *array = pixpositions("\t\tballe", 0, &len, gui->font);
+            // float *array = pixpositions("\t\tballe", 0, &len, textfont);
             // for (Ulong i=0; i<len; ++i) {
             //   writef("Index %lu: %.2f\n", i, (double)array[i]);
             // }
-            // Ulong index = closest_index(array, len, 17.5, gui->font);
+            // Ulong index = closest_index(array, len, 17.5, textfont);
             // writef("\nClosest Index: %lu\n", index);
             // free(array);
 
@@ -780,15 +780,15 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         case GLFW_KEY_MINUS: {
           /* Decrease the font size. */
           if (mods == GLFW_MOD_CONTROL) {
-            gui_font_decrease_size(gui->font);
-            statusline(AHEM, "Font size: %u", gui_font_get_size(gui->font));
+            gui_font_decrease_size(textfont);
+            statusline(AHEM, "Font size: %u", gui_font_get_size(textfont));
             editor_update_all();
             refresh_needed = TRUE;
           }
           /* Decrease the font line height. */
           else if (mods == (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL)) {
-            gui_font_decrease_line_height(gui->font);
-            statusline(AHEM, "Font line height: %ld", gui_font_get_line_height(gui->font));
+            gui_font_decrease_line_height(textfont);
+            statusline(AHEM, "Font line height: %ld", gui_font_get_line_height(textfont));
             editor_update_all();
             refresh_needed = TRUE;
           }
@@ -797,15 +797,15 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         case GLFW_KEY_EQUAL: {
           /* increase the font size. */
           if (mods == GLFW_MOD_CONTROL) {
-            gui_font_increase_size(gui->font);
-            statusline(AHEM, "Font size: %u", gui_font_get_size(gui->font));
+            gui_font_increase_size(textfont);
+            statusline(AHEM, "Font size: %u", gui_font_get_size(textfont));
             editor_update_all();
             refresh_needed = TRUE;
           }
           /* increase the font line height. */
           else if (mods == (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL)) {
-            gui_font_increase_line_height(gui->font);
-            statusline(AHEM, "Font line height: %ld", gui_font_get_line_height(gui->font));
+            gui_font_increase_line_height(textfont);
+            statusline(AHEM, "Font line height: %ld", gui_font_get_line_height(textfont));
             editor_update_all();
             refresh_needed = TRUE;
           }
@@ -1347,7 +1347,7 @@ void scroll_callback(GLFWwindow *window, double x, double y) {
       /* If the mouse left mouse button is held while scrolling, update the cursor pos so that the marked region gets updated. */
       // if (mouse_flag.is_set<LEFT_MOUSE_BUTTON_HELD>()) {
       if (is_mouse_flag_set(MOUSE_BUTTON_HELD_LEFT)) {
-        line = line_and_index_from_mousepos(gui_font_get_font(gui->font), &index);
+        line = line_and_index_from_mousepos(gui_font_get_font(textfont), &index);
         test->dp_editor->openfile->current   = line;
         test->dp_editor->openfile->current_x = index;
       }

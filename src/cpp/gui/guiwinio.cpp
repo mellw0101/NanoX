@@ -54,18 +54,18 @@ static message_type statustype = VACUUM;
 //       if (paintlen == -1) {
 //         paintlen = strlen(thetext);
 //       }
-//       // rect.x = (string_pixel_offset(line->data, NULL, startcol, gui_font_get_font(gui->font)) + (ISSET(LINE_NUMBERS) ? get_line_number_pixel_offset(line, gui_font_get_font(gui->font)) : 0));
-//       rect.x = (string_pixel_offset(line->data, NULL, startcol, gui_font_get_font(gui->font)) + editor->text->pos.x);
+//       // rect.x = (string_pixel_offset(line->data, NULL, startcol, gui_font_get_font(textfont)) + (ISSET(LINE_NUMBERS) ? get_line_number_pixel_offset(line, gui_font_get_font(textfont)) : 0));
+//       rect.x = (string_pixel_offset(line->data, NULL, startcol, gui_font_get_font(textfont)) + editor->text->pos.x);
 //       /* Calculate the width of the marked region in pixels. */
-//       rect.width = string_pixel_offset(thetext, ((convert == thetext) ? NULL : &convert[(thetext - convert) - 1]), paintlen, gui_font_get_font(gui->font));
+//       rect.width = string_pixel_offset(thetext, ((convert == thetext) ? NULL : &convert[(thetext - convert) - 1]), paintlen, gui_font_get_font(textfont));
 //       /* Get the y offset for the given line. */
-//       gui_font_row_top_bot(gui->font, (line->lineno - editor->openfile->edittop->lineno), &pixtop, NULL);
-//       // row_top_bot_pixel((line->lineno - editor->openfile->edittop->lineno), gui_font_get_font(gui->font), &pixtop, NULL);
+//       gui_font_row_top_bot(textfont, (line->lineno - editor->openfile->edittop->lineno), &pixtop, NULL);
+//       // row_top_bot_pixel((line->lineno - editor->openfile->edittop->lineno), gui_font_get_font(textfont), &pixtop, NULL);
 //       rect.y = (pixtop + editor->text->pos.y);
 //       /* To ensure that there is no overlap and no space between lines by calculating
 //        * the height of the marked box based on the top of the next line. */
-//       gui_font_row_top_bot(gui->font, (line->lineno - editor->openfile->edittop->lineno + 1), &pixbot, NULL);
-//       // row_top_bot_pixel((line->lineno - editor->openfile->edittop->lineno + 1), gui_font_get_font(gui->font), &pixbot, NULL);
+//       gui_font_row_top_bot(textfont, (line->lineno - editor->openfile->edittop->lineno + 1), &pixbot, NULL);
+//       // row_top_bot_pixel((line->lineno - editor->openfile->edittop->lineno + 1), gui_font_get_font(textfont), &pixbot, NULL);
 //       rect.height = (pixbot - pixtop);
 //       /* Draw the rect to the screen. */
 //       draw_rect(rect.xy(), rect.zw(), GUI_MARKED_REGION_COLOR);
@@ -74,6 +74,7 @@ static message_type statustype = VACUUM;
 // }
 
 static void draw_marked(Editor *const editor, linestruct *const line, const char *const restrict convert, Ulong fromcol) {
+  RectVertex rectvert[4];
   /* The top and bottom line where the marked region begins and ends. */
   linestruct *top, *bot;
   /* The start position in the top line and the end position in the bottom line. */
@@ -115,39 +116,41 @@ static void draw_marked(Editor *const editor, linestruct *const line, const char
       if (paintlen == -1) {
         paintlen = strlen(thetext);
       }
-      // rect.x = (string_pixel_offset(line->data, NULL, startcol, gui_font_get_font(gui->font)) + (ISSET(LINE_NUMBERS) ? get_line_number_pixel_offset(line, gui_font_get_font(gui->font)) : 0));
-      rect.x = (string_pixel_offset(line->data, NULL, startcol, gui_font_get_font(gui->font)) + editor->text->x);
+      // rect.x = (string_pixel_offset(line->data, NULL, startcol, gui_font_get_font(textfont)) + (ISSET(LINE_NUMBERS) ? get_line_number_pixel_offset(line, gui_font_get_font(textfont)) : 0));
+      rect.x = (string_pixel_offset(line->data, NULL, startcol, gui_font_get_font(textfont)) + editor->text->x);
       /* Calculate the width of the marked region in pixels. */
-      rect.width = string_pixel_offset(thetext, ((convert == thetext) ? NULL : &convert[(thetext - convert) - 1]), paintlen, gui_font_get_font(gui->font));
+      rect.width = string_pixel_offset(thetext, ((convert == thetext) ? NULL : &convert[(thetext - convert) - 1]), paintlen, gui_font_get_font(textfont));
       /* Get the y offset for the given line. */
-      gui_font_row_top_bot(gui->font, (line->lineno - editor->openfile->edittop->lineno), &pixtop, NULL);
-      // row_top_bot_pixel((line->lineno - editor->openfile->edittop->lineno), gui_font_get_font(gui->font), &pixtop, NULL);
+      gui_font_row_top_bot(textfont, (line->lineno - editor->openfile->edittop->lineno), &pixtop, NULL);
+      // row_top_bot_pixel((line->lineno - editor->openfile->edittop->lineno), gui_font_get_font(textfont), &pixtop, NULL);
       rect.y = (pixtop + editor->text->y);
       /* To ensure that there is no overlap and no space between lines by calculating
        * the height of the marked box based on the top of the next line. */
-      gui_font_row_top_bot(gui->font, (line->lineno - editor->openfile->edittop->lineno + 1), &pixbot, NULL);
-      // row_top_bot_pixel((line->lineno - editor->openfile->edittop->lineno + 1), gui_font_get_font(gui->font), &pixbot, NULL);
+      gui_font_row_top_bot(textfont, (line->lineno - editor->openfile->edittop->lineno + 1), &pixbot, NULL);
+      // row_top_bot_pixel((line->lineno - editor->openfile->edittop->lineno + 1), gui_font_get_font(textfont), &pixbot, NULL);
       rect.height = (pixbot - pixtop);
+      shader_rect_vertex_load(rectvert, rect.x, rect.y, rect.width, rect.height, PACKED_UINT_FLOAT(0.2f, 0.2f, 0.5f, 0.45f));
+      vertex_buffer_push_back(editor->marked_region_buf, rectvert, 4, RECT_INDICES, RECT_INDICES_LEN);
       /* Draw the rect to the screen. */
-      draw_rect(rect.xy(), rect.zw(), GUI_MARKED_REGION_COLOR);
+      // draw_rect(rect.xy(), rect.zw(), GUI_MARKED_REGION_COLOR);
     }
   }
 }
 
 /* Draw rect to the window. */
-void draw_rect(vec2 pos, vec2 size, vec4 color) {
-  glUseProgram(gui->rect_shader); {
-    /* Get the locations for the rect shader uniforms. */
-    static int rectcolor_loc = glGetUniformLocation(gui->rect_shader, "rectcolor");
-    static int elempos_loc   = glGetUniformLocation(gui->rect_shader, "elempos");
-    static int elemsize_loc  = glGetUniformLocation(gui->rect_shader, "elemsize");
-    /* Pass the color to the rect shader color uniform. */
-    glUniform4fv(rectcolor_loc, 1, &color[0]);
-    glUniform2fv(elempos_loc, 1, &pos[0]);
-    glUniform2fv(elemsize_loc, 1, &size[0]);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-  }
-}
+// void draw_rect(vec2 pos, vec2 size, vec4 color) {
+//   glUseProgram(gui->rect_shader); {
+//     /* Get the locations for the rect shader uniforms. */
+//     static int rectcolor_loc = glGetUniformLocation(gui->rect_shader, "rectcolor");
+//     static int elempos_loc   = glGetUniformLocation(gui->rect_shader, "elempos");
+//     static int elemsize_loc  = glGetUniformLocation(gui->rect_shader, "elemsize");
+//     /* Pass the color to the rect shader color uniform. */
+//     glUniform4fv(rectcolor_loc, 1, &color[0]);
+//     glUniform2fv(elempos_loc, 1, &pos[0]);
+//     glUniform2fv(elemsize_loc, 1, &size[0]);
+//     glDrawArrays(GL_TRIANGLES, 0, 6);
+//   }
+// }
 
 void render_vertex_buffer(Uint shader, vertex_buffer_t *buf) {
   ASSERT(shader);
@@ -164,9 +167,9 @@ void render_vertex_buffer(Uint shader, vertex_buffer_t *buf) {
 //   vec2 pen;
 //   if (refresh_needed && ISSET(LINE_NUMBERS)) {
 //     pen = editor->gutter->pos;
-//     pen.y += gui_font_row_baseline(gui->font, (line->lineno - editor->openfile->edittop->lineno));
+//     pen.y += gui_font_row_baseline(textfont, (line->lineno - editor->openfile->edittop->lineno));
 //     sprintf(linenobuffer, "%*lu ", (margin - 1), line->lineno);
-//     vertex_buffer_add_string(editor->buffer, linenobuffer, margin, NULL, gui_font_get_font(gui->font), vec4(1.0f), &pen);
+//     vertex_buffer_add_string(editor->buffer, linenobuffer, margin, NULL, gui_font_get_font(textfont), vec4(1.0f), &pen);
 //   }
 // }
 
@@ -177,7 +180,7 @@ static void gui_draw_row_linenum(linestruct *const line, Editor *const editor) {
   float y;
   if (refresh_needed && ISSET(LINE_NUMBERS)) {
     x = editor->gutter->x;
-    y = (gui_font_row_baseline(gui->font, (line->lineno - editor->openfile->edittop->lineno)) + editor->gutter->y);
+    y = (gui_font_row_baseline(textfont, (line->lineno - editor->openfile->edittop->lineno)) + editor->gutter->y);
     sprintf(linenobuffer, "%*lu ", (editor->margin - 1), line->lineno);
     font_vertbuf_add_mbstr(textfont, editor->buffer, linenobuffer, editor->margin, NULL, PACKED_UINT(255, 255, 255, 255), &x, &y);
   }
@@ -216,15 +219,15 @@ static void gui_draw_row_linenum(linestruct *const line, Editor *const editor) {
 //             obj = (SyntaxObject *)hashmap_get(sf->objects, node->str);
 //             if (obj) {
 //               if (obj->color == SYNTAX_COLOR_BLUE) {
-//                 vertex_buffer_add_mbstr(editor->buffer, (converted + index), (node->start - index), prev_char, gui->font, vec4(1.0f), drawpos);
-//                 vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(gui->font), VEC4_8BIT(36, 114, 200, 1), drawpos);
+//                 vertex_buffer_add_mbstr(editor->buffer, (converted + index), (node->start - index), prev_char, textfont, vec4(1.0f), drawpos);
+//                 vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(textfont), VEC4_8BIT(36, 114, 200, 1), drawpos);
 //                 index = node->end;
 //                 free_node(node);
 //                 continue;
 //               }
 //               else if (obj->color == SYNTAX_COLOR_GREEN) {
-//                 vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
-//                 vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(gui->font), VEC4_8BIT(13, 188, 121, 1), drawpos);
+//                 vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(textfont), vec4(1.0f), drawpos);
+//                 vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(textfont), VEC4_8BIT(13, 188, 121, 1), drawpos);
 //                 index = node->end;
 //                 free_node(node);
 //                 continue;
@@ -233,8 +236,8 @@ static void gui_draw_row_linenum(linestruct *const line, Editor *const editor) {
 //           }
 //           /* The global map. */
 //           if (test_map.find(node->str) != test_map.end()) {
-//             vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
-//             vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(gui->font), color_idx_to_vec4(test_map[node->str].color), drawpos);
+//             vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(textfont), vec4(1.0f), drawpos);
+//             vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(textfont), color_idx_to_vec4(test_map[node->str].color), drawpos);
 //             index = node->end;
 //           }
 //           /* The variable map in the language server. */
@@ -242,8 +245,8 @@ static void gui_draw_row_linenum(linestruct *const line, Editor *const editor) {
 //             for (const auto &v : LSP->index.vars[node->str]) {
 //               if (strcmp(tail(v.file), tail(openfile->filename)) == 0) {
 //                 if (line->lineno >= v.decl_st && line->lineno <= v.decl_end) {
-//                   vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
-//                   vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(gui->font), color_idx_to_vec4(FG_VS_CODE_BRIGHT_CYAN), drawpos);
+//                   vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(textfont), vec4(1.0f), drawpos);
+//                   vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(textfont), color_idx_to_vec4(FG_VS_CODE_BRIGHT_CYAN), drawpos);
 //                   index = node->end;
 //                 }
 //               }
@@ -251,25 +254,25 @@ static void gui_draw_row_linenum(linestruct *const line, Editor *const editor) {
 //           }
 //           /* The define map in the language server. */
 //           else if (LSP->index.defines.find(node->str) != LSP->index.defines.end()) {
-//             vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
-//             vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(gui->font), color_idx_to_vec4(FG_VS_CODE_BLUE), drawpos);
+//             vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(textfont), vec4(1.0f), drawpos);
+//             vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(textfont), color_idx_to_vec4(FG_VS_CODE_BLUE), drawpos);
 //             index = node->end;
 //           }
 //           /* The map for typedefined structs and normal structs. */
 //           else if (LSP->index.tdstructs.find(node->str) != LSP->index.tdstructs.end() || LSP->index.structs.find(node->str) != LSP->index.structs.end()) {
-//             vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
-//             vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(gui->font), color_idx_to_vec4(FG_VS_CODE_GREEN), drawpos);
+//             vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(textfont), vec4(1.0f), drawpos);
+//             vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(textfont), color_idx_to_vec4(FG_VS_CODE_GREEN), drawpos);
 //             index = node->end;
 //           }
 //           /* The function name map in the language server. */
 //           else if (LSP->index.functiondefs.find(node->str) != LSP->index.functiondefs.end()) {
-//             vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
-//             vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(gui->font), color_idx_to_vec4(FG_VS_CODE_BRIGHT_YELLOW), drawpos);
+//             vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(textfont), vec4(1.0f), drawpos);
+//             vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(textfont), color_idx_to_vec4(FG_VS_CODE_BRIGHT_YELLOW), drawpos);
 //             index = node->end;
 //           }
 //           free_node(node);
 //         }
-//         vertex_buffer_add_string(editor->buffer, (converted + index), (converted_len - index), prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
+//         vertex_buffer_add_string(editor->buffer, (converted + index), (converted_len - index), prev_char, gui_font_get_font(textfont), vec4(1.0f), drawpos);
 //       }
 //       /* AT&T asm syntax. */
 //       else if (editor->openfile->is_atnt_asm_file /* editor->openfile->type.is_set<ATNT_ASM>() */) {
@@ -279,13 +282,13 @@ static void gui_draw_row_linenum(linestruct *const line, Editor *const editor) {
 //         const char *comment = strchr(converted, '#');
 //         if (comment) {
 //           vec2 origin = *drawpos;
-//           origin.x += string_pixel_offset(converted, (ISSET(LINE_NUMBERS) ? " " : NULL), (comment - converted), gui_font_get_font(gui->font));
+//           origin.x += string_pixel_offset(converted, (ISSET(LINE_NUMBERS) ? " " : NULL), (comment - converted), gui_font_get_font(textfont));
 //           vertex_buffer_add_string(
 //             editor->buffer,
 //             (converted + (comment - converted)),
 //             (converted_len - (comment - converted)),
 //             ((comment - converted) ? &converted[(comment - converted) - 1] : NULL),
-//             gui_font_get_font(gui->font),
+//             gui_font_get_font(textfont),
 //             GUI_DEFAULT_COMMENT_COLOR,
 //             &origin
 //           );
@@ -297,13 +300,13 @@ static void gui_draw_row_linenum(linestruct *const line, Editor *const editor) {
 //             node = head;
 //             head = node->next;
 //             if (syntax_map_exists(ATNT_ASM, node->str, &color)) {
-//               vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
-//               vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(gui->font), color, drawpos);
+//               vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(textfont), vec4(1.0f), drawpos);
+//               vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(textfont), color, drawpos);
 //               index = node->end;
 //             }
 //             free_node(node);
 //           }
-//           vertex_buffer_add_string(editor->buffer, (converted + index), ((comment ? (comment - converted) : converted_len) - index), prev_char, gui_font_get_font(gui->font), 1, drawpos);
+//           vertex_buffer_add_string(editor->buffer, (converted + index), ((comment ? (comment - converted) : converted_len) - index), prev_char, gui_font_get_font(textfont), 1, drawpos);
 //         }
 //       }
 //       /* Nasm syntax. */
@@ -311,13 +314,13 @@ static void gui_draw_row_linenum(linestruct *const line, Editor *const editor) {
 //         const char *comment = strchr(converted, ';');
 //         if (comment) {
 //           vec2 origin = *drawpos;
-//           origin.x += string_pixel_offset(converted, (ISSET(LINE_NUMBERS) ? " " : NULL), (comment - converted), gui_font_get_font(gui->font));
+//           origin.x += string_pixel_offset(converted, (ISSET(LINE_NUMBERS) ? " " : NULL), (comment - converted), gui_font_get_font(textfont));
 //           vertex_buffer_add_string(
 //             editor->buffer,
 //             (converted + (comment - converted)),
 //             (converted_len - (comment - converted)),
 //             ((comment - converted) ? &converted[(comment - converted) - 1] : NULL),
-//             gui_font_get_font(gui->font),
+//             gui_font_get_font(textfont),
 //             GUI_DEFAULT_COMMENT_COLOR,
 //             &origin
 //           );
@@ -329,7 +332,7 @@ static void gui_draw_row_linenum(linestruct *const line, Editor *const editor) {
 //             converted,
 //             (comment ? (comment - converted) : converted_len),
 //             (ISSET(LINE_NUMBERS) ? " " : NULL),
-//             gui_font_get_font(gui->font),
+//             gui_font_get_font(textfont),
 //             vec4(1.0f),
 //             drawpos
 //           );
@@ -345,14 +348,14 @@ static void gui_draw_row_linenum(linestruct *const line, Editor *const editor) {
 //           }
 //           else {
 //             vec2 origin = *drawpos;
-//             origin.x += string_pixel_offset(converted, (ISSET(LINE_NUMBERS) ? " " : NULL), (comment - converted), gui_font_get_font(gui->font));
+//             origin.x += string_pixel_offset(converted, (ISSET(LINE_NUMBERS) ? " " : NULL), (comment - converted), gui_font_get_font(textfont));
 //             vertex_buffer_add_mbstr(
 //               editor->buffer,
 //               (converted + (comment - converted)),
 //               (converted_len - (comment - converted)),
 //               ((comment - converted) ? &converted[(comment - converted) - 1] : NULL),
-//               // gui_font_get_font(gui->font),
-//               gui->font,
+//               // gui_font_get_font(textfont),
+//               textfont,
 //               GUI_DEFAULT_COMMENT_COLOR,
 //               &origin
 //             );
@@ -365,7 +368,7 @@ static void gui_draw_row_linenum(linestruct *const line, Editor *const editor) {
 //             converted,
 //             (comment ? (comment - converted) : converted_len),
 //             (ISSET(LINE_NUMBERS) ? " " : NULL),
-//             gui->font,
+//             textfont,
 //             GUI_WHITE_COLOR,
 //             drawpos
 //           );
@@ -373,12 +376,12 @@ static void gui_draw_row_linenum(linestruct *const line, Editor *const editor) {
 //       }
 //       /* Otherwise just draw white text. */
 //       else {
-//         vertex_buffer_add_string(editor->buffer, converted, converted_len, prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
+//         vertex_buffer_add_string(editor->buffer, converted, converted_len, prev_char, gui_font_get_font(textfont), vec4(1.0f), drawpos);
 //       }
 //     }
 //     /* Otherwise just draw white text. */
 //     else {
-//       vertex_buffer_add_string(editor->buffer, converted, converted_len, prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
+//       vertex_buffer_add_string(editor->buffer, converted, converted_len, prev_char, gui_font_get_font(textfont), vec4(1.0f), drawpos);
 //     }
 //   }
 //   draw_marked(editor, line, converted, from_col);
@@ -421,15 +424,15 @@ static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
             obj = (SyntaxObject *)hashmap_get(sf->objects, node->str);
             if (obj) {
               if (obj->color == SYNTAX_COLOR_BLUE) {
-                vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
-                vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(gui->font), VEC4_8BIT(36, 114, 200, 1), drawpos);
+                vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(textfont), vec4(1.0f), drawpos);
+                vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(textfont), VEC4_8BIT(36, 114, 200, 1), drawpos);
                 index = node->end;
                 free_node(node);
                 continue;
               }
               else if (obj->color == SYNTAX_COLOR_GREEN) {
-                vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
-                vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(gui->font), VEC4_8BIT(13, 188, 121, 1), drawpos);
+                vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(textfont), vec4(1.0f), drawpos);
+                vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(textfont), VEC4_8BIT(13, 188, 121, 1), drawpos);
                 index = node->end;
                 free_node(node);
                 continue;
@@ -438,8 +441,8 @@ static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
           }
           /* The global map. */
           if (test_map.find(node->str) != test_map.end()) {
-            vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
-            vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(gui->font), color_idx_to_vec4(test_map[node->str].color), drawpos);
+            vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(textfont), vec4(1.0f), drawpos);
+            vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(textfont), color_idx_to_vec4(test_map[node->str].color), drawpos);
             index = node->end;
           }
           /* The variable map in the language server. */
@@ -447,8 +450,8 @@ static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
             for (const auto &v : LSP->index.vars[node->str]) {
               if (strcmp(tail(v.file), tail(openfile->filename)) == 0) {
                 if (line->lineno >= v.decl_st && line->lineno <= v.decl_end) {
-                  vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
-                  vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(gui->font), color_idx_to_vec4(FG_VS_CODE_BRIGHT_CYAN), drawpos);
+                  vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(textfont), vec4(1.0f), drawpos);
+                  vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(textfont), color_idx_to_vec4(FG_VS_CODE_BRIGHT_CYAN), drawpos);
                   index = node->end;
                 }
               }
@@ -456,25 +459,25 @@ static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
           }
           /* The define map in the language server. */
           else if (LSP->index.defines.find(node->str) != LSP->index.defines.end()) {
-            vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
-            vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(gui->font), color_idx_to_vec4(FG_VS_CODE_BLUE), drawpos);
+            vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(textfont), vec4(1.0f), drawpos);
+            vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(textfont), color_idx_to_vec4(FG_VS_CODE_BLUE), drawpos);
             index = node->end;
           }
           /* The map for typedefined structs and normal structs. */
           else if (LSP->index.tdstructs.find(node->str) != LSP->index.tdstructs.end() || LSP->index.structs.find(node->str) != LSP->index.structs.end()) {
-            vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
-            vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(gui->font), color_idx_to_vec4(FG_VS_CODE_GREEN), drawpos);
+            vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(textfont), vec4(1.0f), drawpos);
+            vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(textfont), color_idx_to_vec4(FG_VS_CODE_GREEN), drawpos);
             index = node->end;
           }
           /* The function name map in the language server. */
           else if (LSP->index.functiondefs.find(node->str) != LSP->index.functiondefs.end()) {
-            vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
-            vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(gui->font), color_idx_to_vec4(FG_VS_CODE_BRIGHT_YELLOW), drawpos);
+            vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(textfont), vec4(1.0f), drawpos);
+            vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(textfont), color_idx_to_vec4(FG_VS_CODE_BRIGHT_YELLOW), drawpos);
             index = node->end;
           }
           free_node(node);
         }
-        vertex_buffer_add_string(editor->buffer, (converted + index), (converted_len - index), prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
+        vertex_buffer_add_string(editor->buffer, (converted + index), (converted_len - index), prev_char, gui_font_get_font(textfont), vec4(1.0f), drawpos);
       }
       /* AT&T asm syntax. */
       else if (editor->openfile->is_atnt_asm_file /* editor->openfile->type.is_set<ATNT_ASM>() */) {
@@ -484,13 +487,13 @@ static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
         const char *comment = strchr(converted, '#');
         if (comment) {
           vec2 origin = *drawpos;
-          origin.x += string_pixel_offset(converted, (ISSET(LINE_NUMBERS) ? " " : NULL), (comment - converted), gui_font_get_font(gui->font));
+          origin.x += string_pixel_offset(converted, (ISSET(LINE_NUMBERS) ? " " : NULL), (comment - converted), gui_font_get_font(textfont));
           vertex_buffer_add_string(
             editor->buffer,
             (converted + (comment - converted)),
             (converted_len - (comment - converted)),
             ((comment - converted) ? &converted[(comment - converted) - 1] : NULL),
-            gui_font_get_font(gui->font),
+            gui_font_get_font(textfont),
             GUI_DEFAULT_COMMENT_COLOR,
             &origin
           );
@@ -502,13 +505,13 @@ static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
             node = head;
             head = node->next;
             if (syntax_map_exists(ATNT_ASM, node->str, &color)) {
-              vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
-              vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(gui->font), color, drawpos);
+              vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(textfont), vec4(1.0f), drawpos);
+              vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(textfont), color, drawpos);
               index = node->end;
             }
             free_node(node);
           }
-          vertex_buffer_add_string(editor->buffer, (converted + index), ((comment ? (comment - converted) : converted_len) - index), prev_char, gui_font_get_font(gui->font), 1, drawpos);
+          vertex_buffer_add_string(editor->buffer, (converted + index), ((comment ? (comment - converted) : converted_len) - index), prev_char, gui_font_get_font(textfont), 1, drawpos);
         }
       }
       /* Nasm syntax. */
@@ -516,13 +519,13 @@ static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
         const char *comment = strchr(converted, ';');
         if (comment) {
           vec2 origin = *drawpos;
-          origin.x += string_pixel_offset(converted, (ISSET(LINE_NUMBERS) ? " " : NULL), (comment - converted), gui_font_get_font(gui->font));
+          origin.x += string_pixel_offset(converted, (ISSET(LINE_NUMBERS) ? " " : NULL), (comment - converted), gui_font_get_font(textfont));
           vertex_buffer_add_string(
             editor->buffer,
             (converted + (comment - converted)),
             (converted_len - (comment - converted)),
             ((comment - converted) ? &converted[(comment - converted) - 1] : NULL),
-            gui_font_get_font(gui->font),
+            gui_font_get_font(textfont),
             GUI_DEFAULT_COMMENT_COLOR,
             &origin
           );
@@ -534,7 +537,7 @@ static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
             converted,
             (comment ? (comment - converted) : converted_len),
             (ISSET(LINE_NUMBERS) ? " " : NULL),
-            gui_font_get_font(gui->font),
+            gui_font_get_font(textfont),
             vec4(1.0f),
             drawpos
           );
@@ -550,14 +553,14 @@ static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
           }
           else {
             vec2 origin = *drawpos;
-            origin.x += string_pixel_offset(converted, (ISSET(LINE_NUMBERS) ? " " : NULL), (comment - converted), gui_font_get_font(gui->font));
+            origin.x += string_pixel_offset(converted, (ISSET(LINE_NUMBERS) ? " " : NULL), (comment - converted), gui_font_get_font(textfont));
             vertex_buffer_add_mbstr(
               editor->buffer,
               (converted + (comment - converted)),
               (converted_len - (comment - converted)),
               ((comment - converted) ? &converted[(comment - converted) - 1] : NULL),
-              // gui_font_get_font(gui->font),
-              gui->font,
+              // gui_font_get_font(textfont),
+              textfont,
               GUI_DEFAULT_COMMENT_COLOR,
               &origin
             );
@@ -570,7 +573,7 @@ static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
             converted,
             (comment ? (comment - converted) : converted_len),
             (ISSET(LINE_NUMBERS) ? " " : NULL),
-            gui->font,
+            textfont,
             GUI_WHITE_COLOR,
             drawpos
           );
@@ -578,16 +581,16 @@ static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
       }
       /* Otherwise just draw white text. */
       else {
-        // vertex_buffer_add_string(editor->buffer, converted, converted_len, prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
+        // vertex_buffer_add_string(editor->buffer, converted, converted_len, prev_char, gui_font_get_font(textfont), vec4(1.0f), drawpos);
         font_vertbuf_add_mbstr(textfont, editor->buffer, converted, converted_len, prev_char, PACKED_UINT_FLOAT(1, 1, 1, 1), &drawpos->x, &drawpos->y);
       }
     }
     /* Otherwise just draw white text. */
     else {
-      vertex_buffer_add_string(editor->buffer, converted, converted_len, prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
+      vertex_buffer_add_string(editor->buffer, converted, converted_len, prev_char, gui_font_get_font(textfont), vec4(1.0f), drawpos);
     }
+    draw_marked(editor, line, converted, from_col);
   }
-  draw_marked(editor, line, converted, from_col);
   free(converted);
 }
 
@@ -630,8 +633,8 @@ void show_toggle_statusmsg(int flag) {
 //   ASSERT(editor->gutter);
 //   ASSERT(gui->font_shader);
 //   ASSERT(gui);
-//   ASSERT(gui->font);
-//   ASSERT(gui->uifont);
+//   ASSERT(textfont);
+//   ASSERT(uifont);
 //   vec2 pen = 0;
 //   int row = 0;
 //   /* Start at the top of the text window. */
@@ -649,18 +652,18 @@ void show_toggle_statusmsg(int flag) {
 //     vertex_buffer_clear(editor->buffer);
 //     while (line && row++ < (int)editor->rows) {
 //       pen.x = editor->text->pos.x;
-//       pen.y = (gui_font_row_baseline(gui->font, (line->lineno - editor->openfile->edittop->lineno)) + editor->text->pos.y);
+//       pen.y = (gui_font_row_baseline(textfont, (line->lineno - editor->openfile->edittop->lineno)) + editor->text->pos.y);
 //       gui_draw_row(line, editor, &pen);
 //       line = line->next;
 //     }
 //     if (!gui->flag.is_set<GUI_PROMPT>() && ((editor->openfile->current->lineno - editor->openfile->edittop->lineno) >= 0)) {
 //       line_add_cursor(
 //         (editor->openfile->current->lineno - editor->openfile->edittop->lineno),
-//         gui->font,
+//         textfont,
 //         editor->buffer,
 //         vec4(1),
 //         gui_editor_cursor_x_pos(editor, editor->openfile->current, editor->openfile->current_x),
-//         // cursor_pixel_x_pos(gui_font_get_font(gui->font)),
+//         // cursor_pixel_x_pos(gui_font_get_font(textfont)),
 //         editor->text->pos.y);
 //     }
 //   }
@@ -670,7 +673,7 @@ void show_toggle_statusmsg(int flag) {
 //       line = line->next;
 //     }
 //   }
-//   upload_texture_atlas(gui_font_get_atlas(gui->font));
+//   upload_texture_atlas(gui_font_get_atlas(textfont));
 //   render_vertex_buffer(gui->font_shader, editor->buffer);
 //   /* Draw the top bar for the editor.  Where the open buffer names are displayd. */
 //   gui_etb_draw(editor->etb);
@@ -686,10 +689,10 @@ void draw_editor(Editor *editor) {
   ASSERT(editor->text);
   ASSERT(editor->buffer);
   ASSERT(editor->gutter);
-  ASSERT(gui->font_shader);
+  ASSERT(font_shader);
   ASSERT(gui);
-  ASSERT(gui->font);
-  ASSERT(gui->uifont);
+  ASSERT(textfont);
+  ASSERT(uifont);
   vec2 pen = 0;
   int row = 0;
   /* Start at the top of the text window. */
@@ -705,20 +708,21 @@ void draw_editor(Editor *editor) {
   /* Render the text element of the editor. */
   if (refresh_needed) {
     vertex_buffer_clear(editor->buffer);
+    vertex_buffer_clear(editor->marked_region_buf);
     while (line && row++ < (int)editor->rows) {
       pen.x = editor->text->x;
-      pen.y = (gui_font_row_baseline(gui->font, (line->lineno - editor->openfile->edittop->lineno)) + editor->text->y);
+      pen.y = (gui_font_row_baseline(textfont, (line->lineno - editor->openfile->edittop->lineno)) + editor->text->y);
       gui_draw_row(line, editor, &pen);
       line = line->next;
     }
     if (!gui->flag.is_set<GUI_PROMPT>() && ((editor->openfile->current->lineno - editor->openfile->edittop->lineno) >= 0)) {
       line_add_cursor(
         (editor->openfile->current->lineno - editor->openfile->edittop->lineno),
-        gui->font,
+        textfont,
         editor->buffer,
         vec4(1),
         editor_cursor_x_pos(editor, editor->openfile->current, editor->openfile->current_x),
-        // cursor_pixel_x_pos(gui_font_get_font(gui->font)),
+        // cursor_pixel_x_pos(gui_font_get_font(textfont)),
         editor->text->y
       );
     }
@@ -729,8 +733,9 @@ void draw_editor(Editor *editor) {
       line = line->next;
     }
   }
-  // upload_texture_atlas(gui_font_get_atlas(gui->font));
+  // upload_texture_atlas(gui_font_get_atlas(textfont));
   // render_vertex_buffer(gui->font_shader, editor->buffer);
+  vertex_buffer_render(editor->marked_region_buf, GL_TRIANGLES);
   render_vertbuf(textfont, editor->buffer);
   /* Draw the top bar for the editor.  Where the open buffer names are displayd. */
   etb_draw(editor->tb);
@@ -786,17 +791,17 @@ void draw_statusbar(void) {
       // gui_element_move_resize(
       //   gui->statusbar,
       //   vec2((((float)gui->width / 2) - (msgwidth / 2)), (gui->height - gui->botbar->size.h - gui->statusbar->size.h)),
-      //   vec2(msgwidth, gui_font_height(gui->uifont) /* FONT_HEIGHT(gui->uifont) */)
+      //   vec2(msgwidth, gui_font_height(uifont) /* FONT_HEIGHT(uifont) */)
       // );
-      // vec2 penpos((gui->statusbar->pos.x + pixbreadth(gui_font_get_font(gui->uifont), " ")), (/* row_baseline_pixel(0, gui->uifont) */ gui_font_row_baseline(gui->uifont, 0) + gui->statusbar->pos.y));
+      // vec2 penpos((gui->statusbar->pos.x + pixbreadth(gui_font_get_font(uifont), " ")), (/* row_baseline_pixel(0, uifont) */ gui_font_row_baseline(uifont, 0) + gui->statusbar->pos.y));
       element_move_resize(gui->statusbar, ((gui_width / 2) - (msg_width / 2)), (gui_height - gui->botbar->height - gui->statusbar->height), msg_width, gui_font_height(uifont));
-      // vertex_buffer_add_string(gui->statusbuf, statusmsg, strlen(statusmsg), " ", gui_font_get_font(gui->uifont), 1, &penpos);
+      // vertex_buffer_add_string(gui->statusbuf, statusmsg, strlen(statusmsg), " ", gui_font_get_font(uifont), 1, &penpos);
       font_vertbuf_add_mbstr(uifont, gui->statusbuf, statusmsg, strlen(statusmsg), " ", PACKED_UINT(255, 255, 255, 255), &x, &y);
     }
     // gui_element_draw(gui->statusbar);
     element_draw(gui->statusbar);
-    upload_texture_atlas(gui_font_get_atlas(gui->uifont));
-    render_vertex_buffer(gui->font_shader, gui->statusbuf);
+    upload_texture_atlas(gui_font_get_atlas(uifont));
+    render_vertex_buffer(font_shader, gui->statusbuf);
   }
 }
 

@@ -131,8 +131,9 @@ extern int *bardata;
 extern int whitelen[2];
 extern int interface_color_pair[NUMBER_OF_ELEMENTS];
 
-// extern float mouse_x;
-// extern float mouse_y;
+extern Uint font_shader;
+extern Uint rect_shader;
+
 extern float gui_width;
 extern float gui_height;
 
@@ -230,8 +231,7 @@ extern Ulong typing_x;
 extern ElementGrid *element_grid;
 // extern Element *test_element;
 
-extern Uint element_rect_shader;
-extern Uint font_shader;
+// extern Uint element_rect_shader;
 
 /* ----------------------------- Other ----------------------------- */
 
@@ -724,7 +724,7 @@ void       scrollbar_set_thumb_color(Scrollbar *const sb, bool active);
 /* ---------------------------------------------------------- gui/utils.c ---------------------------------------------------------- */
 
 
-void draw_rect_rgba(float x, float y, float width, float height, float r, float g, float b, float a);
+// void draw_rect_rgba(float x, float y, float width, float height, float r, float g, float b, float a);
 void render_vertbuf(Font *const f, vertex_buffer_t *buf);
 vertex_buffer_t *vertbuf_create(void);
 
@@ -1493,6 +1493,16 @@ float get_last_mouse_ypos(void);
 /* ----------------------------- Is mouse flag set ----------------------------- */
 bool is_mouse_flag_set(Uint flag);
 void clear_mouse_flags(void);
+
+
+/* ---------------------------------------------------------- gui/shader.c ---------------------------------------------------------- */
+
+
+/* ----------------------------- Shader font create ----------------------------- */
+void shader_font_create(void);
+/* ----------------------------- Shader rect create ----------------------------- */
+void shader_rect_create(void);
+void shader_rect_vertex_load(RectVertex *buf, float x, float y, float w, float h, Uint color);
 
 
 /* ---------------------------------------------------------- nanox.c ---------------------------------------------------------- */

@@ -18,6 +18,8 @@ static Editor *editor_create_internal(void) {
   editor->hidden       = FALSE;
   /* Vertex buffer. */
   editor->buffer = vertbuf_create();
+  /* Marked region rect buffer. */
+  editor->marked_region_buf = vertex_buffer_new(RECT_VERTBUF);
   /* Openfile's */
   editor->startfile = NULL;
   editor->openfile  = NULL;
@@ -141,6 +143,7 @@ void editor_free(Editor *const editor) {
     return;
   }
   vertex_buffer_delete(editor->buffer);
+  vertex_buffer_delete(editor->marked_region_buf);
   element_free(editor->main);
   etb_free(editor->tb);
   free(editor->sb);
@@ -399,7 +402,7 @@ float editor_cursor_x_pos(Editor *const editor, linestruct *const line, Ulong in
   ASSERT(line);
   Ulong from_col  = editor_get_page_start(openeditor, wideness(line->data, index));
   char *converted = display_string(line->data, from_col, editor->cols, TRUE, FALSE);
-  // float ret = (string_pixel_offset(converted, NULL, (wideness(line->data, index) - from_col), gui_font_get_font(gui->font)) + editor->text->pos.x);
+  // float ret = (string_pixel_offset(converted, NULL, (wideness(line->data, index) - from_col), gui_font_get_font(textfont)) + editor->text->pos.x);
   float ret = (font_wideness(textfont, converted, (wideness(line->data, index) - from_col)) + editor->text->x);
   free(converted);
   return ret;

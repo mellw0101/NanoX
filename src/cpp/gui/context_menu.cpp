@@ -34,7 +34,7 @@ ContextMenu *context_menu_create(void) {
   ContextMenu *cxm;
   MALLOC_STRUCT(cxm);
   cxm->element = element_create(100, 100, 100, 100, TRUE);
-  cxm->menu = menu_create(cxm->element, gui->font, gui, context_menu_pos_routine, context_menu_accept_routine);
+  cxm->menu = menu_create(cxm->element, textfont, gui, context_menu_pos_routine, context_menu_accept_routine);
   menu_push_back(cxm->menu, "Root menu test: 0");
   menu_push_back(cxm->menu, "Root menu test: 1");
   menu_push_back(cxm->menu, "Root menu test: 2");

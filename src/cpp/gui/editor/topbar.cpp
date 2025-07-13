@@ -69,9 +69,9 @@
 //     GUI_ELEMENT_CHILDREN_ITER(etb->element, i, child,
 //       if (gui_element_has_file_data(child)) {
 //         pen = child->pos;
-//         pen.x += pixbreadth(gui->uifont, " ");
-//         pen.y += gui_font_row_baseline(gui->uifont, 0);
-//         vertex_buffer_add_string(etb->buffer, child->lable, child->lablelen, " ", gui_font_get_font(gui->uifont), child->textcolor, &pen);
+//         pen.x += pixbreadth(uifont, " ");
+//         pen.y += gui_font_row_baseline(uifont, 0);
+//         vertex_buffer_add_string(etb->buffer, child->lable, child->lablelen, " ", gui_font_get_font(uifont), child->textcolor, &pen);
 //       }
 //     );
 //     etb->text_refresh_needed = FALSE;
@@ -98,7 +98,7 @@
 //   button = gui_element_create(etb->element);
 //   button->flag = { GUIELEMENT_ABOVE, GUIELEMENT_RELATIVE_POS };
 //   button->cursor_type = GLFW_HAND_CURSOR;
-//   gui_element_move_resize(button, *pos, vec2((pixbreadth(gui->uifont, lable) + pixbreadth(gui->uifont, "  ")), gui_font_height(gui->uifont)));
+//   gui_element_move_resize(button, *pos, vec2((pixbreadth(uifont, lable) + pixbreadth(uifont, "  ")), gui_font_height(uifont)));
 //   gui_element_set_lable(button, lable);
 //   gui_element_set_file_data(button, f);
 //   /* Set the correct color for the button based on if it's the currently open file in the editor. */
@@ -210,11 +210,11 @@
 //   ASSERT(etb->element);
 //   MALLOC_STRUCT(etb->context);
 //   etb->context->clicked = NULL;
-//   etb->context->button_menu = gui_menu_create(etb->element, gui->uifont, etb, gui_etb_button_context_menu_pos, gui_etb_button_context_menu_accept);
+//   etb->context->button_menu = gui_menu_create(etb->element, uifont, etb, gui_etb_button_context_menu_pos, gui_etb_button_context_menu_accept);
 //   gui_menu_push_back(etb->context->button_menu, "Close");
 //   gui_menu_push_back(etb->context->button_menu, "Close Others");
 //   gui_menu_push_back(etb->context->button_menu, "Close All");
-//   etb->context->topbar_menu = gui_menu_create(etb->element, gui->uifont, etb, gui_etb_context_menu_pos, gui_etb_context_menu_accept);
+//   etb->context->topbar_menu = gui_menu_create(etb->element, uifont, etb, gui_etb_context_menu_pos, gui_etb_context_menu_accept);
 //   gui_menu_push_back(etb->context->topbar_menu, "New Text File");
 // }
 
@@ -232,7 +232,7 @@
 
 // EditorTb *gui_etb_create(guieditor *const editor) {
 //   ASSERT(gui);
-//   ASSERT(gui->uifont);
+//   ASSERT(uifont);
 //   ASSERT(editor);
 //   ASSERT(editor->main);
 //   EditorTb *etb;
@@ -249,7 +249,7 @@
 //   etb->element->flag = { GUIELEMENT_RELATIVE_POS, GUIELEMENT_RELATIVE_WIDTH };
 //   etb->element->relative_pos  = 0;
 //   etb->element->relative_size = 0;
-//   gui_element_move_resize(etb->element, etb->editor->main->pos, vec2(etb->editor->main->size.w, gui_font_height(gui->uifont)));
+//   gui_element_move_resize(etb->element, etb->editor->main->pos, vec2(etb->editor->main->size.w, gui_font_height(uifont)));
 //   gui_element_set_editor_data(etb->element, etb->editor);
 //   gui_etb_context_menu_create(etb);
 //   return etb;
@@ -272,7 +272,7 @@
 //   gui_etb_refresh_entries(etb);
 //   gui_etb_refresh_text(etb);
 //   gui_etb_draw_entries(etb);
-//   upload_texture_atlas(gui_font_get_atlas(gui->uifont));
+//   upload_texture_atlas(gui_font_get_atlas(uifont));
 //   render_vertex_buffer(gui->font_shader, etb->buffer);
 //   gui_menu_draw(etb->context->button_menu);
 //   gui_menu_draw(etb->context->topbar_menu);

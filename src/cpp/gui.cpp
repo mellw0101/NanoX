@@ -31,17 +31,17 @@ guistruct *gui = NULL;
 #define JETBRAINS_REGULAR_FONT  "jetbrains regular"
 
 /* Define the vertices of a square (centered at the origin). */
-constexpr const vec2 vertices[] = {
-  /* Pos. */
-  vec2(0.0f, 0.0f), /* Bottom-left */
-  vec2(1.0f, 0.0f), /* Bottom-right */
-  vec2(1.0f, 1.0f), /* Top-right */
-  vec2(0.0f, 1.0f), /* Top-left */
-};
-constexpr const Uint indices[] = {
-  0, 1, 2, /* First triangle. */
-  2, 3, 0  /* Second triangle. */
-};
+// constexpr const vec2 vertices[] = {
+//   /* Pos. */
+//   vec2(0.0f, 0.0f), /* Bottom-left */
+//   vec2(1.0f, 0.0f), /* Bottom-right */
+//   vec2(1.0f, 1.0f), /* Top-right */
+//   vec2(0.0f, 1.0f), /* Top-left */
+// };
+// constexpr const Uint indices[] = {
+//   0, 1, 2, /* First triangle. */
+//   2, 3, 0  /* Second triangle. */
+// };
 
 /* Print a error to stderr.  Used when using the gui. */
 void log_error_gui(const char *format, ...) {
@@ -58,88 +58,85 @@ void log_error_gui(const char *format, ...) {
 /* Init font shader and buffers. */
 static void setup_font_shader(void) {
   /* Create shader. */
-  gui->font_shader = openGL_create_shader_program_raw({
-    /* Font vertex shader. */
-    { STRLITERAL(\
-        uniform mat4 projection;
-        attribute vec3 vertex;
-        attribute vec2 tex_coord;
-        attribute vec4 color;
-        void main() {
-          gl_TexCoord[0].xy = tex_coord.xy;
-          gl_FrontColor     = color;
-          gl_Position       = projection * (vec4(vertex,1.0));
-        }
-      ),
-      GL_VERTEX_SHADER },
-    /* Font fragment shader. */
-    { STRLITERAL(\
-        uniform sampler2D texture;
-        void main() {
-          float a = texture2D(texture, gl_TexCoord[0].xy).r;
-          gl_FragColor = vec4(gl_Color.rgb, (gl_Color.a * a));
-        }
-      ),
-      GL_FRAGMENT_SHADER }
-  });
+  shader_font_create();
+  // gui->font_shader = openGL_create_shader_program_raw({
+  //   /* Font vertex shader. */
+  //   { STRLITERAL(\
+  //       uniform mat4 projection;
+  //       attribute vec3 vertex;
+  //       attribute vec2 tex_coord;
+  //       attribute vec4 color;
+  //       void main() {
+  //         gl_TexCoord[0].xy = tex_coord.xy;
+  //         gl_FrontColor     = color;
+  //         gl_Position       = projection * (vec4(vertex,1.0));
+  //       }
+  //     ),
+  //     GL_VERTEX_SHADER },
+  //   /* Font fragment shader. */
+  //   { STRLITERAL(\
+  //       uniform sampler2D texture;
+  //       void main() {
+  //         float a = texture2D(texture, gl_TexCoord[0].xy).r;
+  //         gl_FragColor = vec4(gl_Color.rgb, (gl_Color.a * a));
+  //       }
+  //     ),
+  //     GL_FRAGMENT_SHADER }
+  // });
   /* If there is a problem with the shader creation just die as we are passing string literals so there should not be alot that can go wrong. */
-  if (!gui->font_shader) {
+  if (!font_shader) {
     glfwDestroyWindow(gui->window);
     glfwTerminate();
     die("Failed to create font shader.\n");
   }
-  font_shader = gui->font_shader;
   /* Load the font and uifont. */
-  gui_font_load(gui->font, FALLBACK_FONT_PATH, 17, 4096);
-  gui_font_load(gui->uifont, FALLBACK_FONT_PATH, 15, 2048);
-  textfont = gui->font;
-  uifont   = gui->uifont;
-  // set_gui_font(FALLBACK_FONT_PATH, gui->font_size);
-  // set_gui_uifont(FALLBACK_FONT_PATH, gui->uifont_size);
+  gui_font_load(textfont, FALLBACK_FONT_PATH, 17, 4096);
+  gui_font_load(uifont, FALLBACK_FONT_PATH, 15, 2048);
 }
 
 /* Init the rect shader and setup the ssbo`s for indices and vertices. */
 static void setup_rect_shader(void) {
-  gui->rect_shader = openGL_create_shader_program_raw({
-    { STRLITERAL(\
-        #version 450 core \n
-        layout(std430, binding = 0) buffer VertexBuffer {
-          vec2 vertices[];
-        };
-        layout(std430, binding = 1) buffer IndexBuffer {
-          uint indices[];
-        };
-        /* Uniforms. */
-        uniform mat4 projection;
-        uniform vec2 elemsize;
-        uniform vec2 elempos;
-        /* Main vertex shader exec. */
-        void main() {
-          vec2 scaledPos = (vertices[indices[gl_VertexID]] * elemsize);
-          vec4 worldPos  = (projection * vec4(scaledPos + elempos, 0.0f, 1.0f));
-          gl_Position    = worldPos;
-        }
-      ),
-      GL_VERTEX_SHADER },
-    { STRLITERAL(\
-        #version 450 core\n
-        /* Output. */
-        out vec4 FragColor;
-        /* Uniforms. */
-        uniform vec4 rectcolor;
-        /* Main shader exec. */
-        void main() {
-          FragColor = rectcolor;
-        }
-      ),
-      GL_FRAGMENT_SHADER }
-  });
+  // gui->rect_shader = openGL_create_shader_program_raw({
+  //   { STRLITERAL(\
+  //       #version 450 core \n
+  //       layout(std430, binding = 0) buffer VertexBuffer {
+  //         vec2 vertices[];
+  //       };
+  //       layout(std430, binding = 1) buffer IndexBuffer {
+  //         uint indices[];
+  //       };
+  //       /* Uniforms. */
+  //       uniform mat4 projection;
+  //       uniform vec2 elemsize;
+  //       uniform vec2 elempos;
+  //       /* Main vertex shader exec. */
+  //       void main() {
+  //         vec2 scaledPos = (vertices[indices[gl_VertexID]] * elemsize);
+  //         vec4 worldPos  = (projection * vec4(scaledPos + elempos, 0.0f, 1.0f));
+  //         gl_Position    = worldPos;
+  //       }
+  //     ),
+  //     GL_VERTEX_SHADER },
+  //   { STRLITERAL(\
+  //       #version 450 core\n
+  //       /* Output. */
+  //       out vec4 FragColor;
+  //       /* Uniforms. */
+  //       uniform vec4 rectcolor;
+  //       /* Main shader exec. */
+  //       void main() {
+  //         FragColor = rectcolor;
+  //       }
+  //     ),
+  //     GL_FRAGMENT_SHADER }
+  // });
   /* Init and setup the static indices and vertices ssbo. */
-  indices_ssbo.init(indices);
-  vertices_ssbo.init(vertices);
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertices_ssbo.ssbo());
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, indices_ssbo.ssbo());
-  element_rect_shader = gui->rect_shader;
+  // indices_ssbo.init(indices);
+  // vertices_ssbo.init(vertices);
+  // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertices_ssbo.ssbo());
+  // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, indices_ssbo.ssbo());
+  // element_rect_shader = gui->rect_shader;
+  shader_rect_create();
 }
 
 /* Setup the bottom bar for the gui. */
@@ -148,8 +145,8 @@ static void setup_botbar(void) {
   // gui->botbar = gui_element_create(gui->root, FALSE);
   // gui_element_move_resize(
   //   gui->botbar,
-  //   vec2(0, (gui->height - FONT_HEIGHT(gui_font_get_font(gui->font)))),
-  //   vec2(gui->width, FONT_HEIGHT(gui_font_get_font(gui->font)))
+  //   vec2(0, (gui->height - FONT_HEIGHT(gui_font_get_font(textfont)))),
+  //   vec2(gui->width, FONT_HEIGHT(gui_font_get_font(textfont)))
   // );
   // gui->botbar->color = GUI_BLACK_COLOR;
   // gui->botbar->flag.set<GUIELEMENT_REVERSE_RELATIVE_Y_POS>();
@@ -169,7 +166,7 @@ static void setup_statusbar(void) {
   gui->statusbuf = make_new_font_buffer();
   // gui->statusbar = gui_element_create(
   //   vec2(0, gui->height),
-  //   vec2(gui->width, gui_font_height(gui->uifont)),
+  //   vec2(gui->width, gui_font_height(uifont)),
   //   color_idx_to_vec4(FG_VS_CODE_RED)
   // );
   // gui->statusbar->flag.set<GUIELEMENT_HIDDEN>();
@@ -208,10 +205,8 @@ static void make_guistruct(void) {
   gui->botbuf                = NULL;
   gui->statusbuf             = NULL;
   gui->projection            = NULL;
-  gui->font_shader           = 0;
-  gui->uifont                = NULL;
-  gui->font                  = NULL;
-  gui->rect_shader           = 0;
+  // gui->font_shader           = 0;
+  // rect_shader           = 0;
   gui->promptmenu            = NULL;
   gui->current_cursor_type   = GLFW_ARROW_CURSOR;
   gui->suggestmenu           = NULL;
@@ -241,8 +236,8 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
   /* Create and start the event handler. */
   gui->handler = nevhandler_create();
   nevhandler_start(gui->handler, TRUE);
-  gui->font   = gui_font_create();
-  gui->uifont = gui_font_create();
+  textfont   = gui_font_create();
+  uifont = gui_font_create();
   // gui->root = gui_element_create(0, vec2(gui->height, gui->width), 0, FALSE);
   gui->root = element_create(0, 0, gui_width, gui_height, FALSE);
 }
@@ -254,19 +249,19 @@ static void delete_guistruct(void) {
   glfwDestroyWindow(gui->window);
   glfwTerminate();
   /* Destroy the shaders. */
-  if (gui->font_shader) {
-    glDeleteProgram(gui->font_shader);
+  if (font_shader) {
+    glDeleteProgram(font_shader);
   }
-  if (gui->rect_shader) {
-    glDeleteProgram(gui->rect_shader);
+  if (rect_shader) {
+    glDeleteProgram(rect_shader);
   }
   /* Delete all elements used by 'gui'. */
   // gui_element_free(gui->root);
   // gui_element_free(gui->statusbar);
   element_free(gui->root);
   /* Free the main font and the uifont. */
-  gui_font_free(gui->font);
-  gui_font_free(gui->uifont);
+  gui_font_free(textfont);
+  gui_font_free(uifont);
   /* Delete all the vertex buffers. */
   if (gui->botbuf) {
     vertex_buffer_delete(gui->botbuf);

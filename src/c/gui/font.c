@@ -388,7 +388,7 @@ void font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const
   ASSERT(current);
   ASSERT(buf);
   float x0, x1, y0, y1;
-  Uint indices[] = { 0, 1, 2, 0, 2, 3 };
+  // Uint indices[] = { 0, 1, 2, 0, 2, 3 };
   vertex_t vertices[4];
   texture_glyph_t *glyph = gui_font_get_glyph(f, current);
   if (prev) {
@@ -398,11 +398,11 @@ void font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const
   y0 = (int)((*pen_y) - glyph->offset_y);
   x1 = (int)(x0 + glyph->width);
   y1 = (int)(y0 + glyph->height);
-  vertices[0] = (vertex_t){ x0,y0,0, glyph->s0,glyph->t0, UNPACK_UINT_FLOAT(color, 0),UNPACK_UINT_FLOAT(color, 1), UNPACK_UINT_FLOAT(color, 2), UNPACK_UINT_FLOAT(color, 3) };
-  vertices[1] = (vertex_t){ x0,y1,0, glyph->s0,glyph->t1, UNPACK_UINT_FLOAT(color, 0),UNPACK_UINT_FLOAT(color, 1), UNPACK_UINT_FLOAT(color, 2), UNPACK_UINT_FLOAT(color, 3) };
-  vertices[2] = (vertex_t){ x1,y1,0, glyph->s1,glyph->t1, UNPACK_UINT_FLOAT(color, 0),UNPACK_UINT_FLOAT(color, 1), UNPACK_UINT_FLOAT(color, 2), UNPACK_UINT_FLOAT(color, 3) };
-  vertices[3] = (vertex_t){ x1,y0,0, glyph->s1,glyph->t0, UNPACK_UINT_FLOAT(color, 0),UNPACK_UINT_FLOAT(color, 1), UNPACK_UINT_FLOAT(color, 2), UNPACK_UINT_FLOAT(color, 3) };
-  vertex_buffer_push_back(buf, vertices, 4, indices, 6);
+  vertices[0] = (vertex_t){ x0,y0, glyph->s0,glyph->t0, UNPACK_UINT_FLOAT(color, 0),UNPACK_UINT_FLOAT(color, 1), UNPACK_UINT_FLOAT(color, 2), UNPACK_UINT_FLOAT(color, 3) };
+  vertices[1] = (vertex_t){ x0,y1, glyph->s0,glyph->t1, UNPACK_UINT_FLOAT(color, 0),UNPACK_UINT_FLOAT(color, 1), UNPACK_UINT_FLOAT(color, 2), UNPACK_UINT_FLOAT(color, 3) };
+  vertices[2] = (vertex_t){ x1,y1, glyph->s1,glyph->t1, UNPACK_UINT_FLOAT(color, 0),UNPACK_UINT_FLOAT(color, 1), UNPACK_UINT_FLOAT(color, 2), UNPACK_UINT_FLOAT(color, 3) };
+  vertices[3] = (vertex_t){ x1,y0, glyph->s1,glyph->t0, UNPACK_UINT_FLOAT(color, 0),UNPACK_UINT_FLOAT(color, 1), UNPACK_UINT_FLOAT(color, 2), UNPACK_UINT_FLOAT(color, 3) };
+  vertex_buffer_push_back(buf, vertices, 4, FONT_INDICES, FONT_INDICES_LEN);
   (*pen_x) += glyph->advance_x;
 }
 

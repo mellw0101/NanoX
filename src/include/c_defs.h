@@ -685,6 +685,17 @@ static const short bg_vs_code_color_array[] = {
     block_sigwinch(FALSE);          \
   )
 
+/* ----------------------------- gui/shader.c ----------------------------- */
+
+static const Uint FONT_INDICES[6] = { 0, 1, 2, 0, 2, 3 };
+static const Uint RECT_INDICES[6] = { 0, 1, 2, 2, 3, 0 };
+#define FONT_INDICES      FONT_INDICES
+#define FONT_INDICES_LEN  ARRAY_SIZE(FONT_INDICES)
+#define RECT_INDICES      RECT_INDICES
+#define RECT_INDICES_LEN  ARRAY_SIZE(RECT_INDICES)
+#define FONT_VERTBUF      "vertex:2f,tex_coord:2f,color:4f"
+#define RECT_VERTBUF      "vertex:2f,color:4f"
+
 
 /* ---------------------------------------------------------- Typedef's ---------------------------------------------------------- */
 
@@ -788,6 +799,10 @@ typedef struct SuggestMenu  SuggestMenu;
 /* ----------------------------- gui/statusbar.c ----------------------------- */
 
 typedef struct Statusbar  Statusbar;
+
+/* ----------------------------- gui/shader.c ----------------------------- */
+
+typedef struct RectVertex  RectVertex;
 
 
 /* ---------------------------------------------------------- Enum's ---------------------------------------------------------- */
@@ -1241,12 +1256,23 @@ typedef enum {
 
 typedef struct {
   /* Position */
-  float x, y, z;
+  float x, y;
   /* Tex */
   float s, t;
   /* Color */
   float r, g, b, a;
 } vertex_t;
+
+struct RectVertex {
+  /* Cordinats for this vertex. */
+  float x;
+  float y;
+  /* Color for this vertex. */
+  float r;
+  float g;
+  float b;
+  float a;
+};
 
 struct colortype {
   short id;         /* An ordinal number (if this color combo is for a multiline regex). */
@@ -1649,10 +1675,12 @@ struct Element {
 
   int cursor;
 
+  vertex_buffer_t *rect_buffer;
+
   union {
     void           *raw;
     Scrollbar      *sb;
-    Menu          *menu;
+    Menu           *menu;
     openfilestruct *file;
     Editor         *editor;
   } data_ptr;
@@ -1666,6 +1694,8 @@ struct Editor {
   bool hidden       : 1;
 
   vertex_buffer_t *buffer;
+  vertex_buffer_t *marked_region_buf;
+
   openfilestruct *startfile;
   openfilestruct *openfile;
 

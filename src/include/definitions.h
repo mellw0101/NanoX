@@ -1213,10 +1213,10 @@ typedef void (*MenuHoverFunc)(void *, const char *const restrict, int index);
     vertex_buffer_t *botbuf;                 /* The text buffer for `botbar`. */
     vertex_buffer_t *statusbuf;              /* The text buffer for `statusbar`. */
     matrix4x4       *projection;             /* The projection to pass to the shaders. */
-    Uint             font_shader;            /* The font shader. */
-    Font            *uifont;
-    Font            *font;
-    Uint             rect_shader;            /* The rect shader. */
+    // Uint             font_shader;            /* The font shader. */
+    // Font            *uifont;
+    // Font            *font;
+    // Uint             rect_shader;            /* The rect shader. */
     GuiPromptMenu   *promptmenu;
     int              current_cursor_type;    /* The currently active cursor type. */
     SuggestMenu     *suggestmenu;

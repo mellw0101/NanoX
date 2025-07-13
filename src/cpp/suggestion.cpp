@@ -284,7 +284,7 @@ static void gui_suggestmenu_accept_routine(void *arg, const char *const restrict
 void gui_suggestmenu_create(void) {
   ASSERT(gui);
   MALLOC_STRUCT(gui->suggestmenu);
-  gui->suggestmenu->menu = menu_create(gui->root, gui->font, gui->suggestmenu, gui_suggestmenu_pos_routine, gui_suggestmenu_accept_routine);
+  gui->suggestmenu->menu = menu_create(gui->root, textfont, gui->suggestmenu, gui_suggestmenu_pos_routine, gui_suggestmenu_accept_routine);
   menu_set_tab_accept_behavior(gui->suggestmenu->menu, TRUE);
   menu_set_arrow_depth_navigation(gui->suggestmenu->menu, FALSE);
   gui->suggestmenu->buf[0] = '\0';

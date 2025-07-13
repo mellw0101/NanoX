@@ -94,12 +94,12 @@
 //   openeditor->gutter->color = EDIT_BACKGROUND_COLOR;
 //   gui_element_move_resize(
 //     openeditor->gutter,
-//     vec2(0.0f, (openeditor->main->pos.y + gui_font_height(gui->uifont))),
-//     vec2(get_line_number_pixel_offset(openeditor->openfile->filetop, gui_font_get_font(gui->font)), (openeditor->main->size.h - gui_font_height(gui->uifont)))
+//     vec2(0.0f, (openeditor->main->pos.y + gui_font_height(uifont))),
+//     vec2(get_line_number_pixel_offset(openeditor->openfile->filetop, gui_font_get_font(textfont)), (openeditor->main->size.h - gui_font_height(uifont)))
 //   );
 //   /* Set relative positioning for the gutter, so it follows the editor. */
 //   openeditor->gutter->flag.set<GUIELEMENT_RELATIVE_POS>();
-//   openeditor->gutter->relative_pos = vec2(0, gui_font_height(gui->uifont));
+//   openeditor->gutter->relative_pos = vec2(0, gui_font_height(uifont));
 //   /* Also set relative height for the gutter element so that it follows the editors height. */
 //   openeditor->gutter->flag.set<GUIELEMENT_RELATIVE_HEIGHT>();
 //   openeditor->gutter->relative_size = 0;
@@ -108,12 +108,12 @@
 //   openeditor->text->color = EDIT_BACKGROUND_COLOR;
 //   gui_element_move_resize(
 //     openeditor->text,
-//     vec2((openeditor->main->pos.x + openeditor->gutter->size.w), (openeditor->main->pos.y + gui_font_height(gui->uifont))),
-//     vec2((openeditor->main->size.w - openeditor->gutter->size.w), (openeditor->main->size.h - gui_font_height(gui->uifont)))
+//     vec2((openeditor->main->pos.x + openeditor->gutter->size.w), (openeditor->main->pos.y + gui_font_height(uifont))),
+//     vec2((openeditor->main->size.w - openeditor->gutter->size.w), (openeditor->main->size.h - gui_font_height(uifont)))
 //   );
 //   /* Set relative positioning for the text elemenent, so it follows the editor. */
 //   openeditor->text->flag.set<GUIELEMENT_RELATIVE_POS>();
-//   openeditor->text->relative_pos = vec2(openeditor->gutter->size.w, gui_font_height(gui->uifont));
+//   openeditor->text->relative_pos = vec2(openeditor->gutter->size.w, gui_font_height(uifont));
 //   /* Also set relative width and height for the text element so that it follows the size of the editor. */
 //   openeditor->text->flag.set<GUIELEMENT_RELATIVE_WIDTH>();
 //   openeditor->text->flag.set<GUIELEMENT_RELATIVE_HEIGHT>();
@@ -308,7 +308,7 @@
 //   Uint row = 0;
 //   float top, bot;
 //   while (TRUE) {
-//     gui_font_row_top_bot(gui->font, row, &top, &bot);
+//     gui_font_row_top_bot(textfont, row, &top, &bot);
 //     if (top > editor->text->size.h) {
 //       break;
 //     }
@@ -328,7 +328,7 @@
 //   char *linenostr;
 //   confirm_margin();
 //   linenostr = fmtstr("%*lu ", (margin - 1), editor->openfile->filebot->lineno);
-//   editor->gutter->size.w = pixbreadth(gui_font_get_font(gui->font), linenostr);
+//   editor->gutter->size.w = pixbreadth(gui_font_get_font(textfont), linenostr);
 //   free(linenostr);
 // }
 
@@ -336,7 +336,7 @@
 //   ASSERT(editor);
 //   int rows;
 //   int cols;
-//   gui_font_rows_cols(gui->font, editor->text->size.w, editor->text->size.h, &rows, &cols);
+//   gui_font_rows_cols(textfont, editor->text->size.w, editor->text->size.h, &rows, &cols);
 //   editor->rows = rows;
 //   editor->cols = cols;
 //   if (editor == openeditor) {
@@ -571,7 +571,7 @@
 //   ASSERT(line);
 //   Ulong from_col  = get_page_start(wideness(line->data, index));
 //   char *converted = display_string(line->data, from_col, openeditor->cols, TRUE, FALSE);
-//   float ret = (string_pixel_offset(converted, NULL, (wideness(line->data, index) - from_col), gui_font_get_font(gui->font)) + editor->text->pos.x);
+//   float ret = (string_pixel_offset(converted, NULL, (wideness(line->data, index) - from_col), gui_font_get_font(textfont)) + editor->text->pos.x);
 //   free(converted);
 //   return ret;
 // }
@@ -582,14 +582,14 @@
 //   ASSERT(editor->openfile);
 //   ASSERT(editor->openfile->edittop);
 //   long row;
-//   gui_font_row_from_pos(gui->font, editor->text->pos.y, (editor->text->pos.y + editor->text->size.h), y_pos, &row);
+//   gui_font_row_from_pos(textfont, editor->text->pos.y, (editor->text->pos.y + editor->text->size.h), y_pos, &row);
 //   return gui_line_from_number(editor, lclamp((editor->openfile->edittop->lineno + row), editor->openfile->edittop->lineno, editor->openfile->filebot->lineno));
 // }
 
 // Ulong gui_editor_get_text_index(guieditor *const editor, linestruct *const line, float x_pos) {
 //   ASSERT(editor);
 //   ASSERT(line);
-//   return gui_font_index_from_pos(gui->font, line->data, strlen(line->data), x_pos, editor->text->pos.x);
+//   return gui_font_index_from_pos(textfont, line->data, strlen(line->data), x_pos, editor->text->pos.x);
 // }
 
 // void gui_editor_get_text_line_index(guieditor *const editor, float x_pos, float y_pos, linestruct **const outline, Ulong *const outindex) {

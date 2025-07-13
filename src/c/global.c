@@ -298,6 +298,11 @@ int whitelen[2];
 /* The processed color pairs for the interface elements. */
 int interface_color_pair[NUMBER_OF_ELEMENTS] = {0};
 
+/* ----------------------------- Uint ----------------------------- */
+
+Uint font_shader = 0;
+Uint rect_shader = 0;
+
 /* ----------------------------- float ----------------------------- */
 
 /* The mouse x position, this is used for the gui. */

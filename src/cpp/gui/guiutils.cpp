@@ -209,10 +209,10 @@ void add_glyph(const char *current, const char *prev, vertex_buffer_t *buf, text
   y0 = (int)(penpos->y - glyph->offset_y);
   x1 = (int)(x0 + glyph->width);
   y1 = (int)(y0 + glyph->height);
-  vertices[0] = { x0,y0,0, glyph->s0,glyph->t0, color.r,color.g,color.b,color.a };
-  vertices[1] = { x0,y1,0, glyph->s0,glyph->t1, color.r,color.g,color.b,color.a };
-  vertices[2] = { x1,y1,0, glyph->s1,glyph->t1, color.r,color.g,color.b,color.a };
-  vertices[3] = { x1,y0,0, glyph->s1,glyph->t0, color.r,color.g,color.b,color.a };
+  vertices[0] = { x0,y0, glyph->s0,glyph->t0, color.r,color.g,color.b,color.a };
+  vertices[1] = { x0,y1, glyph->s0,glyph->t1, color.r,color.g,color.b,color.a };
+  vertices[2] = { x1,y1, glyph->s1,glyph->t1, color.r,color.g,color.b,color.a };
+  vertices[3] = { x1,y0, glyph->s1,glyph->t0, color.r,color.g,color.b,color.a };
   vertex_buffer_push_back(buf, vertices, 4, indices, 6);
   penpos->x += glyph->advance_x;
 }
@@ -260,10 +260,10 @@ void add_cursor(texture_font_t *font, vertex_buffer_t *buf, vec4 color, vec2 at)
   Uint indices[] = { 0, 1, 2, 0, 2, 3 };
   vertex_t vertices[] = {
     // Position   Texture               Color
-    {  x0,y0,0,   glyph->s0, glyph->t0, color.r,color.g,color.b,color.a },
-    {  x0,y1,0,   glyph->s0, glyph->t1, color.r,color.g,color.b,color.a },
-    {  x1,y1,0,   glyph->s1, glyph->t1, color.r,color.g,color.b,color.a },
-    {  x1,y0,0,   glyph->s1, glyph->t0, color.r,color.g,color.b,color.a }
+    {  x0,y0,   glyph->s0, glyph->t0, color.r,color.g,color.b,color.a },
+    {  x0,y1,   glyph->s0, glyph->t1, color.r,color.g,color.b,color.a },
+    {  x1,y1,   glyph->s1, glyph->t1, color.r,color.g,color.b,color.a },
+    {  x1,y0,   glyph->s1, glyph->t0, color.r,color.g,color.b,color.a }
   };
   vertex_buffer_push_back(buf, vertices, 4, indices, 6);
 }
