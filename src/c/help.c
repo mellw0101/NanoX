@@ -10,16 +10,14 @@
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
 
 
-/* static */ char *help_text = NULL;
-
+/* The text displayed in the help window. */
+static char *help_text = NULL;
 /* The point in the help text where the shortcut descriptions begin. */
-char *end_of_help_intro = NULL;
-
+static char *end_of_help_intro = NULL;
 /* The point in the help text just after the title. */
-const char *start_of_help_body = NULL;
-
+static const char *start_of_help_body = NULL;
 /* The offset (in bytes) of the topleft of the shown help text. */
-Ulong help_location;
+static Ulong help_location;
 
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
@@ -36,7 +34,7 @@ Ulong help_location;
  * The function key list is built by iterating over all functions,
  * and for each function, iterating over all shortcuts.
  * The function key descriptions are built by iterating over all functions. */
-/* static */ void help_init(void) {
+static void help_init(void) {
   int tally;
   int maximum = 0;
   int counter = 0;
@@ -319,7 +317,8 @@ Ulong help_location;
 
 /* ----------------------------- Show help ----------------------------- */
 
-/* static */ void show_help_for(FULL_CTX_ARGS) {
+/* Assemble a help text, display it, and allow scrolling through it. */
+static void show_help_for(FULL_CTX_ARGS) {
   ASSERT(start);
   ASSERT(open);
   ASSERT(*start);
@@ -516,11 +515,6 @@ Ulong help_location;
   }
 }
 
-/* static */ void show_help(void) {
-  FULL_CTX_CALL(show_help_for);
-}
-
-
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
@@ -595,62 +589,23 @@ void wrap_help_text_into_buffer(void) {
   FULL_CTX_CALL(wrap_help_text_into_buffer_for);
 }
 
-/* Hard-wrap the concatenated help text, and write it into a new buffer. */
-// void wrap_help_text_into_buffer(void) {
-//   /* Avoid overtight and overwide paragraphs in the introductory text. */
-//   const char *ptr = start_of_help_body;
-//   Ulong wrapping_point = (((COLS < 40) ? 40 : (COLS > 74) ? 74 : COLS) - sidebar);
-//   Ulong sum = 0;
-//   make_new_buffer();
-//   /* Ensure there is a blank line at the top of the text, for esthetics. */
-//   if ((ISSET(MINIBAR) || !ISSET(EMPTY_LINE)) && LINES > 6) {
-//     openfile->current->data = realloc_strcpy(openfile->current->data, " ");
-//     openfile->current->next = make_new_node(openfile->current);
-//     openfile->current       = openfile->current->next;
-//   }
-//   /* Copy the help text into the just-created new buffer. */
-//   while (*ptr) {
-//     int   length, shim;
-//     char *oneline;
-//     if (ptr == end_of_help_intro) {
-//       wrapping_point = (((COLS < 40) ? 40 : COLS) - sidebar);
-//     }
-//     if (ptr < end_of_help_intro || *(ptr - 1) == '\n') {
-//       length  = break_line(ptr, wrapping_point, TRUE);
-//       oneline = xmalloc(length + 1);
-//       shim    = ((*(ptr + length - 1) == ' ') ? 0 : 1);
-//       snprintf(oneline, (length + shim), "%s", ptr);
-//     }
-//     else {
-//       length  = break_line(ptr, (((COLS < 40) ? 22 : (COLS - 18)) - sidebar), TRUE);
-//       oneline = xmalloc(length + 5);
-//       snprintf(oneline, (length + 5), "\t\t  %s", ptr);
-//     }
-//     free(openfile->current->data);
-//     openfile->current->data = oneline;
-//     ptr += length;
-//     if (*ptr != '\n') {
-//       --ptr;
-//     }
-//     /* Create a new line, and then one more for each extra \n. */
-//     do {
-//       openfile->current->next = make_new_node(openfile->current);
-//       openfile->current       = openfile->current->next;
-//       openfile->current->data = COPY_OF("");
-//     } while (*(++ptr) == '\n');
-//   }
-//   openfile->filebot = openfile->current;
-//   openfile->current = openfile->filetop;
-//   remove_magicline();
-//   find_and_prime_applicable_syntax();
-//   prepare_for_display();
-//   /* Move to the position in the file where we were before. */
-//   while (TRUE) {
-//     sum += strlen(openfile->current->data);
-//     if (sum > help_location) {
-//       break;
-//     }
-//     openfile->current = openfile->current->next;
-//   }
-//   openfile->edittop = openfile->current;
-// }
+/* ----------------------------- Do help ----------------------------- */
+
+/* Start the help-viewer, or indecate that there is no help. */
+void do_help_for(FULL_CTX_ARGS) {
+# ifdef ENABLE_HELP
+  show_help_for(FULL_STACK_CTX);
+# else
+  if (currmenu & (MMAIN | MBROWSER)) {
+    statusbar_all(_("^W == Ctrl+W    M-W == Alt+W"));
+  }
+  else {
+    beep();
+  }
+# endif
+}
+
+/* Start the help-viewer, or indecate that there is no help.  Note that this is `context-safe`. */
+void do_help(void) {
+  FULL_CTX_CALL(do_help_for);
+}

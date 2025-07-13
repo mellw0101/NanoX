@@ -39,8 +39,8 @@
 /* `Internal` structure that represent's the context menu for a `EditorTb` structure. */
 typedef struct {
   Element *clicked;
-  CMenu *button_menu;
-  CMenu *topbar_menu;
+  Menu *button_menu;
+  Menu *topbar_menu;
 } EtbContextMenu;
 
 struct EditorTb {
@@ -157,8 +157,8 @@ static void etb_button_context_menu_pos(void *arg, float _UNUSED width, float _U
   ASSERT(arg);
   ASSERT(x);
   ASSERT(y);
-  (*x) = mouse_x;
-  (*y) = mouse_y;
+  (*x) = get_mouse_xpos();
+  (*y) = get_mouse_ypos();
 }
 
 /* The accept routine for the button context menu of the editor topbar. */
@@ -197,8 +197,8 @@ static void etb_context_menu_pos(void *arg, float _UNUSED width, float _UNUSED h
   ASSERT(arg);
   ASSERT(x);
   ASSERT(y);
-  (*x) = mouse_x;
-  (*y) = mouse_y;
+  (*x) = get_mouse_xpos();
+  (*y) = get_mouse_ypos();
 }
 
 /* The accept routine for the context menu of the editor topbar. */

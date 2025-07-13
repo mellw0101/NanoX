@@ -356,8 +356,8 @@ void element_set_sb_data(Element *const e, Scrollbar *const data) {
   e->dp_sb           = data;
 }
 
-/* Set the internal data ptr of `e` to `CMenu *` data.  Note that this should be the only way of setting the internal data of a element. */
-void element_set_menu_data(Element *const e, CMenu *const data) {
+/* Set the internal data ptr of `e` to `Menu *` data.  Note that this should be the only way of setting the internal data of a element. */
+void element_set_menu_data(Element *const e, Menu *const data) {
   ASSERT(e);
   ASSERT(data);
   e->has_raw_data    = FALSE;

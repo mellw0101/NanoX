@@ -9,10 +9,10 @@
 
 struct ContextMenu {
   Element *element;
-  CMenu *menu;
-  CMenu *sm0;
-  CMenu *sm1;
-  CMenu *sm2;
+  Menu *menu;
+  Menu *sm0;
+  Menu *sm1;
+  Menu *sm2;
 };
 
 
@@ -20,8 +20,8 @@ static void context_menu_pos_routine(void *arg, float width, float height, float
   ASSERT(arg);
   ASSERT(x);
   ASSERT(y);
-  (*x) = mousepos.x;
-  (*y) = mousepos.y;
+  (*x) = get_mouse_xpos();
+  (*y) = get_mouse_ypos();
 }
 
 static void context_menu_accept_routine(void *arg, const char *const restrict entry_string, int index) {

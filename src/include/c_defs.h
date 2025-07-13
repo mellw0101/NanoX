@@ -767,7 +767,7 @@ typedef struct Scrollbar  Scrollbar;
 
 /* ----------------------------- gui/menu.c ----------------------------- */
 
-typedef struct CMenu  CMenu;
+typedef struct Menu  Menu;
 
 /* ----------------------------- gui/element.c ----------------------------- */
 
@@ -1220,6 +1220,19 @@ typedef enum {
   #define SYNTAX_OBJECT_TYPE_C_STRUCT   SYNTAX_OBJECT_TYPE_C_STRUCT
 } SyntaxObjectType;
 
+/* ----------------------------- gui/mouse.c ----------------------------- */
+
+typedef enum {
+  MOUSE_BUTTON_HELD_LEFT,
+  MOUSE_BUTTON_HELD_RIGHT,
+  MOUSE_PRESS_WAS_DOUBLE,
+  MOUSE_PRESS_WAS_TRIPPLE,
+# define MOUSE_BUTTON_HELD_LEFT   MOUSE_BUTTON_HELD_LEFT
+# define MOUSE_BUTTON_HELD_RIGHT  MOUSE_BUTTON_HELD_RIGHT
+# define MOUSE_PRESS_WAS_DOUBLE   MOUSE_PRESS_WAS_DOUBLE
+# define MOUSE_PRESS_WAS_TRIPPLE  MOUSE_PRESS_WAS_TRIPPLE
+} MouseFlag;
+
 
 /* ---------------------------------------------------------- Struct's ---------------------------------------------------------- */
 
@@ -1639,7 +1652,7 @@ struct Element {
   union {
     void           *raw;
     Scrollbar      *sb;
-    CMenu          *menu;
+    Menu          *menu;
     openfilestruct *file;
     Editor         *editor;
   } data_ptr;
@@ -1674,7 +1687,7 @@ struct Editor {
 /* ----------------------------- gui/suggestmenu.c ----------------------------- */
 
 struct SuggestMenu {
-  CMenu *menu;
+  Menu *menu;
   /* The current string used to search, and its length. */
   char  buf[128];
   int   len;

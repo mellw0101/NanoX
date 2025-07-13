@@ -301,9 +301,9 @@ int interface_color_pair[NUMBER_OF_ELEMENTS] = {0};
 /* ----------------------------- float ----------------------------- */
 
 /* The mouse x position, this is used for the gui. */
-float mouse_x = 0;
+// float mouse_x = 0;
 /* The mouse y position, this is used for the gui. */
-float mouse_y = 0;
+// float mouse_y = 0;
 /* The current width of the gui. */
 float gui_width = 0;
 /* The current height of the gui. */

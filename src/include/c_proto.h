@@ -131,8 +131,8 @@ extern int *bardata;
 extern int whitelen[2];
 extern int interface_color_pair[NUMBER_OF_ELEMENTS];
 
-extern float mouse_x;
-extern float mouse_y;
+// extern float mouse_x;
+// extern float mouse_y;
 extern float gui_width;
 extern float gui_height;
 
@@ -224,13 +224,6 @@ extern Ulong waiting_codes;
 
 extern char *prompt;
 extern Ulong typing_x;
-
-/* ----------------------------- help.c ----------------------------- */
-
-/* static */ extern char *help_text;
-extern char       *end_of_help_intro;
-extern const char *start_of_help_body;
-extern Ulong       help_location;
 
 /* ----------------------------- General ----------------------------- */
 
@@ -708,7 +701,7 @@ void     element_set_layer(Element *const e, Ushort layer);
 void     element_set_parent(Element *const e, Element *const parent);
 void     element_set_raw_data(Element *const e, void *const data);
 void     element_set_sb_data(Element *const e, Scrollbar *const data);
-void     element_set_menu_data(Element *const e, CMenu *const data);
+void     element_set_menu_data(Element *const e, Menu *const data);
 void     element_set_file_data(Element *const e, openfilestruct *const data);
 void     element_set_editor_data(Element *const e, Editor *const data);
 
@@ -739,38 +732,38 @@ vertex_buffer_t *vertbuf_create(void);
 /* ---------------------------------------------------------- gui/menu.c ---------------------------------------------------------- */
 
 
-CMenu *menu_create(Element *const parent, Font *const font, void *data, MenuPositionFunc position_routine, MenuAcceptFunc accept_routine);
-CMenu *menu_create_submenu(CMenu *const parent, const char *const restrict lable, void *data, MenuAcceptFunc accept_routine);
-void   menu_free(CMenu *const menu);
-CMenu *menu_get_active(void);
-void   menu_draw(CMenu *const menu);
-void   menu_push_back(CMenu *const menu, const char *const restrict string);
-void   menu_pos_refresh_needed(CMenu *const menu);
-void   menu_text_refresh_needed(CMenu *const menu);
-void   menu_scrollbar_refresh_needed(CMenu *const menu);
-void   menu_show(CMenu *const menu, bool show);
-void   menu_selected_up(CMenu *const menu);
-void   menu_selected_down(CMenu *const menu);
-void   menu_exit_submenu(CMenu *const menu);
-void   menu_enter_submenu(CMenu *const menu);
-void   menu_accept_action(CMenu *const menu);
-void   menu_hover_action(CMenu *const menu, float x_pos, float y_pos);
-void   menu_scroll_action(CMenu *const menu, bool direction, float x_pos, float y_pos);
-void   menu_click_action(CMenu *const menu, float x_pos, float y_pos);
-void   menu_clear_entries(CMenu *const menu);
-void   menu_set_static_width(CMenu *const menu, float width);
-void   menu_set_tab_accept_behavior(CMenu *const menu, bool accept_on_tab);
-void   menu_set_arrow_depth_navigation(CMenu *const menu, bool enable_arrow_depth_navigation);
-bool   menu_owns_element(CMenu *const menu, Element *const e);
-bool   menu_element_is_main(CMenu *const menu, Element *const e);
-bool   menu_should_accept_on_tab(CMenu *const menu);
-bool   menu_allows_arrow_navigation(CMenu *const menu);
-bool   menu_is_ancestor(CMenu *const menu, CMenu *const ancestor);
-bool   menu_is_shown(CMenu *const menu);
-Font  *menu_get_font(CMenu *const menu);
-int    menu_len(CMenu *const menu);
+Menu *menu_create(Element *const parent, Font *const font, void *data, MenuPositionFunc position_routine, MenuAcceptFunc accept_routine);
+Menu *menu_create_submenu(Menu *const parent, const char *const restrict lable, void *data, MenuAcceptFunc accept_routine);
+void   menu_free(Menu *const menu);
+Menu *menu_get_active(void);
+void   menu_draw(Menu *const menu);
+void   menu_push_back(Menu *const menu, const char *const restrict string);
+void   menu_pos_refresh_needed(Menu *const menu);
+void   menu_text_refresh_needed(Menu *const menu);
+void   menu_scrollbar_refresh_needed(Menu *const menu);
+void   menu_show(Menu *const menu, bool show);
+void   menu_selected_up(Menu *const menu);
+void   menu_selected_down(Menu *const menu);
+void   menu_exit_submenu(Menu *const menu);
+void   menu_enter_submenu(Menu *const menu);
+void   menu_accept_action(Menu *const menu);
+void   menu_hover_action(Menu *const menu, float x_pos, float y_pos);
+void   menu_scroll_action(Menu *const menu, bool direction, float x_pos, float y_pos);
+void   menu_click_action(Menu *const menu, float x_pos, float y_pos);
+void   menu_clear_entries(Menu *const menu);
+void   menu_set_static_width(Menu *const menu, float width);
+void   menu_set_tab_accept_behavior(Menu *const menu, bool accept_on_tab);
+void   menu_set_arrow_depth_navigation(Menu *const menu, bool enable_arrow_depth_navigation);
+bool   menu_owns_element(Menu *const menu, Element *const e);
+bool   menu_element_is_main(Menu *const menu, Element *const e);
+bool   menu_should_accept_on_tab(Menu *const menu);
+bool   menu_allows_arrow_navigation(Menu *const menu);
+bool   menu_is_ancestor(Menu *const menu, Menu *const ancestor);
+bool   menu_is_shown(Menu *const menu);
+Font  *menu_get_font(Menu *const menu);
+int    menu_len(Menu *const menu);
 int    menu_entry_qsort_strlen_cb(const void *a, const void *b);
-void   menu_qsort(CMenu *const menu, CmpFuncPtr cmp_func);
+void   menu_qsort(Menu *const menu, CmpFuncPtr cmp_func);
 
 
 /* ---------------------------------------------------------- files.c ---------------------------------------------------------- */
@@ -935,29 +928,43 @@ int mbtowide(wchar *const restrict wc, const char *const restrict c) __THROW _NO
 int widetomb(Uint wc, char *const restrict mb);
 /* ----------------------------- Is doublewidth ----------------------------- */
 bool is_doublewidth(const char *const ch);
-bool  is_zerowidth(const char *ch);
-bool  is_cursor_zerowidth(void);
-int   char_length(const char *const pointer);
+/* ----------------------------- Is zerowidth ----------------------------- */
+bool is_zerowidth(const char *ch);
+bool is_cursor_zerowidth(void);
+/* ----------------------------- Char length ----------------------------- */
+int char_length(const char *const pointer);
+/* ----------------------------- Mbstrlen ----------------------------- */
 Ulong mbstrlen(const char *pointer);
 /* ----------------------------- Collect char ----------------------------- */
 int collect_char(const char *const str, char *c);
-int   advance_over(const char *const str, Ulong *column);
+/* ----------------------------- Advance over ----------------------------- */
+int advance_over(const char *const str, Ulong *column);
+/* ----------------------------- Step left ----------------------------- */
 Ulong step_left(const char *const buf, const Ulong pos);
-void  step_cursor_left(openfilestruct *const file);
+/* ----------------------------- Step cursor left ----------------------------- */
+void step_cursor_left(openfilestruct *const file);
+/* ----------------------------- Step right ----------------------------- */
 Ulong step_right(const char *const buf, const Ulong pos);
-void  step_cursor_right(openfilestruct *const file);
-int   mbstrcasecmp(const char *s1, const char *s2);
-int   mbstrncasecmp(const char *s1, const char *s2, Ulong n);
+/* ----------------------------- Step cursor right ----------------------------- */
+void step_cursor_right(openfilestruct *const file);
+/* ----------------------------- Mbstrcasecmp ----------------------------- */
+int mbstrcasecmp(const char *s1, const char *s2);
+/* ----------------------------- Mbstrncasecmp ----------------------------- */
+int mbstrncasecmp(const char *s1, const char *s2, Ulong n);
+/* ----------------------------- Mbstrcasestr ----------------------------- */
 char *mbstrcasestr(const char *haystack, const char *const needle);
+/* ----------------------------- Revstrstr ----------------------------- */
 char *revstrstr(const char *const haystack, const char *const needle, const char *pointer) __THROW _NODISCARD _NONNULL(1, 2, 3);
+/* ----------------------------- Mbrevstrcasestr ----------------------------- */
 char *mbrevstrcasestr(const char *const haystack, const char *const needle, const char *pointer) _NODISCARD;
+/* ----------------------------- Mbstrchr ----------------------------- */
 char *mbstrchr(const char *string, const char *const chr);
 /* ----------------------------- Mbstrpbrk ----------------------------- */
 char *mbstrpbrk(const char *str, const char *accept);
 /* ----------------------------- Mbrevstrpbrk ----------------------------- */
 char *mbrevstrpbrk(const char *const head, const char *const accept, const char *pointer);
 /* ----------------------------- Has blank char ----------------------------- */
-bool  has_blank_char(const char *restrict str);
+bool has_blank_char(const char *restrict str);
 /* ----------------------------- White string ----------------------------- */
 bool white_string(const char *restrict str);
 void  strip_leading_blanks_from(char *const str);
@@ -1365,14 +1372,12 @@ char *browse_in(const char *const restrict inpath);
 /* ---------------------------------------------------------- help.c ---------------------------------------------------------- */
 
 
-/* static */ void help_init(void);
-
-/* static */ void show_help_for(FULL_CTX_ARGS);
-/* static */ void show_help(void);
-
 /* ----------------------------- Wrap help text into buffer ----------------------------- */
 void wrap_help_text_into_buffer_for(openfilestruct **const start, openfilestruct **const open, int rows, int cols);
 void wrap_help_text_into_buffer(void);
+/* ----------------------------- Do help ----------------------------- */
+void do_help_for(FULL_CTX_ARGS);
+void do_help(void);
 
 
 /* ---------------------------------------------------------- cut.c ---------------------------------------------------------- */
@@ -1470,8 +1475,30 @@ void statusbar_gui(const char *const restrict msg);
 void statusbar_draw(float fps);
 
 
+/* ---------------------------------------------------------- gui/mouse.c ---------------------------------------------------------- */
+
+
+/* ----------------------------- Update mouse state ----------------------------- */
+void update_mouse_state(int action, int button);
+/* ----------------------------- Update mouse pos ----------------------------- */
+void update_mouse_pos(float x, float y);
+/* ----------------------------- Get mouse xpos ----------------------------- */
+float get_mouse_xpos(void);
+/* ----------------------------- Get mouse ypos ----------------------------- */
+float get_mouse_ypos(void);
+/* ----------------------------- Get mouse pos ----------------------------- */
+void get_mouse_pos(float *const x, float *const y);
+float get_last_mouse_xpos(void);
+float get_last_mouse_ypos(void);
+/* ----------------------------- Is mouse flag set ----------------------------- */
+bool is_mouse_flag_set(Uint flag);
+void clear_mouse_flags(void);
+
+
 /* ---------------------------------------------------------- nanox.c ---------------------------------------------------------- */
 
+
+/* static */ int get_keycode(const char *const restrict keyname, int standard);
 
 /* static */ void mouse_init(void);
 
@@ -1577,7 +1604,6 @@ void syntax_check_file(openfilestruct *file);
 bool wanted_to_move(functionptrtype f);
 bool changes_something(functionptrtype f);
 void do_exit(void);
-void do_help(void);
 
 
 _END_C_LINKAGE

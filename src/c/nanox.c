@@ -75,11 +75,9 @@
 
 /* Used to store the user's original mouse click interval. */
 static int oldinterval = -1;
-
 /* Containers for the original and the temporary handler for SIGINT. */
 static struct sigaction oldaction;
 static struct sigaction newaction;
-
 /* The original settings of the user's terminal. */
 struct termios original_state;
 
@@ -87,9 +85,28 @@ struct termios original_state;
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
+/* ----------------------------- Make a note ----------------------------- */
+
 /* Register that Ctrl+C was pressed during some system call. */
 static void make_a_note(int _UNUSED signal) {
   control_C_was_pressed = TRUE;
+}
+
+/* ----------------------------- Get keycode ----------------------------- */
+
+/* Ask ncurses for a keycode, or assign a default one. */
+/* static */ int get_keycode(const char *const restrict keyname, int standard) {
+  ASSERT(keyname);
+  const char *keyvalue = tigetstr(keyname);
+  if (keyvalue != 0 && keyvalue != (char *)-1 && key_defined(keyvalue)) {
+    return key_defined(keyvalue);
+  }
+# ifdef DEBUG
+  if (!ISSET(RAW_SEQUENCES)) {
+    fprintf(strerr, "Using fallback keycode for %s\n", keyname);
+  }
+# endif
+  return standard;
 }
 
 /* ----------------------------- Disable mouse support ----------------------------- */

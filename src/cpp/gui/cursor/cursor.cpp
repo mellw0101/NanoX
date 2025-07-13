@@ -13,7 +13,7 @@
 //   float top, bot;
 //   linestruct *line = editor->openfile->edittop;
 //   /* If the mouse y position is above the text of the editor return the topline. */
-//   if (mousepos.y < editor->text->pos.y) {
+//   if (get_mouse_ypos() < editor->text->pos.y) {
 //     return line;
 //   }
 //   /* Check if the mouse y position is within any line in the text window. */
@@ -22,11 +22,11 @@
 //     gui_font_row_top_bot(gui->font, row, &top, &bot);
 //     /* When checking the first row, if the y mousepos is above the top but
 //      * still inside text->pos.y, break directly and return the first line. */
-//     if (!row && mousepos.y < top) {
+//     if (!row && get_mouse_ypos() < top) {
 //       break;
 //     }
 //     /* If the mouse position falls within the position of the current line, then break. */
-//     if (mousepos.y > (top + editor->text->pos.y) && mousepos.y < (bot + editor->text->pos.y)) {
+//     if (get_mouse_ypos() > (top + editor->text->pos.y) && get_mouse_ypos() < (bot + editor->text->pos.y)) {
 //       break;
 //     }
 //     line = line->next;
@@ -41,7 +41,7 @@ linestruct *line_from_cursor_pos(Editor *const editor) {
   float top, bot;
   linestruct *line = editor->openfile->edittop;
   /* If the mouse y position is above the text of the editor return the topline. */
-  if (mousepos.y < editor->text->y) {
+  if (get_mouse_ypos() < editor->text->y) {
     return line;
   }
   /* Check if the mouse y position is within any line in the text window. */
@@ -50,11 +50,11 @@ linestruct *line_from_cursor_pos(Editor *const editor) {
     gui_font_row_top_bot(gui->font, row, &top, &bot);
     /* When checking the first row, if the y mousepos is above the top but
      * still inside text->pos.y, break directly and return the first line. */
-    if (!row && mousepos.y < top) {
+    if (!row && get_mouse_ypos() < top) {
       break;
     }
     /* If the mouse position falls within the position of the current line, then break. */
-    if (mousepos.y > (top + editor->text->y) && mousepos.y < (bot + editor->text->y)) {
+    if (get_mouse_ypos() > (top + editor->text->y) && get_mouse_ypos() < (bot + editor->text->y)) {
       break;
     }
     line = line->next;

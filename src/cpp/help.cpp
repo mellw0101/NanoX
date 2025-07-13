@@ -499,15 +499,15 @@
 // }
 
 /* Start the help viewer, or indicate that there is no help. */
-void do_help(void) {
-# ifdef ENABLE_HELP
-  show_help();
-# else
-  if (currmenu & (MMAIN | MBROWSER)) {
-    statusbar_all(_("^W = Ctrl+W    M-W = Alt+W"));
-  }
-  else {
-    beep();
-  }
-# endif
-}
+// void do_help(void) {
+// # ifdef ENABLE_HELP
+//   show_help();
+// # else
+//   if (currmenu & (MMAIN | MBROWSER)) {
+//     statusbar_all(_("^W = Ctrl+W    M-W = Alt+W"));
+//   }
+//   else {
+//     beep();
+//   }
+// # endif
+// }

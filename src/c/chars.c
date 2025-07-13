@@ -12,6 +12,8 @@ static bool use_utf8 = FALSE;
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
+/* ----------------------------- Control rep ----------------------------- */
+
 /* Return the visible representation of control character c. */
 _NODISCARD
 static char control_rep(Schar c) {
@@ -29,6 +31,8 @@ static char control_rep(Schar c) {
   }
 }
 
+/* ----------------------------- Is punct char ----------------------------- */
+
 /* Return `TRUE` when the given character is a punctuation character. */
 _NODISCARD _NONNULL(1)
 static bool is_punct_char(const char *const c) {
@@ -39,9 +43,11 @@ static bool is_punct_char(const char *const c) {
   return iswpunct(wc);
 }
 
+/* ----------------------------- Revstrcasestr ----------------------------- */
+
 /* This function is equivalent to strcasestr(), except in that it scans the string in reverse, starting at pointer. */
 _NODISCARD _NONNULL(1, 2, 3)
-static char * revstrcasestr(const char *const haystack, const char *const needle, const char *pointer)  {
+static char *revstrcasestr(const char *const haystack, const char *const needle, const char *pointer)  {
   const Ulong needle_len = strlen(needle);
   const Ulong tail_len   = strlen(pointer);
   if (tail_len < needle_len) {
@@ -468,6 +474,8 @@ bool is_doublewidth(const char *const ch) {
   return (wcwidth(wc) == 2);
 }
 
+/* ----------------------------- Is zerowidth ----------------------------- */
+
 /* Return `TRUE` when the given character occupies zero cells. */
 bool is_zerowidth(const char *ch) {
   wchar wc;
@@ -491,6 +499,8 @@ bool is_zerowidth(const char *ch) {
 bool is_cursor_zerowidth(void) {
   return is_zerowidth(openfile->current->data + openfile->current_x);
 }
+
+/* ----------------------------- Char length ----------------------------- */
 
 /* Return the number of bytes in the character that starts at *pointer. */
 int char_length(const char *const ptr) {
@@ -529,6 +539,8 @@ int char_length(const char *const ptr) {
   return 1;
 }
 
+/* ----------------------------- Mbstrlen ----------------------------- */
+
 /* Return the number of (multibyte and singlebyte) characters in the given string. */
 Ulong mbstrlen(const char *pointer) {
   Ulong count = 0;
@@ -549,6 +561,8 @@ int collect_char(const char *const str, char *c) {
   }
   return charlen;
 }
+
+/* ----------------------------- Advance over ----------------------------- */
 
 /* Return the length ( in bytes ) of the character at the start of the given string, and add this character's width to '*column'. */
 int advance_over(const char *const str, Ulong *column) {
@@ -650,6 +664,8 @@ Ulong visual_step_left(const char *const restrict mbstr, Ulong pos) {
   return ret;
 }
 
+/* ----------------------------- Step cursor left ----------------------------- */
+
 /* Move `file->current_x` one step to the left, while also ensuring we pass all preceding zerowidth characters. */
 void step_cursor_left(openfilestruct *const file) {
   ASSERT(file);
@@ -671,6 +687,8 @@ Ulong step_right(const char *const buf, const Ulong pos) {
   return (pos + char_length(buf + pos));
 }
 
+/* ----------------------------- Step cursor right ----------------------------- */
+
 /* Move `file->current_x` one step to the right, while also ensuring we pass all following zerowidth characters. */
 void step_cursor_right(openfilestruct *const file) {
   ASSERT(file);
@@ -685,15 +703,19 @@ void step_cursor_right(openfilestruct *const file) {
   }
 }
 
+/* ----------------------------- Mbstrcasecmp ----------------------------- */
+
 /* This function is equivalent to strcasecmp() for multibyte strings. */
 int mbstrcasecmp(const char *s1, const char *s2) {
   return mbstrncasecmp(s1, s2, HIGHEST_POSITIVE);
 }
 
+/* ----------------------------- Mbstrncasecmp ----------------------------- */
+
 /* This function is equivalent to strncasecmp() for multibyte strings. */
 int mbstrncasecmp(const char *s1, const char *s2, Ulong n) {
-  wchar wc1;
-  wchar wc2;
+  Wchar wc1;
+  Wchar wc2;
   bool bad1;
   bool bad2;
   int difference;
@@ -732,14 +754,14 @@ int mbstrncasecmp(const char *s1, const char *s2, Ulong n) {
         }
       }
       else {
-        difference = (int)towlower((wint_t)wc1) - (int)towlower((wint_t)wc2);
+        difference = (int)towlower((Wint)wc1) - (int)towlower((Wint)wc2);
         if (difference) {
           return difference;
         }
       }
       s1 += char_length(s1);
       s2 += char_length(s2);
-      n--;
+      --n;
     }
     return ((n > 0) ? (int)((Uchar)*s1 - (Uchar)*s2) : 0);
   }
@@ -747,6 +769,8 @@ int mbstrncasecmp(const char *s1, const char *s2, Ulong n) {
     return strncasecmp(s1, s2, n);
   }
 }
+
+/* ----------------------------- Mbstrcasestr ----------------------------- */
 
 /* This function is equivalent to strcasestr() for multibyte strings. */
 char *mbstrcasestr(const char *haystack, const char *const needle) {
@@ -765,6 +789,8 @@ char *mbstrcasestr(const char *haystack, const char *const needle) {
   }
 }
 
+/* ----------------------------- Revstrstr ----------------------------- */
+
 /* This function is equivalent to strstr(), except in that it scans the string in reverse, starting at pointer. */
 char *revstrstr(const char *const haystack, const char *const needle, const char *pointer) {
   Ulong needle_len = strlen(needle);
@@ -780,6 +806,8 @@ char *revstrstr(const char *const haystack, const char *const needle, const char
   }
   return NULL;
 }
+
+/* ----------------------------- Mbrevstrcasestr ----------------------------- */
 
 /* This function is equivalent to strcasestr() for multibyte strings, except in that it scans the string in reverse, starting at pointer. */
 char *mbrevstrcasestr(const char *const haystack, const char *const needle, const char *pointer) {
@@ -806,6 +834,8 @@ char *mbrevstrcasestr(const char *const haystack, const char *const needle, cons
     return revstrcasestr(haystack, needle, pointer);
   }
 }
+
+/* ----------------------------- Mbstrchr ----------------------------- */
 
 /* This function is equivalent to strchr() for multibyte strings.  It is used to find the
  * first occurrence of a character in a string.  The character to find is given as a

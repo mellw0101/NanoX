@@ -67,7 +67,7 @@ long index_from_mouse_x(const char *string, Uint len, texture_font_t *font, floa
   float st_x  = 0.0f;
   float end_x = 0.0f;
   Ulong i;
-  if (mousepos.x <= offset) {
+  if (get_mouse_xpos() <= offset) {
     return 0;
   }
   for (i=0; i<len; ++i) {
@@ -82,7 +82,7 @@ long index_from_mouse_x(const char *string, Uint len, texture_font_t *font, floa
       end_x += glyph_width(cur, prev, font);
     }
     prev = cur;
-    if (mousepos.x > (st_x + offset) && mousepos.x < (end_x + offset)) {
+    if (get_mouse_xpos() > (st_x + offset) && get_mouse_xpos() < (end_x + offset)) {
       break;
     }
   }
@@ -115,7 +115,7 @@ linestruct *line_from_mouse_y(texture_font_t *font, float offset) {
   linestruct *line = openeditor->openfile->edittop;
   while (line && ++row < openeditor->rows) {
     get_row_y_pixel_region(font, row, &top_y, &bot_y, offset);
-    if ((mousepos.y > top_y && mousepos.y < bot_y) || (mousepos.y < top_y && mousepos.y < bot_y)) {
+    if ((get_mouse_ypos() > top_y && get_mouse_ypos() < bot_y) || (get_mouse_ypos() < top_y && get_mouse_ypos() < bot_y)) {
       break;
     }
     line = line->next;
@@ -131,7 +131,7 @@ linestruct *line_and_index_from_mousepos(texture_font_t *const font, Ulong *cons
   ASSERT(font);
   ASSERT(index);
   linestruct *line = line_from_cursor_pos(openeditor);
-  *index = index_from_pix_xpos(line->data, mousepos.x, openeditor->text->x, font);
+  *index = index_from_pix_xpos(line->data, get_mouse_xpos(), openeditor->text->x, font);
   return line;
 }
 

@@ -91,7 +91,7 @@ long prompt_index_from_mouse(bool allow_outside) {
   long ret = 0;
   /* When we dont allow a valid return value when outside the confinement of top-bar, just return -1. 
    * This is usefull for when we are tracking a hold after the user has pressed inside the top-bar, then drags outside it. */
-  if (!allow_outside && (mousepos.y < gui->promptmenu->element->y || mousepos.y > (gui->promptmenu->element->y + gui->promptmenu->element->height))) {
+  if (!allow_outside && (get_mouse_ypos() < gui->promptmenu->element->y || get_mouse_ypos() > (gui->promptmenu->element->y + gui->promptmenu->element->height))) {
     return -1;
   }
   if (no_linenums) {

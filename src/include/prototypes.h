@@ -186,7 +186,7 @@ extern SyntaxFile *sf;
   // extern guielement *file_menu_element;
   /* The bottom bar. */
   extern frametimerclass frametimer;
-  extern vec2 mousepos;
+  // extern vec2 mousepos;
   // extern guieditor *openeditor;
   // extern guieditor *starteditor;
   extern guistruct *gui;
