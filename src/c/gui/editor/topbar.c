@@ -65,7 +65,17 @@ static void etb_refresh_active(EditorTb *const etb) {
   if (etb->active_refresh_needed) {
     ELEMENT_CHILDREN_ITER(etb->element, i, button,
       if (button->dt == ELEMENT_DATA_FILE) {
-        button->color = ((button->dp_file == etb->editor->openfile) ? ETB_ACTIVE_COLOR : ETB_BUTTON_COLOR);
+        if (button->dp_file == etb->editor->openfile) {
+          if (button->color != (Uint)ETB_ACTIVE_COLOR) {
+            button->color = ETB_ACTIVE_COLOR;
+            button->xflags |= ELEMENT_RECT_REFRESH;
+          }
+        }
+        else if (button->color != (Uint)ETB_BUTTON_COLOR) {
+          button->color   = ETB_BUTTON_COLOR;
+          button->xflags |= ELEMENT_RECT_REFRESH;
+        }
+        // button->color = ((button->dp_file == etb->editor->openfile) ? ETB_ACTIVE_COLOR : ETB_BUTTON_COLOR);
       }
     );
     etb->active_refresh_needed = FALSE;

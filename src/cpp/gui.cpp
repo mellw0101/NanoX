@@ -362,29 +362,32 @@ void init_gui(void) {
 void glfw_loop(void) {
   while (!glfwWindowShouldClose(gui->window)) {
     frametimer.start();
-    place_the_cursor();
-    glClear(GL_COLOR_BUFFER_BIT);
-    /* Check if any editor's has it's `should_close` flag set, and if so close them. */
-    editor_check_should_close();
-    /* Draw the editors. */
-    CLIST_ITER(starteditor, editor,
-      editor_confirm_margin(editor);
-      draw_editor(editor);
-    );
-    /* Draw the top menu bar. */
-    draw_topbar();
-    /* Draw the bottom bar. */
-    draw_botbar();
-    /* Draw the status bar, if there is any status messages. */
-    draw_statusbar();
-    statusbar_draw(frametimer.fps);
-    context_menu_draw(gui->context_menu);
-    /* Draw the suggestmenu. */
-    draw_suggestmenu();
-    /* If refresh was needed it has been done so set it to FALSE. */
-    refresh_needed = FALSE;
-    glfwSwapBuffers(gui->window);
-    glfwPollEvents();
+    if (refresh_needed) {
+      place_the_cursor();
+      glClear(GL_COLOR_BUFFER_BIT);
+      /* Check if any editor's has it's `should_close` flag set, and if so close them. */
+      editor_check_should_close();
+      /* Draw the editors. */
+      CLIST_ITER(starteditor, editor,
+        editor_confirm_margin(editor);
+        draw_editor(editor);
+      );
+      /* Draw the top menu bar. */
+      draw_topbar();
+      /* Draw the bottom bar. */
+      draw_botbar();
+      /* Draw the status bar, if there is any status messages. */
+      draw_statusbar();
+      statusbar_draw(frametimer.fps);
+      context_menu_draw(gui->context_menu);
+      /* Draw the suggestmenu. */
+      draw_suggestmenu();
+      /* If refresh was needed it has been done so set it to FALSE. */
+      glfwSwapBuffers(gui->window);
+      // glfwPollEvents();
+      refresh_needed = FALSE;
+    }
+    glfwWaitEvents();
     frametimer.end();
   }
   cleanup();

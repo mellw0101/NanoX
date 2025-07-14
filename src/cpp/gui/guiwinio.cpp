@@ -707,6 +707,7 @@ void draw_editor(Editor *editor) {
   element_draw(editor->gutter);
   /* Render the text element of the editor. */
   if (refresh_needed) {
+    writef("hello\n");
     vertex_buffer_clear(editor->buffer);
     vertex_buffer_clear(editor->marked_region_buf);
     while (line && row++ < (int)editor->rows) {
@@ -727,12 +728,12 @@ void draw_editor(Editor *editor) {
       );
     }
   }
-  else {
-    while (line && row++ < (int)editor->rows) {
-      gui_draw_row(line, editor, &pen);
-      line = line->next;
-    }
-  }
+  // else {
+  //   while (line && row++ < (int)editor->rows) {
+  //     gui_draw_row(line, editor, &pen);
+  //     line = line->next;
+  //   }
+  // }
   // upload_texture_atlas(gui_font_get_atlas(textfont));
   // render_vertex_buffer(gui->font_shader, editor->buffer);
   vertex_buffer_render(editor->marked_region_buf, GL_TRIANGLES);
