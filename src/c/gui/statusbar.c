@@ -60,7 +60,7 @@ void statusbar_init(Element *const parent) {
   // statusbar->element->has_relative_x_pos         = TRUE;
   // statusbar->element->has_reverse_relative_y_pos = TRUE;
   statusbar->element->xflags |= (ELEMENT_HIDDEN | ELEMENT_REL_X | ELEMENT_REVREL_Y);
-  statusbar->element->relative_y = (gui_font_height(uifont) * 2);
+  statusbar->element->rel_y = (gui_font_height(uifont) * 2);
 }
 
 /* Free the statusbar structure. */

@@ -120,7 +120,7 @@ void editor_create(bool new_buffer) {
   // openeditor->gutter->has_relative_pos    = TRUE;
   // openeditor->gutter->has_relative_height = TRUE;
   openeditor->gutter->xflags |= (ELEMENT_REL_POS | ELEMENT_REL_HEIGHT);
-  openeditor->gutter->relative_y = gui_font_height(uifont);
+  openeditor->gutter->rel_y = gui_font_height(uifont);
   /* Text element. */
   openeditor->text = element_create((openeditor->main->x + openeditor->gutter->width), (openeditor->main->y + gui_font_height(uifont)), (openeditor->main->width - openeditor->gutter->width), (openeditor->main->height - gui_font_height(uifont)), TRUE);
   element_set_parent(openeditor->text, openeditor->main);
@@ -130,8 +130,8 @@ void editor_create(bool new_buffer) {
   // openeditor->text->has_relative_pos    = TRUE;
   // openeditor->text->has_relative_width  = TRUE;
   // openeditor->text->has_relative_height = TRUE;
-  openeditor->text->relative_x = openeditor->gutter->width;
-  openeditor->text->relative_y = gui_font_height(uifont);
+  openeditor->text->rel_x = openeditor->gutter->width;
+  openeditor->text->rel_y = gui_font_height(uifont);
   openeditor->text->cursor     = GLFW_IBEAM_CURSOR;
   /* Create the text scrollbar. */
   editor_scrollbar_create(openeditor);
@@ -239,7 +239,7 @@ void editor_resize(Editor *const editor) {
   ASSERT(editor->text);
   editor_confirm_margin(editor);
   editor->gutter->width    = editor_get_gutter_width(editor);
-  editor->text->relative_x = editor->gutter->width;
+  editor->text->rel_x = editor->gutter->width;
   if (!editor->gutter->width) {
     editor->gutter->xflags |= ELEMENT_HIDDEN;
   }

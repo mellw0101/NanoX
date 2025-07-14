@@ -159,7 +159,7 @@ static void setup_botbar(void) {
   gui->botbar->xflags |= (ELEMENT_REVREL_Y | ELEMENT_REL_WIDTH);
   // gui->botbar->has_reverse_relative_y_pos = TRUE;
   // gui->botbar->has_relative_width         = TRUE;
-  gui->botbar->relative_y = gui->botbar->height;
+  gui->botbar->rel_y = gui->botbar->height;
 }
 
 /* Set up the bottom bar. */

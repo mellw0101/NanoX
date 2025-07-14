@@ -1265,7 +1265,7 @@ typedef enum {
   ELEMENT_HAS_BORDERS  = (1 <<  9),
   ELEMENT_NOT_IN_MAP   = (1 << 10),
   ELEMENT_ABOVE        = (1 << 11),
-  ELEMENT_REFRESH_RECT = (1 << 12),
+  ELEMENT_RECT_REFRESH = (1 << 12),
   /* General flags. */
 # define ELEMENT_HIDDEN        ELEMENT_HIDDEN
 # define ELEMENT_LABLE         ELEMENT_LABLE
@@ -1279,11 +1279,12 @@ typedef enum {
 # define ELEMENT_HAS_BORDERS   ELEMENT_HAS_BORDERS
 # define ELEMENT_NOT_IN_MAP    ELEMENT_NOT_IN_MAP
 # define ELEMENT_ABOVE         ELEMENT_ABOVE
-# define ELEMENT_REFRESH_RECT  ELEMENT_REFRESH_RECT
+# define ELEMENT_RECT_REFRESH  ELEMENT_RECT_REFRESH
   /* Group states. */
-# define ELEMENT_REL_POS       (ELEMENT_REL_X | ELEMENT_REL_Y)
-# define ELEMENT_REVREL_POS    (ELEMENT_REVREL_X | ELEMENT_REVREL_Y)
-# define ELEMENT_REL_SIZE      (ELEMENT_REL_WIDTH | ELEMENT_REL_HEIGHT)
+# define ELEMENT_REL_POS         (ELEMENT_REL_X | ELEMENT_REL_Y)
+# define ELEMENT_REVREL_POS      (ELEMENT_REVREL_X | ELEMENT_REVREL_Y)
+# define ELEMENT_REL_SIZE        (ELEMENT_REL_WIDTH | ELEMENT_REL_HEIGHT)
+# define ELEMENT_XFLAGS_DEFAULT  ELEMENT_RECT_REFRESH
 } ElementFlag;
 
 /* The type of data the element's data ptr is currently pointing to. */
@@ -1686,37 +1687,16 @@ typedef struct {
 /* ----------------------------- gui/element.c ----------------------------- */
 
 struct Element {
-  /* Boolian flags. */
-  // bool hidden                     : 1;
-  // bool has_lable                  : 1;
-  // bool has_relative_pos           : 1;
-  // bool has_relative_x_pos         : 1;
-  // bool has_relative_y_pos         : 1;
-  // bool has_reverse_relative_pos   : 1;
-  // bool has_reverse_relative_x_pos : 1;
-  // bool has_reverse_relative_y_pos : 1;
-  // bool has_relative_width         : 1;
-  // bool has_relative_height        : 1;
-  // bool is_border                  : 1;
-  // bool has_borders                : 1;
-  // bool not_in_gridmap             : 1;
-  // bool has_raw_data               : 1;
-  // bool has_file_data              : 1;
-  // bool has_editor_data            : 1;
-  // bool has_sb_data                : 1;
-  // bool has_menu_data              : 1;
-  // bool is_above                   : 1;
-
   Ushort layer;
 
   float x;
   float y;
-  float relative_x;
-  float relative_y;
   float width;
   float height;
-  float relative_width;
-  float relative_height;
+  float rel_x;
+  float rel_y;
+  float rel_width;
+  float rel_height;
 
   Uint color;
   Uint text_color;

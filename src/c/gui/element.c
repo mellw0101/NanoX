@@ -19,37 +19,19 @@
 static Element *element_create_internal(void) {
   Element *e = xmalloc(sizeof(*e));
   /* State flags. */
-  e->xflags = 0;
+  e->xflags = ELEMENT_XFLAGS_DEFAULT;
   /* Boolian flags. */
-  // e->hidden                     = FALSE;
-  // e->has_lable                  = FALSE;
-  // e->has_relative_pos           = FALSE;
-  // e->has_relative_x_pos         = FALSE;
-  // e->has_relative_y_pos         = FALSE;
-  // e->has_reverse_relative_pos   = FALSE;
-  // e->has_reverse_relative_x_pos = FALSE;
-  // e->has_reverse_relative_y_pos = FALSE;
-  // e->has_relative_width         = FALSE;
-  // e->has_relative_height        = FALSE;
-  // e->is_border                  = FALSE;
-  // e->has_borders                = FALSE;
-  // e->not_in_gridmap             = FALSE;
-  // e->has_raw_data               = FALSE;
-  // e->has_file_data              = FALSE;
-  // e->has_editor_data            = FALSE;
-  // e->has_sb_data                = FALSE;
-  // e->has_menu_data              = FALSE;
-  // e->is_above                   = FALSE;
+  e->dt = ELEMENT_DATA_NONE;
   /* Position. */
-  e->x          = 0;
-  e->y          = 0;
-  e->relative_x = 0;
-  e->relative_y = 0;
+  e->x     = 0;
+  e->y     = 0;
+  e->rel_x = 0;
+  e->rel_y = 0;
   /* Size. */
-  e->width           = 0;
-  e->height          = 0;
-  e->relative_width  = 0;
-  e->relative_height = 0;
+  e->width      = 0;
+  e->height     = 0;
+  e->rel_width  = 0;
+  e->rel_height = 0;
   /* Color. */
   e->color      = 0;
   e->text_color = 0;
@@ -93,25 +75,25 @@ static void element_children_relative_pos(Element *const e) {
     // }
     /* Check reverse or regular relative x position. */
     if (child->xflags & ELEMENT_REL_X) {
-      x = (e->x + child->relative_x);
+      x = (e->x + child->rel_x);
     }
     else if (child->xflags & ELEMENT_REVREL_X) {
-      x = ((e->x + e->width) - child->relative_x);
+      x = ((e->x + e->width) - child->rel_x);
     }
     /* Check reverse or regular relative y position. */
     if (child->xflags & ELEMENT_REL_Y) {
-      y = (e->y + child->relative_y);
+      y = (e->y + child->rel_y);
     }
     else if (child->xflags & ELEMENT_REVREL_Y) {
-      y = ((e->y + e->height) - child->relative_y);
+      y = ((e->y + e->height) - child->rel_y);
     }
     /* Relative width. */
     if (child->xflags & ELEMENT_REL_WIDTH) {
-      width = (e->width - child->relative_x - child->relative_width);
+      width = (e->width - child->rel_x - child->rel_width);
     }
     /* Relative_height. */
     if (child->xflags & ELEMENT_REL_HEIGHT) {
-      height = (e->height - child->relative_y - child->relative_height);
+      height = (e->height - child->rel_y - child->rel_height);
     }
     /* If any value has changed, call `element_move_resize()`. */
     if (x != child->x || y != child->y || width != child->width || height != child->height) {
@@ -135,9 +117,13 @@ static inline void element_draw_rect(Element *const e) {
   // draw_rect_rgba(e->x, e->y, e->width, e->height, UNPACK_UINT_FLOAT(e->color, 0), UNPACK_UINT_FLOAT(e->color, 1), UNPACK_UINT_FLOAT(e->color, 2), UNPACK_UINT_FLOAT(e->color, 3));
   ASSERT(e);
   RectVertex vert[4];
-  shader_rect_vertex_load(vert, e->x, e->y, e->width, e->height, e->color);
-  vertex_buffer_clear(e->rect_buffer);
-  vertex_buffer_push_back(e->rect_buffer, vert, 4, RECT_INDICES, RECT_INDICES_LEN);
+  /* Only update the rect vertex buffer when needed. */
+  if (e->xflags & ELEMENT_RECT_REFRESH) {
+    e->xflags &= ~ELEMENT_RECT_REFRESH;
+    shader_rect_vertex_load(vert, e->x, e->y, e->width, e->height, e->color);
+    vertex_buffer_clear(e->rect_buffer);
+    vertex_buffer_push_back(e->rect_buffer, vert, 4, RECT_INDICES, RECT_INDICES_LEN);
+  }
   glUseProgram(rect_shader); {
     vertex_buffer_render(e->rect_buffer, GL_TRIANGLES);
   }
@@ -199,6 +185,9 @@ void element_draw(Element *const e) {
 void element_move(Element *const e, float x, float y) {
   ASSERT(e);
   element_grid_remove(e);
+  if (!(e->x == x && e->y == y)) {
+    e->xflags |= ELEMENT_RECT_REFRESH;
+  }
   e->x = x;
   e->y = y;
   element_children_relative_pos(e);
@@ -208,6 +197,9 @@ void element_move(Element *const e, float x, float y) {
 void element_resize(Element *const e, float width, float height) {
   ASSERT(e);
   element_grid_remove(e);
+  if (!(e->width == width && e->height == height)) {
+    e->xflags |= ELEMENT_RECT_REFRESH;
+  }
   e->width  = width;
   e->height = height;
   element_children_relative_pos(e);
@@ -218,7 +210,7 @@ void element_move_resize(Element *const e, float x, float y, float width, float 
   ASSERT(e);
   element_grid_remove(e);
   if (!(e->x == x && e->y == y && e->width == width && e->height == height)) {
-
+    e->xflags |= ELEMENT_RECT_REFRESH;
   }
   e->x      = x;
   e->y      = y;
@@ -231,9 +223,13 @@ void element_move_resize(Element *const e, float x, float y, float width, float 
 /* Move `e` to a new y position `y` while clamping it so it can be no less then `min` and no more then `max`. */
 void element_move_y_clamp(Element *const e, float y, float min, float max) {
   ASSERT(e);
+  float newy = fclamp(y, min, max);
   /* Only perform any action when the passed y value is not the same as the current. */
   element_grid_remove(e);
-  e->y = fclamp(y, min, max);
+  if (e->y != newy) {
+    e->xflags |= ELEMENT_RECT_REFRESH;
+  }
+  e->y = newy;
   element_children_relative_pos(e);
   element_grid_set(e);
 }
@@ -322,14 +318,14 @@ void element_set_borders(Element *const e, float lsize, float tsize, float rsize
   // r->has_reverse_relative_x_pos = TRUE;
   // r->has_relative_y_pos         = TRUE;
   // r->has_relative_height        = TRUE;
-  r->relative_x = rsize;
+  r->rel_x = rsize;
   /* Bottom. */
   b->xflags |= (ELEMENT_IS_BORDER | ELEMENT_REL_X | ELEMENT_REVREL_Y | ELEMENT_REL_WIDTH);
   // b->is_border                  = TRUE;
   // b->has_relative_x_pos         = TRUE;
   // b->has_reverse_relative_y_pos = TRUE;
   // b->has_relative_width         = TRUE;
-  b->relative_y = bsize;
+  b->rel_y = bsize;
 }
 
 /* Set the event layer of `e`.  Note that this does not change drawing layer as that depends on the order of drawing. */

@@ -155,13 +155,13 @@ static void scrollbar_calc_routine(Scrollbar *const sb) {
     /* Thumb. */
     // sb->thumb->hidden     = FALSE;
     sb->thumb->xflags &= ~ELEMENT_HIDDEN;
-    sb->thumb->relative_y = y_pos;
+    sb->thumb->rel_y = y_pos;
     element_resize(sb->thumb, sb->thumb->width, length);
     /* Base. */
     // sb->base->hidden     = FALSE;
     sb->base->xflags &= ~ELEMENT_HIDDEN;
-    sb->base->relative_x = (sb->base->width + r_offset);
-    sb->base->relative_y = t_offset;
+    sb->base->rel_x = (sb->base->width + r_offset);
+    sb->base->rel_y = t_offset;
     element_resize(sb->base, sb->base->width, total_length);
   }
 }
@@ -197,8 +197,8 @@ Scrollbar *scrollbar_create(Element *const parent, void *const data, ScrollbarUp
   sb->base->xflags |= (ELEMENT_REVREL_X | ELEMENT_REL_Y);
   // sb->base->has_reverse_relative_x_pos = TRUE;
   // sb->base->has_relative_y_pos         = TRUE;
-  sb->base->relative_x                 = (SB_WIDTH + r_offset);
-  sb->base->relative_y                 = t_offset;
+  sb->base->rel_x                 = (SB_WIDTH + r_offset);
+  sb->base->rel_y                 = t_offset;
   /* Thumb. */
   // sb->thumb->has_relative_pos = TRUE;
   sb->thumb->xflags |= ELEMENT_REL_POS;
