@@ -44,7 +44,8 @@ void gui_promptmode_enter(void) {
   statusbar_discard_all_undo_redo();
   gui->flag.set<GUI_PROMPT>();
   // gui->promptmenu->element->flag.unset<GUIELEMENT_HIDDEN>();
-  gui->promptmenu->element->hidden     = FALSE;
+  // gui->promptmenu->element->hidden     = FALSE;
+  gui->promptmenu->element->xflags &= ~ELEMENT_HIDDEN;
   gui->promptmenu->text_refresh_needed = TRUE;
   gui->promptmenu->size_refresh_needed = TRUE;
   refresh_needed = TRUE;
@@ -59,7 +60,8 @@ void gui_promptmode_leave(void) {
   statusbar_discard_all_undo_redo();
   gui->flag.unset<GUI_PROMPT>();
   // gui->promptmenu->element->flag.set<GUIELEMENT_HIDDEN>();
-  gui->promptmenu->element->hidden = TRUE;
+  // gui->promptmenu->element->hidden = TRUE;
+  gui->promptmenu->element->xflags |= ELEMENT_HIDDEN;
   cvec_clear(gui->promptmenu->completions);
   cvec_clear(gui->promptmenu->search_vec);
   gui->promptmenu->selected = 0;
@@ -409,11 +411,12 @@ void gui_promptmenu_create(void) {
   // color_copy(gui->promptmenu->element->color, &color_vs_code_red);
   gui->promptmenu->element->color = PACKED_UINT_VS_CODE_RED;
   // gui->promptmenu->element->flag.set<GUIELEMENT_RELATIVE_WIDTH>();
-  gui->promptmenu->element->has_relative_width = TRUE;
+  // gui->promptmenu->element->has_relative_width = TRUE;
   // gui->promptmenu->element->relative_size = 0;
   // gui->promptmenu->element->flag.set<GUIELEMENT_ABOVE>();
   // gui->promptmenu->element->flag.set<GUIELEMENT_HIDDEN>();
-  gui->promptmenu->element->hidden = TRUE;
+  // gui->promptmenu->element->hidden = TRUE;
+  gui->promptmenu->element->xflags |= (ELEMENT_HIDDEN | ELEMENT_REL_WIDTH);
   gui->promptmenu->search_vec  = cvec_create_setfree(free);
   gui->promptmenu->completions = cvec_create_setfree(free);
   gui->promptmenu->maxrows  = 8;

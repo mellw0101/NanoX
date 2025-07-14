@@ -62,14 +62,16 @@ static inline void element_grid_get_action(Ulong _UNUSED key, void *value, void 
   ASSERT(value);
   Element *e = value;
   GetPackage *p;
-  if (e->hidden) {
+  if (e->xflags & ELEMENT_HIDDEN) {
     return;
   }
   p = data;
   /* Ensure the given position actually falls inside the element. */
   if ((p->x >= e->x && p->x <= (e->x + e->width) && p->y >= e->y && p->y <= (e->y + e->height))
-   /* Also, ensure the layers are respected. */
-   && (!p->ret || (p->ret->layer < e->layer || (p->ret->layer == e->layer && !p->ret->is_above && e->is_above)))) {
+  /* Also, ensure the layers are respected. */
+  && (!p->ret || (p->ret->layer < e->layer || (p->ret->layer == e->layer
+  && !(p->ret->xflags & ELEMENT_ABOVE) && (e->xflags & ELEMENT_ABOVE)))))
+  {
     p->ret = e;
   }
   // if (p->x >= e->x && p->x <= (e->x + e->width) && p->y >= e->y && p->y <= (e->y + e->height)) {
@@ -105,7 +107,7 @@ void element_grid_set(Element *const e) {
   ElementGridpos end;
   Ulong key;
   HashMapNum *cellmap;
-  if (e->not_in_gridmap) {
+  if (e->xflags & ELEMENT_NOT_IN_MAP) {
     return;
   }
   start = element_grid_get_start(e);
@@ -130,7 +132,7 @@ void element_grid_remove(Element *const e) {
   ElementGridpos end;
   Ulong key;
   HashMapNum *cellmap;
-  if (e->not_in_gridmap) {
+  if (e->xflags & ELEMENT_NOT_IN_MAP) {
     return;
   }
   start = element_grid_get_start(e);

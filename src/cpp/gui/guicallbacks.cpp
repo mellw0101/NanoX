@@ -1059,10 +1059,10 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         if (menu_get_active() && !menu_owns_element(menu_get_active(), test)) {
           menu_show(menu_get_active(), FALSE);
         }
-        else if (menu_get_active() && test->has_menu_data && menu_is_ancestor(test->dp_menu, menu_get_active()) && menu_element_is_main(test->dp_menu, test)) {
+        else if (menu_get_active() && test->dt == ELEMENT_DATA_MENU && menu_is_ancestor(test->dp_menu, menu_get_active()) && menu_element_is_main(test->dp_menu, test)) {
           menu_click_action(test->dp_menu, get_mouse_xpos(), get_mouse_ypos());
         }
-        else if (test->has_editor_data && test == test->dp_editor->text) {
+        else if (test->dt == ELEMENT_DATA_EDITOR && test == test->dp_editor->text) {
           /* When a click occurs in the text element of a editor, make that editor the currently active editor. */
           editor_set_open(test->dp_editor);
           /* Get the line and index from the mouse position. */
@@ -1097,7 +1097,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
             GUI_OF->current_x = strlen(GUI_OF->current->data);
           }
         }
-        else if (test->has_file_data && test->parent && test->parent->has_editor_data && etb_element_is_main(test->parent->dp_editor->tb, test->parent) && !gui->flag.is_set<GUI_PROMPT>()) {
+        else if (test->dt == ELEMENT_DATA_FILE && test->parent && test->parent->dt == ELEMENT_DATA_EDITOR && etb_element_is_main(test->parent->dp_editor->tb, test->parent) && !gui->flag.is_set<GUI_PROMPT>()) {
           if (test->dp_file && test->dp_file != test->parent->dp_editor->openfile) {
             test->parent->dp_editor->openfile = test->dp_file;
             editor_redecorate(test->parent->dp_editor);
@@ -1116,7 +1116,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
       if (GUI_OF->mark == GUI_OF->current && GUI_OF->mark_x == GUI_OF->current_x) {
         GUI_OF->mark = NULL;
       }
-      if (gui->clicked && gui->clicked->has_sb_data) {
+      if (gui->clicked && gui->clicked->dt == ELEMENT_DATA_SB) {
         if (scrollbar_element_is_thumb(gui->clicked->dp_sb, gui->clicked) && gui->clicked != element_grid_get(get_mouse_xpos(), get_mouse_ypos())) {
           scrollbar_set_thumb_color(gui->clicked->dp_sb, FALSE);
         }
@@ -1131,13 +1131,13 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
       // mouse_flag.set<RIGHT_MOUSE_BUTTON_HELD>();
       // test = element_grid_get(get_mouse_xpos(), get_mouse_ypos());
       test = element_grid_get(get_mouse_xpos(), get_mouse_ypos());
-      if (test && test->has_file_data && test->parent && test->parent->has_editor_data && etb_element_is_main(test->parent->dp_editor->tb, test->parent)) {
+      if (test && test->dt == ELEMENT_DATA_FILE && test->parent && test->parent->dt == ELEMENT_DATA_EDITOR && etb_element_is_main(test->parent->dp_editor->tb, test->parent)) {
         etb_show_context_menu(test->parent->dp_editor->tb, test, TRUE);
       }
-      else if (test && test->has_editor_data && etb_element_is_main(test->dp_editor->tb, test)) {
+      else if (test && test->dt == ELEMENT_DATA_EDITOR && etb_element_is_main(test->dp_editor->tb, test)) {
         etb_show_context_menu(test->dp_editor->tb, test, TRUE);
       }
-      else if (test && test->has_menu_data) {
+      else if (test && test->dt == ELEMENT_DATA_MENU) {
         menu_show(test->dp_menu, FALSE);
       }
       else {
@@ -1200,12 +1200,12 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
     }
     if (gui->clicked) {
       /* Scrollbar */
-      if (gui->clicked->has_sb_data) {
+      if (gui->clicked->dt == ELEMENT_DATA_SB) {
         // scrollbar_mouse_pos_routine(gui->clicked->dp_sb, gui->clicked, last_mousepos.y, get_mouse_ypos());
         scrollbar_mouse_pos_routine(gui->clicked->dp_sb, gui->clicked, get_last_mouse_ypos(), get_mouse_ypos());
       }
       /* Editor-Text */
-      else if (gui->clicked->has_editor_data && gui->clicked == gui->clicked->dp_editor->text) {
+      else if (gui->clicked->dt == ELEMENT_DATA_EDITOR && gui->clicked == gui->clicked->dp_editor->text) {
         // editor_get_text_line_index(gui->clicked->dp_editor, get_mouse_xpos(), get_mouse_ypos(), &GUI_OF->current, &GUI_OF->current_x);
         editor_get_text_line_index(gui->clicked->dp_editor, get_mouse_xpos(), get_mouse_ypos(), &GUI_OF->current, &GUI_OF->current_x);
         /* If the left press was a tripple press, adjust the mark based on the current cursor line. */
@@ -1274,7 +1274,7 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
         set_cursor_type(window, test->cursor);
         gui->current_cursor_type = test->cursor;
       }
-      if (!gui->clicked && menu_get_active() && test->has_menu_data && menu_is_ancestor(test->dp_menu, menu_get_active()) && menu_element_is_main(test->dp_menu, test)) {
+      if (!gui->clicked && menu_get_active() && test->dt == ELEMENT_DATA_MENU && menu_is_ancestor(test->dp_menu, menu_get_active()) && menu_element_is_main(test->dp_menu, test)) {
         menu_hover_action(test->dp_menu, get_mouse_xpos(), get_mouse_ypos());
       }
       else if (!gui->clicked && test == gui->promptmenu->element) {
@@ -1282,13 +1282,13 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
       }
       if (!entered_element || test != entered_element) {
         /* If there is no clicked element currently and the newly entered element is the thumb of any scrollbar, highlight the color of it. */
-        if (!gui->clicked && test->has_sb_data && scrollbar_element_is_thumb(test->dp_sb, test)) {
+        if (!gui->clicked && test->dt == ELEMENT_DATA_SB && scrollbar_element_is_thumb(test->dp_sb, test)) {
           scrollbar_set_thumb_color(test->dp_sb, TRUE);
         }
         /* If the old entered element was not NULL. */
         if (entered_element) {
           /* If there is no clicked element currently and the recently left element is the thumb of any scrollbar, reset the color of it. */
-          if (!gui->clicked && entered_element->has_sb_data && scrollbar_element_is_thumb(entered_element->dp_sb, entered_element)) {
+          if (!gui->clicked && entered_element->dt == ELEMENT_DATA_SB && scrollbar_element_is_thumb(entered_element->dp_sb, entered_element)) {
             scrollbar_set_thumb_color(entered_element->dp_sb, FALSE);
           }
         }
@@ -1329,7 +1329,7 @@ void window_enter_callback(GLFWwindow *window, int entered) {
     /* If there is a currently entered element, call its leave callback.  If it has one. */
     if (entered_element) {
       /* Reset the color of any scrollbar if it was the last element the mouse was on and its not currently clicked. */
-      if (!gui->clicked && entered_element->has_sb_data && scrollbar_element_is_thumb(entered_element->dp_sb, entered_element)) {
+      if (!gui->clicked && entered_element->dt == ELEMENT_DATA_SB && scrollbar_element_is_thumb(entered_element->dp_sb, entered_element)) {
         scrollbar_set_thumb_color(entered_element->dp_sb, FALSE);
       }
       entered_element = NULL;
@@ -1343,7 +1343,7 @@ void scroll_callback(GLFWwindow *window, double x, double y) {
   Ulong index;
   linestruct *line;
   if (test) {
-    if (test->has_editor_data && test == test->dp_editor->text) {
+    if (test->dt == ELEMENT_DATA_EDITOR && test == test->dp_editor->text) {
       /* If the mouse left mouse button is held while scrolling, update the cursor pos so that the marked region gets updated. */
       // if (mouse_flag.is_set<LEFT_MOUSE_BUTTON_HELD>()) {
       if (is_mouse_flag_set(MOUSE_BUTTON_HELD_LEFT)) {
@@ -1361,7 +1361,7 @@ void scroll_callback(GLFWwindow *window, double x, double y) {
         menu_pos_refresh_needed(gui->suggestmenu->menu);
       }
     }
-    if (menu_get_active() && test->has_menu_data && menu_is_ancestor(test->dp_menu, menu_get_active()) && menu_element_is_main(test->dp_menu, test)) {
+    if (menu_get_active() && test->dt == ELEMENT_DATA_MENU && menu_is_ancestor(test->dp_menu, menu_get_active()) && menu_element_is_main(test->dp_menu, test)) {
       menu_scroll_action(test->dp_menu, ((y > 0) ? BACKWARD : FORWARD), get_mouse_xpos(), get_mouse_ypos());
     }
     /* If this element is the gui promptmenu main element.  Then call the scroll function. */

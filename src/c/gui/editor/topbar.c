@@ -64,7 +64,7 @@ static void etb_refresh_active(EditorTb *const etb) {
   ASSERT_ETB;
   if (etb->active_refresh_needed) {
     ELEMENT_CHILDREN_ITER(etb->element, i, button,
-      if (button->has_file_data) {
+      if (button->dt == ELEMENT_DATA_FILE) {
         button->color = ((button->dp_file == etb->editor->openfile) ? ETB_ACTIVE_COLOR : ETB_BUTTON_COLOR);
       }
     );
@@ -79,7 +79,7 @@ static void etb_refresh_text(EditorTb *const etb) {
   if (etb->text_refresh_needed) {
     vertex_buffer_clear(etb->buffer);
     ELEMENT_CHILDREN_ITER(etb->element, i, child,
-      if (child->has_file_data) {
+      if (child->dt == ELEMENT_DATA_FILE) {
         pen_x = (child->x + font_breadth(uifont, " "));
         pen_y = (child->y + gui_font_row_baseline(uifont, 0));
         font_vertbuf_add_mbstr(uifont, etb->buffer, child->lable, child->lable_len, " ", child->text_color, &pen_x, &pen_y);
@@ -92,7 +92,7 @@ static void etb_refresh_text(EditorTb *const etb) {
 static void etb_delete_entries(EditorTb *const etb) {
   ASSERT_ETB;
   ELEMENT_CHILDREN_ITER(etb->element, i, child,
-    if (child->has_file_data) {
+    if (child->dt == ELEMENT_DATA_FILE) {
       element_free(child);
       --i;
     }
@@ -109,8 +109,9 @@ static void etb_create_button(EditorTb *const etb, openfilestruct *const f, floa
   const char *lable = (*f->filename ? f->filename : "Nameless");
   button = element_create((*pos_x), (*pos_y), (font_breadth(uifont, lable) + font_breadth(uifont, "  ")), gui_font_height(uifont), TRUE);
   element_set_parent(button, etb->element);
-  button->has_relative_pos = TRUE;
-  button->cursor           = GLFW_HAND_CURSOR;
+  // button->has_relative_pos = TRUE;
+  button->xflags |= ELEMENT_REL_POS;
+  button->cursor = GLFW_HAND_CURSOR;
   element_set_lable(button, lable, strlen(lable));
   element_set_file_data(button, f);
   /* Set the correct color for the button based on if it's the currently open file in the editor. */
@@ -144,7 +145,7 @@ static void etb_refresh_entries(EditorTb *const etb) {
 static void etb_draw_entries(EditorTb *const etb) {
   ASSERT_ETB;
   ELEMENT_CHILDREN_ITER(etb->element, i, child,
-    if (child->has_file_data) {
+    if (child->dt == ELEMENT_DATA_FILE) {
       element_draw(child);
     }
   );
@@ -169,7 +170,7 @@ static void etb_button_context_menu_accept(void *arg, const char *const restrict
   ASSERT_ETB;
   // openfilestruct *file;
   /* Ensure this only perfoms any action when the clicked element is a button of the topbar. */
-  if (etb->context->clicked && etb->context->clicked->has_file_data && etb->context->clicked->parent->has_editor_data) {
+  if (etb->context->clicked && etb->context->clicked->dt == ELEMENT_DATA_FILE && etb->context->clicked->parent->dt == ELEMENT_DATA_EDITOR) {
     // file = etb->context->clicked->dp_file;
     switch (index) {
       /* Close */
@@ -208,7 +209,7 @@ static void etb_context_menu_accept(void *arg, const char *const restrict entry_
   EditorTb *etb = arg;
   ASSERT_ETB;
   /* Ensure this only perfoms any action when the clicked element is a button of the topbar. */
-  if (etb->context->clicked && etb->context->clicked == etb->element && etb->context->clicked->has_editor_data) {
+  if (etb->context->clicked && etb->context->clicked == etb->element && etb->context->clicked->dt == ELEMENT_DATA_EDITOR) {
     switch (index) {
       case 0: {
         // gui_editor_set_open(etb->context->clicked->ed_editor);
@@ -262,9 +263,10 @@ EditorTb *etb_create(Editor *const editor) {
   etb->editor  = editor;
   etb->element = element_create(etb->editor->main->x, etb->editor->main->y, etb->editor->main->width, gui_font_height(uifont), TRUE);
   element_set_parent(etb->element, etb->editor->main);
-  etb->element->color              = PACKED_UINT_EDIT_BACKGROUND;
-  etb->element->has_relative_pos   = TRUE;
-  etb->element->has_relative_width = TRUE;
+  etb->element->color = PACKED_UINT_EDIT_BACKGROUND;
+  etb->element->xflags |= (ELEMENT_REL_POS | ELEMENT_REL_WIDTH);
+  // etb->element->has_relative_pos   = TRUE;
+  // etb->element->has_relative_width = TRUE;
   element_set_editor_data(etb->element, etb->editor);
   etb_context_menu_create(etb);
   return etb;

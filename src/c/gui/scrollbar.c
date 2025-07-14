@@ -146,16 +146,20 @@ static void scrollbar_calc_routine(Scrollbar *const sb) {
   /* Calculate the size and position of the thumb. */
   scrollbar_calculate(total_length, start, end, visible, current, &length, &y_pos);
   if (total_length <= 0 || length >= total_length) {
-    sb->base->hidden  = TRUE;
-    sb->thumb->hidden = TRUE;
+    // sb->base->hidden  = TRUE;
+    // sb->thumb->hidden = TRUE;
+    sb->base->xflags  |= ELEMENT_HIDDEN;
+    sb->thumb->xflags |= ELEMENT_HIDDEN;
   }
   else {
     /* Thumb. */
-    sb->thumb->hidden     = FALSE;
+    // sb->thumb->hidden     = FALSE;
+    sb->thumb->xflags &= ~ELEMENT_HIDDEN;
     sb->thumb->relative_y = y_pos;
     element_resize(sb->thumb, sb->thumb->width, length);
     /* Base. */
-    sb->base->hidden     = FALSE;
+    // sb->base->hidden     = FALSE;
+    sb->base->xflags &= ~ELEMENT_HIDDEN;
     sb->base->relative_x = (sb->base->width + r_offset);
     sb->base->relative_y = t_offset;
     element_resize(sb->base, sb->base->width, total_length);
@@ -190,12 +194,14 @@ Scrollbar *scrollbar_create(Element *const parent, void *const data, ScrollbarUp
   sb->base->color  = PACKED_UINT_FLOAT(0.05f, 0.05f, 0.05f, 0.3f);
   sb->thumb->color = PACKED_UINT_FLOAT(1.0f, 1.0f, 1.0f, 0.3f);
   /* Base. */
-  sb->base->has_reverse_relative_x_pos = TRUE;
-  sb->base->has_relative_y_pos         = TRUE;
+  sb->base->xflags |= (ELEMENT_REVREL_X | ELEMENT_REL_Y);
+  // sb->base->has_reverse_relative_x_pos = TRUE;
+  // sb->base->has_relative_y_pos         = TRUE;
   sb->base->relative_x                 = (SB_WIDTH + r_offset);
   sb->base->relative_y                 = t_offset;
   /* Thumb. */
-  sb->thumb->has_relative_pos = TRUE;
+  // sb->thumb->has_relative_pos = TRUE;
+  sb->thumb->xflags |= ELEMENT_REL_POS;
   /* Data ptr. */
   sb->data = data;
   /* Update routine. */
@@ -221,7 +227,7 @@ void scrollbar_draw(Scrollbar *const sb) {
   if (sb->refresh_needed) {
     scrollbar_calc_routine(sb);
     sb->refresh_needed = FALSE;
-    if (sb->base->hidden) {
+    if (sb->base->xflags & ELEMENT_HIDDEN) {
       return;
     }
   }
@@ -264,12 +270,16 @@ float scrollbar_width(Scrollbar *const sb) {
 void scrollbar_show(Scrollbar *const sb, bool show) {
   ASSERT_SCROLLBAR;
   if (show) {
-    sb->base->hidden  = FALSE;
-    sb->thumb->hidden = FALSE;
+    sb->base->xflags  &= ~ELEMENT_HIDDEN;
+    sb->thumb->xflags &= ~ELEMENT_HIDDEN;
+    // sb->base->hidden  = FALSE;
+    // sb->thumb->hidden = FALSE;
   }
   else {
-    sb->base->hidden  = TRUE;
-    sb->thumb->hidden = TRUE;
+    sb->base->xflags  |= ELEMENT_HIDDEN;
+    sb->thumb->xflags |= ELEMENT_HIDDEN;
+    // sb->base->hidden  = TRUE;
+    // sb->thumb->hidden = TRUE;
   }
 }
 

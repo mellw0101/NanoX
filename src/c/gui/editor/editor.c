@@ -117,20 +117,22 @@ void editor_create(bool new_buffer) {
   element_set_parent(openeditor->gutter, openeditor->main);
   element_set_editor_data(openeditor->gutter, openeditor);
   openeditor->gutter->color               = PACKED_UINT_EDIT_BACKGROUND;
-  openeditor->gutter->has_relative_pos    = TRUE;
-  openeditor->gutter->has_relative_height = TRUE;
-  openeditor->gutter->relative_y          = gui_font_height(uifont);
+  // openeditor->gutter->has_relative_pos    = TRUE;
+  // openeditor->gutter->has_relative_height = TRUE;
+  openeditor->gutter->xflags |= (ELEMENT_REL_POS | ELEMENT_REL_HEIGHT);
+  openeditor->gutter->relative_y = gui_font_height(uifont);
   /* Text element. */
   openeditor->text = element_create((openeditor->main->x + openeditor->gutter->width), (openeditor->main->y + gui_font_height(uifont)), (openeditor->main->width - openeditor->gutter->width), (openeditor->main->height - gui_font_height(uifont)), TRUE);
   element_set_parent(openeditor->text, openeditor->main);
   element_set_editor_data(openeditor->text, openeditor);
-  openeditor->text->color               = PACKED_UINT_EDIT_BACKGROUND;
-  openeditor->text->has_relative_pos    = TRUE;
-  openeditor->text->has_relative_width  = TRUE;
-  openeditor->text->has_relative_height = TRUE;
-  openeditor->text->relative_x          = openeditor->gutter->width;
-  openeditor->text->relative_y          = gui_font_height(uifont);
-  openeditor->text->cursor              = GLFW_IBEAM_CURSOR;
+  openeditor->text->color = PACKED_UINT_EDIT_BACKGROUND;
+  openeditor->text->xflags |= (ELEMENT_REL_POS | ELEMENT_REL_SIZE);
+  // openeditor->text->has_relative_pos    = TRUE;
+  // openeditor->text->has_relative_width  = TRUE;
+  // openeditor->text->has_relative_height = TRUE;
+  openeditor->text->relative_x = openeditor->gutter->width;
+  openeditor->text->relative_y = gui_font_height(uifont);
+  openeditor->text->cursor     = GLFW_IBEAM_CURSOR;
   /* Create the text scrollbar. */
   editor_scrollbar_create(openeditor);
   /* Create the editor topbar. */
@@ -192,9 +194,19 @@ Editor *editor_from_file(openfilestruct *const file) {
 void editor_hide(Editor *const editor, bool hide) {
   ASSERT(editor);
   editor->hidden         = hide;
-  editor->main->hidden   = hide;
-  editor->gutter->hidden = hide;
-  editor->text->hidden   = hide;
+  if (hide) {
+    editor->main->xflags   |= ELEMENT_HIDDEN;
+    editor->gutter->xflags |= ELEMENT_HIDDEN;
+    editor->text->xflags   |= ELEMENT_HIDDEN;
+  }
+  else {
+    editor->main->xflags   &= ~ELEMENT_HIDDEN;
+    editor->gutter->xflags &= ~ELEMENT_HIDDEN;
+    editor->text->xflags   &= ~ELEMENT_HIDDEN;
+  }
+  // editor->main->hidden   = hide;
+  // editor->gutter->hidden = hide;
+  // editor->text->hidden   = hide;
   etb_show_context_menu(editor->tb, NULL, FALSE);
 }
 
@@ -228,7 +240,13 @@ void editor_resize(Editor *const editor) {
   editor_confirm_margin(editor);
   editor->gutter->width    = editor_get_gutter_width(editor);
   editor->text->relative_x = editor->gutter->width;
-  editor->gutter->hidden   = !editor->gutter->width;
+  if (!editor->gutter->width) {
+    editor->gutter->xflags |= ELEMENT_HIDDEN;
+  }
+  else {
+    editor->gutter->xflags &= ~ELEMENT_HIDDEN;
+  }
+  // editor->gutter->hidden   = !editor->gutter->width;
   element_move_resize(editor->main, 0, 0, gui_width, (gui_height - gui_font_height(uifont)));
   editor_set_rows_cols(editor, editor->text->width, editor->text->height);
   etb_text_refresh_needed(editor->tb);

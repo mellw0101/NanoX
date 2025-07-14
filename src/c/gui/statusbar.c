@@ -56,10 +56,11 @@ void statusbar_init(Element *const parent) {
   element_set_parent(statusbar->element, parent);
   // color_copy(statusbar->element->color, &color_vs_code_red);
   statusbar->element->color = PACKED_UINT_VS_CODE_RED;
-  statusbar->element->hidden                     = TRUE;
-  statusbar->element->has_reverse_relative_y_pos = TRUE;
-  statusbar->element->has_relative_x_pos         = TRUE;
-  statusbar->element->relative_y                 = (gui_font_height(uifont) * 2);
+  // statusbar->element->hidden                     = TRUE;
+  // statusbar->element->has_relative_x_pos         = TRUE;
+  // statusbar->element->has_reverse_relative_y_pos = TRUE;
+  statusbar->element->xflags |= (ELEMENT_HIDDEN | ELEMENT_REL_X | ELEMENT_REVREL_Y);
+  statusbar->element->relative_y = (gui_font_height(uifont) * 2);
 }
 
 /* Free the statusbar structure. */
@@ -117,11 +118,13 @@ void statusbar_draw(float fps) {
     if (statusbar->time < 0) {
       /* If the set time has elapsed, then reset the status element. */
       statusbar->type            = VACUUM;
-      statusbar->element->hidden = TRUE;
+      // statusbar->element->hidden = TRUE;
+      statusbar->element->xflags |= ELEMENT_HIDDEN;
       return;
     }
     if (refresh_needed) {
-      statusbar->element->hidden = FALSE;
+      // statusbar->element->hidden = FALSE;
+      statusbar->element->xflags &= ~ELEMENT_HIDDEN;
       msg_width = (font_breadth(uifont, statusbar->msg) + font_breadth(uifont, "  "));
       vertex_buffer_clear(statusbar->buffer);
       element_move_resize(statusbar->element, ((gui_width / 2) - (msg_width / 2)), (gui_height - (gui_font_height(uifont) * 2)), msg_width, gui_font_height(uifont));

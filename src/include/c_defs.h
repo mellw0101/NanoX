@@ -1249,6 +1249,60 @@ typedef enum {
 } MouseFlag;
 
 
+/* ----------------------------- gui/element.c ----------------------------- */
+
+/* State flags for elements. */
+typedef enum {
+  ELEMENT_HIDDEN       = (1 <<  0),
+  ELEMENT_LABLE        = (1 <<  1),
+  ELEMENT_REL_X        = (1 <<  2),
+  ELEMENT_REL_Y        = (1 <<  3),
+  ELEMENT_REVREL_X     = (1 <<  4),
+  ELEMENT_REVREL_Y     = (1 <<  5),
+  ELEMENT_REL_WIDTH    = (1 <<  6),
+  ELEMENT_REL_HEIGHT   = (1 <<  7),
+  ELEMENT_IS_BORDER    = (1 <<  8),
+  ELEMENT_HAS_BORDERS  = (1 <<  9),
+  ELEMENT_NOT_IN_MAP   = (1 << 10),
+  ELEMENT_ABOVE        = (1 << 11),
+  ELEMENT_REFRESH_RECT = (1 << 12),
+  /* General flags. */
+# define ELEMENT_HIDDEN        ELEMENT_HIDDEN
+# define ELEMENT_LABLE         ELEMENT_LABLE
+# define ELEMENT_REL_X         ELEMENT_REL_X
+# define ELEMENT_REL_Y         ELEMENT_REL_Y
+# define ELEMENT_REVREL_X      ELEMENT_REVREL_X
+# define ELEMENT_REVREL_Y      ELEMENT_REVREL_Y
+# define ELEMENT_REL_WIDTH     ELEMENT_REL_WIDTH
+# define ELEMENT_REL_HEIGHT    ELEMENT_REL_HEIGHT
+# define ELEMENT_IS_BORDER     ELEMENT_IS_BORDER
+# define ELEMENT_HAS_BORDERS   ELEMENT_HAS_BORDERS
+# define ELEMENT_NOT_IN_MAP    ELEMENT_NOT_IN_MAP
+# define ELEMENT_ABOVE         ELEMENT_ABOVE
+# define ELEMENT_REFRESH_RECT  ELEMENT_REFRESH_RECT
+  /* Group states. */
+# define ELEMENT_REL_POS       (ELEMENT_REL_X | ELEMENT_REL_Y)
+# define ELEMENT_REVREL_POS    (ELEMENT_REVREL_X | ELEMENT_REVREL_Y)
+# define ELEMENT_REL_SIZE      (ELEMENT_REL_WIDTH | ELEMENT_REL_HEIGHT)
+} ElementFlag;
+
+/* The type of data the element's data ptr is currently pointing to. */
+typedef enum {
+  ELEMENT_DATA_NONE,
+  ELEMENT_DATA_RAW,
+  ELEMENT_DATA_FILE,
+  ELEMENT_DATA_EDITOR,
+  ELEMENT_DATA_SB,
+  ELEMENT_DATA_MENU,
+# define ELEMENT_DATA_NONE    ELEMENT_DATA_NONE
+# define ELEMENT_DATA_RAW     ELEMENT_DATA_RAW
+# define ELEMENT_DATA_FILE    ELEMENT_DATA_FILE
+# define ELEMENT_DATA_EDITOR  ELEMENT_DATA_EDITOR
+# define ELEMENT_DATA_SB      ELEMENT_DATA_SB
+# define ELEMENT_DATA_MENU    ELEMENT_DATA_MENU
+} ElementDataType;
+
+
 /* ---------------------------------------------------------- Struct's ---------------------------------------------------------- */
 
 
@@ -1633,25 +1687,25 @@ typedef struct {
 
 struct Element {
   /* Boolian flags. */
-  bool hidden                     : 1;
-  bool has_lable                  : 1;
-  bool has_relative_pos           : 1;
-  bool has_relative_x_pos         : 1;
-  bool has_relative_y_pos         : 1;
-  bool has_reverse_relative_pos   : 1;
-  bool has_reverse_relative_x_pos : 1;
-  bool has_reverse_relative_y_pos : 1;
-  bool has_relative_width         : 1;
-  bool has_relative_height        : 1;
-  bool is_border                  : 1;
-  bool has_borders                : 1;
-  bool not_in_gridmap             : 1;
-  bool has_raw_data               : 1;
-  bool has_file_data              : 1;
-  bool has_editor_data            : 1;
-  bool has_sb_data                : 1;
-  bool has_menu_data              : 1;
-  bool is_above                   : 1;
+  // bool hidden                     : 1;
+  // bool has_lable                  : 1;
+  // bool has_relative_pos           : 1;
+  // bool has_relative_x_pos         : 1;
+  // bool has_relative_y_pos         : 1;
+  // bool has_reverse_relative_pos   : 1;
+  // bool has_reverse_relative_x_pos : 1;
+  // bool has_reverse_relative_y_pos : 1;
+  // bool has_relative_width         : 1;
+  // bool has_relative_height        : 1;
+  // bool is_border                  : 1;
+  // bool has_borders                : 1;
+  // bool not_in_gridmap             : 1;
+  // bool has_raw_data               : 1;
+  // bool has_file_data              : 1;
+  // bool has_editor_data            : 1;
+  // bool has_sb_data                : 1;
+  // bool has_menu_data              : 1;
+  // bool is_above                   : 1;
 
   Ushort layer;
 
@@ -1675,8 +1729,13 @@ struct Element {
 
   int cursor;
 
+  int xflags;
+
   vertex_buffer_t *rect_buffer;
 
+  /* The type of data that `data_ptr` currently points to, otherwise `ELEMENT_DATA_NONE`
+   * when none.  Note that `ELEMENT_DATA_NONE` is equal to zero so `!e->dt` also works. */
+  ElementDataType dt;
   union {
     void           *raw;
     Scrollbar      *sb;

@@ -226,12 +226,14 @@ static void menu_reset(Menu *const menu) {
 static void menu_show_internal(Menu *const menu, bool show) {
   ASSERT_MENU;
   if (show) {
-    menu->element->hidden = FALSE;
+    // menu->element->hidden = FALSE;
+    menu->element->xflags &= ~ELEMENT_HIDDEN;
     /* TODO: Figure out if only resetting when hiding works for all things. */
     // menu_reset(menu);
   }
   else {
-    menu->element->hidden = TRUE;
+    menu->element->xflags |= ELEMENT_HIDDEN;
+    // menu->element->hidden = TRUE;
     if (menu->active_submenu) {
       menu_show_internal(menu->active_submenu, FALSE);
       menu->active_submenu = NULL;
@@ -350,13 +352,15 @@ static void menu_draw_selected(Menu *const menu) {
     gui_font_row_top_bot(menu->font, row, &y, &height);
     height -= (y - ((row == menu->rows - 1) ? 1 : 0));
     y      += (menu->element->y + menu->border_size);
-    menu->selelem->hidden = FALSE;
+    // menu->selelem->hidden = FALSE;
+    menu->selelem->xflags &= ~ELEMENT_HIDDEN;
     element_move_resize(menu->selelem, x, y, width, height);
     element_draw(menu->selelem);
     // draw_rect_rgba(x, y, width, height, 1, 1, 1, 0.4f);
   }
   else {
-    menu->selelem->hidden = TRUE;
+    // menu->selelem->hidden = TRUE;
+    menu->selelem->xflags |= ELEMENT_HIDDEN;
   }
 }
 
@@ -520,7 +524,8 @@ Menu *menu_create(Element *const parent, Font *const font, void *data, MenuPosit
   /* The default background color for menu's is black. */
   menu->element->color = PACKED_UINT(0, 0, 0, 255);
   element_set_parent(menu->element, parent);
-  menu->element->hidden = TRUE;
+  menu->element->xflags |= ELEMENT_HIDDEN;
+  // menu->element->hidden = TRUE;
   /* As default all menus should have borders, to create a uniform look.  Note that this can be configured.  TODO: Implement the config of borders. */
   element_set_borders(menu->element, menu->border_size, menu->border_size, menu->border_size, menu->border_size, PACKED_UINT_DEFAULT_BORDERS);
   element_set_menu_data(menu->element, menu);
@@ -575,7 +580,7 @@ void menu_draw(Menu *const menu) {
   ASSERT_MENU;
   Menu *submenu;
   /* Only draw the suggestmenu if there are any available suggestions. */
-  if (!menu->element->hidden && cvec_len(menu->entries)) {
+  if (!(menu->element->xflags & ELEMENT_HIDDEN) && cvec_len(menu->entries)) {
     menu_resize(menu);
     /* Draw the main element of the suggestmenu. */
     element_draw(menu->element);
@@ -855,7 +860,7 @@ bool menu_is_ancestor(Menu *const menu, Menu *const ancestor) {
 /* Return's `TRUE` when `menu` is currently being shown and has more then zero entries. */
 bool menu_is_shown(Menu *const menu) {
   ASSERT_MENU;
-  return (!menu->element->hidden && cvec_len(menu->entries));
+  return (!(menu->element->xflags & ELEMENT_HIDDEN) && cvec_len(menu->entries));
 }
 
 /* ----------------------------- Getter function's ----------------------------- */

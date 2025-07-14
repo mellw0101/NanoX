@@ -18,26 +18,28 @@
 
 static Element *element_create_internal(void) {
   Element *e = xmalloc(sizeof(*e));
+  /* State flags. */
+  e->xflags = 0;
   /* Boolian flags. */
-  e->hidden                     = FALSE;
-  e->has_lable                  = FALSE;
-  e->has_relative_pos           = FALSE;
-  e->has_relative_x_pos         = FALSE;
-  e->has_relative_y_pos         = FALSE;
-  e->has_reverse_relative_pos   = FALSE;
-  e->has_reverse_relative_x_pos = FALSE;
-  e->has_reverse_relative_y_pos = FALSE;
-  e->has_relative_width         = FALSE;
-  e->has_relative_height        = FALSE;
-  e->is_border                  = FALSE;
-  e->has_borders                = FALSE;
-  e->not_in_gridmap             = FALSE;
-  e->has_raw_data               = FALSE;
-  e->has_file_data              = FALSE;
-  e->has_editor_data            = FALSE;
-  e->has_sb_data                = FALSE;
-  e->has_menu_data              = FALSE;
-  e->is_above                   = FALSE;
+  // e->hidden                     = FALSE;
+  // e->has_lable                  = FALSE;
+  // e->has_relative_pos           = FALSE;
+  // e->has_relative_x_pos         = FALSE;
+  // e->has_relative_y_pos         = FALSE;
+  // e->has_reverse_relative_pos   = FALSE;
+  // e->has_reverse_relative_x_pos = FALSE;
+  // e->has_reverse_relative_y_pos = FALSE;
+  // e->has_relative_width         = FALSE;
+  // e->has_relative_height        = FALSE;
+  // e->is_border                  = FALSE;
+  // e->has_borders                = FALSE;
+  // e->not_in_gridmap             = FALSE;
+  // e->has_raw_data               = FALSE;
+  // e->has_file_data              = FALSE;
+  // e->has_editor_data            = FALSE;
+  // e->has_sb_data                = FALSE;
+  // e->has_menu_data              = FALSE;
+  // e->is_above                   = FALSE;
   /* Position. */
   e->x          = 0;
   e->y          = 0;
@@ -49,8 +51,8 @@ static Element *element_create_internal(void) {
   e->relative_width  = 0;
   e->relative_height = 0;
   /* Color. */
-  e->color      = 0/* color_create(0, 0, 0, 0) */;
-  e->text_color = 0/* color_create(0, 0, 0, 0) */;
+  e->color      = 0;
+  e->text_color = 0;
   /* Lable. */
   e->lable     = NULL;
   e->lable_len = 0;
@@ -80,35 +82,35 @@ static void element_children_relative_pos(Element *const e) {
     width  = child->width;
     height = child->height;
     /* Normal relative position. */
-    if (child->has_relative_pos) {
-      x = (e->x + child->relative_x);
-      y = (e->y + child->relative_y);
-    }
+    // if (child->has_relative_pos) {
+    //   x = (e->x + child->relative_x);
+    //   y = (e->y + child->relative_y);
+    // }
     /* Reverse relative position. */
-    else if (child->has_reverse_relative_pos) {
-      x = ((e->x + e->width)  - child->relative_x); 
-      y = ((e->y + e->height) - child->relative_y);
-    }
+    // else if (child->has_reverse_relative_pos) {
+    //   x = ((e->x + e->width)  - child->relative_x); 
+    //   y = ((e->y + e->height) - child->relative_y);
+    // }
     /* Check reverse or regular relative x position. */
-    if (child->has_relative_x_pos) {
+    if (child->xflags & ELEMENT_REL_X) {
       x = (e->x + child->relative_x);
     }
-    else if (child->has_reverse_relative_x_pos) {
+    else if (child->xflags & ELEMENT_REVREL_X) {
       x = ((e->x + e->width) - child->relative_x);
     }
     /* Check reverse or regular relative y position. */
-    if (child->has_relative_y_pos) {
+    if (child->xflags & ELEMENT_REL_Y) {
       y = (e->y + child->relative_y);
     }
-    else if (child->has_reverse_relative_y_pos) {
+    else if (child->xflags & ELEMENT_REVREL_Y) {
       y = ((e->y + e->height) - child->relative_y);
     }
     /* Relative width. */
-    if (child->has_relative_width) {
+    if (child->xflags & ELEMENT_REL_WIDTH) {
       width = (e->width - child->relative_x - child->relative_width);
     }
     /* Relative_height. */
-    if (child->has_relative_height) {
+    if (child->xflags & ELEMENT_REL_HEIGHT) {
       height = (e->height - child->relative_y - child->relative_height);
     }
     /* If any value has changed, call `element_move_resize()`. */
@@ -155,7 +157,8 @@ Element *element_create(float x, float y, float width, float height, bool in_gri
     element_grid_set(e);
   }
   else {
-    e->not_in_gridmap = TRUE;
+    e->xflags |= ELEMENT_NOT_IN_MAP;
+    // e->not_in_gridmap = TRUE;
   }
   return e;
 }
@@ -180,12 +183,12 @@ void element_free(Element *const e) {
 void element_draw(Element *const e) {
   ASSERT(e);
   /* Only draw the element rect when the element is not hidden and the rect shader has been init. */
-  if (!e->hidden && rect_shader) {
+  if (!(e->xflags & ELEMENT_HIDDEN) && rect_shader) {
     element_draw_rect(e);
     /* If the element has borders, draw them to. */
-    if (e->has_borders) {
+    if (e->xflags & ELEMENT_HAS_BORDERS) {
       ELEMENT_CHILDREN_ITER(e, i, c,
-        if (c->is_border) {
+        if (c->xflags & ELEMENT_IS_BORDER) {
           element_draw_rect(c);
         }
       );
@@ -214,6 +217,9 @@ void element_resize(Element *const e, float width, float height) {
 void element_move_resize(Element *const e, float x, float y, float width, float height) {
   ASSERT(e);
   element_grid_remove(e);
+  if (!(e->x == x && e->y == y && e->width == width && e->height == height)) {
+
+  }
   e->x      = x;
   e->y      = y;
   e->width  = width;
@@ -236,7 +242,7 @@ void element_move_y_clamp(Element *const e, float y, float min, float max) {
 void element_delete_borders(Element *const e) {
   ASSERT(e);
   ELEMENT_CHILDREN_ITER(e, i, c,
-    if (c->is_border) {
+    if (c->xflags & ELEMENT_IS_BORDER) {
       element_free(c);
       --i;
     }
@@ -265,12 +271,13 @@ bool element_is_ancestor(Element *const e, Element *const ancestor) {
 void element_set_lable(Element *const e, const char *const restrict lable, Ulong len) {
   ASSERT(e);
   ASSERT(lable);
-  if (e->has_lable) {
+  if (e->xflags & ELEMENT_LABLE) {
     free(e->lable);
   }
   e->lable_len = len;
   e->lable     = measured_copy(lable, len);
-  e->has_lable = TRUE;
+  // e->has_lable = TRUE;
+  e->xflags |= ELEMENT_LABLE;
 }
 
 void element_set_borders(Element *const e, float lsize, float tsize, float rsize, float bsize, Uint color) {
@@ -283,7 +290,8 @@ void element_set_borders(Element *const e, float lsize, float tsize, float rsize
   Element *b = element_create(e->x,                      (e->y + e->height - bsize), e->width, bsize,     FALSE);
   /* Delete the current border's of `e` if it has them.  TODO: implement resizing and recoloring the existing ones when they exist. */
   element_delete_borders(e);
-  e->has_borders = TRUE;
+  // e->has_borders = TRUE;
+  e->xflags |= ELEMENT_HAS_BORDERS;
   /* Set `e` as the parent for all borders. */
   element_set_parent(l, e);
   element_set_parent(t, e);
@@ -299,25 +307,29 @@ void element_set_borders(Element *const e, float lsize, float tsize, float rsize
   r->color = color;
   b->color = color;
   /* Left. */
-  l->is_border           = TRUE;
-  l->has_relative_pos    = TRUE;
-  l->has_relative_height = TRUE;
+  l->xflags |= (ELEMENT_IS_BORDER | ELEMENT_REL_POS | ELEMENT_REL_HEIGHT);
+  // l->is_border           = TRUE;
+  // l->has_relative_pos    = TRUE;
+  // l->has_relative_height = TRUE;
   /* Top. */
-  t->is_border          = TRUE;
-  t->has_relative_pos   = TRUE;
-  t->has_relative_width = TRUE;
+  t->xflags |= (ELEMENT_IS_BORDER | ELEMENT_REL_POS | ELEMENT_REL_WIDTH);
+  // t->is_border          = TRUE;
+  // t->has_relative_pos   = TRUE;
+  // t->has_relative_width = TRUE;
   /* Right. */
-  r->is_border                  = TRUE;
-  r->has_reverse_relative_x_pos = TRUE;
-  r->has_relative_y_pos         = TRUE;
-  r->has_relative_height        = TRUE;
-  r->relative_x                 = rsize;
+  r->xflags |= (ELEMENT_IS_BORDER | ELEMENT_REVREL_X | ELEMENT_REL_Y | ELEMENT_REL_HEIGHT);
+  // r->is_border                  = TRUE;
+  // r->has_reverse_relative_x_pos = TRUE;
+  // r->has_relative_y_pos         = TRUE;
+  // r->has_relative_height        = TRUE;
+  r->relative_x = rsize;
   /* Bottom. */
-  b->is_border                  = TRUE;
-  b->has_reverse_relative_y_pos = TRUE;
-  b->has_relative_x_pos         = TRUE;
-  b->has_relative_width         = TRUE;
-  b->relative_y                 = bsize;
+  b->xflags |= (ELEMENT_IS_BORDER | ELEMENT_REL_X | ELEMENT_REVREL_Y | ELEMENT_REL_WIDTH);
+  // b->is_border                  = TRUE;
+  // b->has_relative_x_pos         = TRUE;
+  // b->has_reverse_relative_y_pos = TRUE;
+  // b->has_relative_width         = TRUE;
+  b->relative_y = bsize;
 }
 
 /* Set the event layer of `e`.  Note that this does not change drawing layer as that depends on the order of drawing. */
@@ -347,11 +359,12 @@ void element_set_parent(Element *const e, Element *const p) {
 void element_set_raw_data(Element *const e, void *const data) {
   ASSERT(e);
   ASSERT(data);
-  e->has_raw_data    = TRUE;
-  e->has_sb_data     = FALSE;
-  e->has_menu_data   = FALSE;
-  e->has_file_data   = FALSE;
-  e->has_editor_data = FALSE;
+  e->dt = ELEMENT_DATA_RAW;
+  // e->has_raw_data    = TRUE;
+  // e->has_sb_data     = FALSE;
+  // e->has_menu_data   = FALSE;
+  // e->has_file_data   = FALSE;
+  // e->has_editor_data = FALSE;
   e->dp_raw          = data;
 }
 
@@ -359,11 +372,12 @@ void element_set_raw_data(Element *const e, void *const data) {
 void element_set_sb_data(Element *const e, Scrollbar *const data) {
   ASSERT(e);
   ASSERT(data);
-  e->has_raw_data    = FALSE;
-  e->has_sb_data     = TRUE;
-  e->has_menu_data   = FALSE;
-  e->has_file_data   = FALSE;
-  e->has_editor_data = FALSE;
+  e->dt = ELEMENT_DATA_SB;
+  // e->has_raw_data    = FALSE;
+  // e->has_sb_data     = TRUE;
+  // e->has_menu_data   = FALSE;
+  // e->has_file_data   = FALSE;
+  // e->has_editor_data = FALSE;
   e->dp_sb           = data;
 }
 
@@ -371,11 +385,12 @@ void element_set_sb_data(Element *const e, Scrollbar *const data) {
 void element_set_menu_data(Element *const e, Menu *const data) {
   ASSERT(e);
   ASSERT(data);
-  e->has_raw_data    = FALSE;
-  e->has_sb_data     = FALSE;
-  e->has_menu_data   = TRUE;
-  e->has_file_data   = FALSE;
-  e->has_editor_data = FALSE;
+  e->dt = ELEMENT_DATA_MENU;
+  // e->has_raw_data    = FALSE;
+  // e->has_sb_data     = FALSE;
+  // e->has_menu_data   = TRUE;
+  // e->has_file_data   = FALSE;
+  // e->has_editor_data = FALSE;
   e->dp_menu         = data;
 }
 
@@ -383,11 +398,12 @@ void element_set_menu_data(Element *const e, Menu *const data) {
 void element_set_file_data(Element *const e, openfilestruct *const data) {
   ASSERT(e);
   ASSERT(data);
-  e->has_raw_data    = FALSE;
-  e->has_sb_data     = FALSE;
-  e->has_menu_data   = FALSE;
-  e->has_file_data   = TRUE;
-  e->has_editor_data = FALSE;
+  e->dt = ELEMENT_DATA_FILE;
+  // e->has_raw_data    = FALSE;
+  // e->has_sb_data     = FALSE;
+  // e->has_menu_data   = FALSE;
+  // e->has_file_data   = TRUE;
+  // e->has_editor_data = FALSE;
   e->dp_file         = data;
 }
 
@@ -395,10 +411,11 @@ void element_set_file_data(Element *const e, openfilestruct *const data) {
 void element_set_editor_data(Element *const e, Editor *const data) {
   ASSERT(e);
   ASSERT(data);
-  e->has_raw_data    = FALSE;
-  e->has_sb_data     = FALSE;
-  e->has_menu_data   = FALSE;
-  e->has_file_data   = FALSE;
-  e->has_editor_data = TRUE;
+  e->dt = ELEMENT_DATA_EDITOR;
+  // e->has_raw_data    = FALSE;
+  // e->has_sb_data     = FALSE;
+  // e->has_menu_data   = FALSE;
+  // e->has_file_data   = FALSE;
+  // e->has_editor_data = TRUE;
   e->dp_editor       = data;
 }

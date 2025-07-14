@@ -156,9 +156,10 @@ static void setup_botbar(void) {
   gui->botbar = element_create(0, (gui_height - gui_font_height(uifont)), gui_width, gui_font_height(uifont), TRUE);
   element_set_parent(gui->botbar, gui->root);
   gui->botbar->color = PACKED_UINT(0, 0, 0, 255);
-  gui->botbar->has_reverse_relative_y_pos = TRUE;
-  gui->botbar->has_relative_width         = TRUE;
-  gui->botbar->relative_y                 = gui->botbar->height;
+  gui->botbar->xflags |= (ELEMENT_REVREL_Y | ELEMENT_REL_WIDTH);
+  // gui->botbar->has_reverse_relative_y_pos = TRUE;
+  // gui->botbar->has_relative_width         = TRUE;
+  gui->botbar->relative_y = gui->botbar->height;
 }
 
 /* Set up the bottom bar. */
@@ -174,7 +175,8 @@ static void setup_statusbar(void) {
   gui->statusbar->color = PACKED_UINT_VS_CODE_RED;
   // color_copy(gui->statusbar->color, &color_vs_code_red);
   element_set_parent(gui->statusbar, gui->root);
-  gui->statusbar->hidden = TRUE;
+  // gui->statusbar->hidden = TRUE;
+  gui->statusbar->xflags |= ELEMENT_HIDDEN;
 }
 
 /* Allocate and init the edit element. */

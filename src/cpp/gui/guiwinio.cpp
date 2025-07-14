@@ -780,12 +780,14 @@ void draw_statusbar(void) {
       /* If the set time has elapsed, then reset the status element. */
       statustype = VACUUM;
       // gui->statusbar->flag.set<GUIELEMENT_HIDDEN>();
-      gui->statusbar->hidden = TRUE;
+      // gui->statusbar->hidden = TRUE;
+      gui->statusbar->xflags |= ELEMENT_HIDDEN;
       return;
     }
     if (refresh_needed) {
       // gui->statusbar->flag.unset<GUIELEMENT_HIDDEN>();
-      gui->statusbar->hidden = FALSE;
+      // gui->statusbar->hidden = FALSE;
+      gui->statusbar->xflags &= ~ELEMENT_HIDDEN;
       msg_width = (font_breadth(uifont, statusmsg) + font_breadth(uifont, "  "));
       vertex_buffer_clear(gui->statusbuf);
       // gui_element_move_resize(
