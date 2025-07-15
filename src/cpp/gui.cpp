@@ -234,7 +234,8 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
   }
   gui_window = gui->window;
   glfwMakeContextCurrent(gui->window);
-  frametimer.fps = ((fps == -1) ? 240 : fps);
+  // frametimer.fps = ((fps == -1) ? 240 : fps);
+  frame_set_rate(((fps == -1) ? 240 : fps));
   /* Create and start the event handler. */
   gui->handler = nevhandler_create();
   nevhandler_start(gui->handler, TRUE);
@@ -361,7 +362,9 @@ void init_gui(void) {
 /* Main gui loop. */
 void glfw_loop(void) {
   while (!glfwWindowShouldClose(gui->window)) {
-    frametimer.start();
+    // frametimer.start();
+    frame_start();
+    writef("%.2f ms\n", frame_get_time());
     if (refresh_needed) {
       place_the_cursor();
       glClear(GL_COLOR_BUFFER_BIT);
@@ -384,11 +387,12 @@ void glfw_loop(void) {
       draw_suggestmenu();
       /* If refresh was needed it has been done so set it to FALSE. */
       glfwSwapBuffers(gui->window);
-      // glfwPollEvents();
       refresh_needed = FALSE;
     }
-    glfwWaitEvents();
-    frametimer.end();
+    glfwPollEvents();
+    // glfwWaitEvents();
+    // frametimer.end();
+    frame_end();
   }
   cleanup();
   close_and_go();
