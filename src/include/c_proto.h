@@ -694,7 +694,10 @@ void     element_resize(Element *const e, float width, float height);
 void     element_move_resize(Element *const e, float x, float y, float width, float height);
 void     element_move_y_clamp(Element *const e, float y, float min, float max);
 void     element_delete_borders(Element *const e);
-bool     element_is_ancestor(Element *const e, Element *const ancestor);
+/* ----------------------------- Element set color ----------------------------- */
+void element_set_color(Element *const e, Uint color);
+/* ----------------------------- Element is ancestor ----------------------------- */
+bool element_is_ancestor(Element *const e, Element *const ancestor);
 void     element_set_lable(Element *const e, const char *const restrict lable, Ulong len);
 void     element_set_borders(Element *const e, float lsize, float tsize, float rsize, float bsize, Uint color /* Color *color */);
 void     element_set_layer(Element *const e, Ushort layer);
@@ -1487,11 +1490,12 @@ void editor_close_a_open_buffer(openfilestruct *const file);
 
 void statusbar_init(Element *const parent);
 void statusbar_free(void);
-void statusline_gui_timed(message_type type, float seconds, const char *format, ...);
+void statusline_gui_timed(message_type type, double seconds, const char *format, ...);
 void statusline_gui_va(message_type type, const char *const restrict format, va_list ap);
 void statusline_gui(message_type type, const char *format, ...) _PRINTFLIKE(2, 3);
 void statusbar_gui(const char *const restrict msg);
-void statusbar_draw(float fps);
+void statusbar_count_frame(void);
+void statusbar_draw(void);
 
 
 /* ---------------------------------------------------------- gui/mouse.c ---------------------------------------------------------- */

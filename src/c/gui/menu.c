@@ -744,11 +744,11 @@ void menu_scroll_action(Menu *const menu, bool direction, float x_pos, float y_p
     /* Only scroll when not already at the top or bottom.  And the call was made from a valid position. */
     if (y_pos >= top && y_pos <= bot && x_pos < right && ((direction == BACKWARD && menu->viewtop > 0) || (direction == FORWARD && menu->viewtop < (len - menu->maxrows)))) {
       menu->viewtop += (!direction ? -1 : 1);
-      // menu->text_refresh_needed = TRUE;
       menu->xflags |= MENU_REFRESH_TEXT;
       /* Ensure that the currently selected entry gets correctly set based on where the mouse is. */
       menu_hover_action(menu, x_pos, y_pos);
       scrollbar_refresh_needed(menu->sb);
+      refresh_needed = TRUE;
     }
   }
 }

@@ -24,11 +24,11 @@
 #define SEGMENT_INTERVAL2_MS  (0.1)
 #define SEGMENT_INTERVAL2_NS  MILLI_TO_NANO(SEGMENT_INTERVAL2_MS)
 
-#define DO_SLEEP_SEGMENT(elapsed, total, start, now, stage)       \
-  while (((elapsed) + SEGMENT_INTERVAL##stage##_NS) < (total)) {  \
-    nanosleep(&sleeptime##stage, NULL);                           \
-    clock_gettime(CLOCK_MONOTONIC, (now));                        \
-    (elapsed) = ELAPSED_NANOSEC((start), (now));                  \
+#define DO_SLEEP_SEGMENT(elapsed, total, start, now, stage)                             \
+  while (((elapsed) + SEGMENT_INTERVAL##stage##_NS + MILLI_TO_NANO(0.05)) < (total)) {  \
+    nanosleep(&sleeptime##stage, NULL);                                                 \
+    clock_gettime(CLOCK_MONOTONIC, (now));                                              \
+    (elapsed) = ELAPSED_NANOSEC((start), (now));                                        \
   }
 
 

@@ -1146,16 +1146,9 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 
 /* Mouse pos callback. */
 void mouse_pos_callback(GLFWwindow *window, double x, double y) {
-  // static vec2 last_mousepos = mousepos;
-  // guielement *element;
   Element *test;
   update_mouse_pos(x, y);
-  /* Set the global mouse position. */
-  // mousepos = vec2(x, y);
-  // get_mouse_xpos() = x;
-  // get_mouse_ypos() = y;
   /* If the left mouse button is being held. */
-  // if (mouse_flag.is_set<LEFT_MOUSE_BUTTON_HELD>()) {
   if (is_mouse_flag_set(MOUSE_BUTTON_HELD_LEFT)) {
     /* When inside prompt mode. */
     if (gui->flag.is_set<GUI_PROMPT>()) {
@@ -1163,20 +1156,19 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
       if (index != -1) {
         typing_x = index;
         gui->promptmenu->text_refresh_needed = TRUE;
+        refresh_needed = TRUE;
       }
     }
     if (gui->clicked) {
       /* Scrollbar */
       if (gui->clicked->dt == ELEMENT_DATA_SB) {
-        // scrollbar_mouse_pos_routine(gui->clicked->dp_sb, gui->clicked, last_mousepos.y, get_mouse_ypos());
         scrollbar_mouse_pos_routine(gui->clicked->dp_sb, gui->clicked, get_last_mouse_ypos(), get_mouse_ypos());
+        refresh_needed = TRUE;
       }
       /* Editor-Text */
       else if (gui->clicked->dt == ELEMENT_DATA_EDITOR && gui->clicked == gui->clicked->dp_editor->text) {
-        // editor_get_text_line_index(gui->clicked->dp_editor, get_mouse_xpos(), get_mouse_ypos(), &GUI_OF->current, &GUI_OF->current_x);
         editor_get_text_line_index(gui->clicked->dp_editor, get_mouse_xpos(), get_mouse_ypos(), &GUI_OF->current, &GUI_OF->current_x);
         /* If the left press was a tripple press, adjust the mark based on the current cursor line. */
-        // if (is_mouse_flag_set(MOUSE_PRESS_WAS_TRIPPLE)) {
         if (is_mouse_flag_set(MOUSE_PRESS_WAS_TRIPPLE)) {
           Ulong st, end;
           st  = 0;
@@ -1196,7 +1188,6 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
           }
         }
         /* If the left press was a double press. */
-        // else if (is_mouse_flag_set(MOUSE_PRESS_WAS_DOUBLE)) {
         else if (is_mouse_flag_set(MOUSE_PRESS_WAS_DOUBLE)) {
           /* Get the start and end of the word that has been marked.  It does not matter is the mark is currently at start or end of that word. */
           Ulong st, end;
@@ -1226,14 +1217,14 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
           else {
             GUI_OF->mark_x = st;
           }
-          GUI_OF->placewewant = xplustabs();
+          SET_PWW(GUI_OF);
         }
+        refresh_needed = TRUE;
       }
     }
   }
   else {
     /* Get the element that the mouse is on. */
-    // test = element_grid_get(get_mouse_xpos(), get_mouse_ypos());
     test = element_grid_get(get_mouse_xpos(), get_mouse_ypos());
     if (test) {
       /* If the element currently hovered on has a diffrent cursor then the active one, change it. */
@@ -1243,9 +1234,11 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
       }
       if (!gui->clicked && menu_get_active() && test->dt == ELEMENT_DATA_MENU && menu_is_ancestor(test->dp_menu, menu_get_active()) && menu_element_is_main(test->dp_menu, test)) {
         menu_hover_action(test->dp_menu, get_mouse_xpos(), get_mouse_ypos());
+        refresh_needed = TRUE;
       }
       else if (!gui->clicked && test == gui->promptmenu->element) {
         gui_promptmenu_hover_action(get_mouse_ypos());
+        refresh_needed = TRUE;
       }
       if (!entered_element || test != entered_element) {
         /* If there is no clicked element currently and the newly entered element is the thumb of any scrollbar, highlight the color of it. */
@@ -1268,9 +1261,6 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
       gui->current_cursor_type = GLFW_ARROW_CURSOR;
     }
   }
-  /* Save the current mouse position. */
-  // last_mousepos = mousepos;
-  refresh_needed = TRUE;
 }
 
 /* Window entering and leaving callback. */
@@ -1312,7 +1302,6 @@ void scroll_callback(GLFWwindow *window, double x, double y) {
   if (test) {
     if (test->dt == ELEMENT_DATA_EDITOR && test == test->dp_editor->text) {
       /* If the mouse left mouse button is held while scrolling, update the cursor pos so that the marked region gets updated. */
-      // if (mouse_flag.is_set<LEFT_MOUSE_BUTTON_HELD>()) {
       if (is_mouse_flag_set(MOUSE_BUTTON_HELD_LEFT)) {
         line = line_and_index_from_mousepos(gui_font_get_font(textfont), &index);
         test->dp_editor->openfile->current   = line;
@@ -1320,13 +1309,13 @@ void scroll_callback(GLFWwindow *window, double x, double y) {
       }
       /* Up and down scroll. */
       edit_scroll((y > 0.0) ? BACKWARD : FORWARD);
-      refresh_needed = TRUE;
       scrollbar_refresh_needed(test->dp_editor->sb);
       /* If the suggestmenu is active then make sure it updates the position and text. */
       if (menu_len(gui->suggestmenu->menu)) {
         menu_text_refresh_needed(gui->suggestmenu->menu);
         menu_pos_refresh_needed(gui->suggestmenu->menu);
       }
+      refresh_needed = TRUE;
     }
     if (menu_get_active() && test->dt == ELEMENT_DATA_MENU && menu_is_ancestor(test->dp_menu, menu_get_active()) && menu_element_is_main(test->dp_menu, test)) {
       menu_scroll_action(test->dp_menu, ((y > 0) ? BACKWARD : FORWARD), get_mouse_xpos(), get_mouse_ypos());
@@ -1334,6 +1323,7 @@ void scroll_callback(GLFWwindow *window, double x, double y) {
     /* If this element is the gui promptmenu main element.  Then call the scroll function. */
     else if (test == gui->promptmenu->element) {
       gui_promptmenu_scroll_action(((y > 0) ? BACKWARD : FORWARD), get_mouse_ypos());
+      refresh_needed = TRUE;
     }
   }
 }

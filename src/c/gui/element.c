@@ -7,12 +7,6 @@
 #include "../../include/c_proto.h"
 
 
-/* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
-
-
-// Uint element_rect_shader = 0;
-
-
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
@@ -245,7 +239,19 @@ void element_delete_borders(Element *const e) {
   );
 }
 
-/* ----------------------------- Boolian function's ----------------------------- */
+/* ----------------------------- Element set color ----------------------------- */
+
+/* Set the color of `e`, and also make the element refresh its rect buffer and tell the gui it needs to redraw. */
+void element_set_color(Element *const e, Uint color) {
+  ASSERT(e);
+  if (e->color != color) {
+    e->color = color;
+    e->xflags |= ELEMENT_RECT_REFRESH;
+    refresh_needed = TRUE;
+  }
+}
+
+/* ----------------------------- Element is ancestor ----------------------------- */
 
 /* Returns 'TRUE' when 'ancestor' is an ancestor to e or is e itself. */
 bool element_is_ancestor(Element *const e, Element *const ancestor) {
@@ -261,8 +267,6 @@ bool element_is_ancestor(Element *const e, Element *const ancestor) {
   }
   return FALSE;
 }
-
-/* ----------------------------- Internal data set function's ----------------------------- */
 
 void element_set_lable(Element *const e, const char *const restrict lable, Ulong len) {
   ASSERT(e);
@@ -356,12 +360,7 @@ void element_set_raw_data(Element *const e, void *const data) {
   ASSERT(e);
   ASSERT(data);
   e->dt = ELEMENT_DATA_RAW;
-  // e->has_raw_data    = TRUE;
-  // e->has_sb_data     = FALSE;
-  // e->has_menu_data   = FALSE;
-  // e->has_file_data   = FALSE;
-  // e->has_editor_data = FALSE;
-  e->dp_raw          = data;
+  e->dp_raw = data;
 }
 
 /* Set the internal data ptr of `e` to `Scrollbar *` data.  Note that this should be the only way of setting the internal data of a element. */
@@ -369,12 +368,7 @@ void element_set_sb_data(Element *const e, Scrollbar *const data) {
   ASSERT(e);
   ASSERT(data);
   e->dt = ELEMENT_DATA_SB;
-  // e->has_raw_data    = FALSE;
-  // e->has_sb_data     = TRUE;
-  // e->has_menu_data   = FALSE;
-  // e->has_file_data   = FALSE;
-  // e->has_editor_data = FALSE;
-  e->dp_sb           = data;
+  e->dp_sb = data;
 }
 
 /* Set the internal data ptr of `e` to `Menu *` data.  Note that this should be the only way of setting the internal data of a element. */
@@ -382,12 +376,7 @@ void element_set_menu_data(Element *const e, Menu *const data) {
   ASSERT(e);
   ASSERT(data);
   e->dt = ELEMENT_DATA_MENU;
-  // e->has_raw_data    = FALSE;
-  // e->has_sb_data     = FALSE;
-  // e->has_menu_data   = TRUE;
-  // e->has_file_data   = FALSE;
-  // e->has_editor_data = FALSE;
-  e->dp_menu         = data;
+  e->dp_menu = data;
 }
 
 /* Set the internal data ptr of `e` to `openfilestruct *` data.  Note that this should be the only way of setting the internal data of a element. */
@@ -395,12 +384,7 @@ void element_set_file_data(Element *const e, openfilestruct *const data) {
   ASSERT(e);
   ASSERT(data);
   e->dt = ELEMENT_DATA_FILE;
-  // e->has_raw_data    = FALSE;
-  // e->has_sb_data     = FALSE;
-  // e->has_menu_data   = FALSE;
-  // e->has_file_data   = TRUE;
-  // e->has_editor_data = FALSE;
-  e->dp_file         = data;
+  e->dp_file = data;
 }
 
 /* Set the internal data ptr of `e` to `Editor *` data.  Note that this should be the only way of setting the internal data of a element. */
@@ -408,10 +392,5 @@ void element_set_editor_data(Element *const e, Editor *const data) {
   ASSERT(e);
   ASSERT(data);
   e->dt = ELEMENT_DATA_EDITOR;
-  // e->has_raw_data    = FALSE;
-  // e->has_sb_data     = FALSE;
-  // e->has_menu_data   = FALSE;
-  // e->has_file_data   = FALSE;
-  // e->has_editor_data = TRUE;
-  e->dp_editor       = data;
+  e->dp_editor = data;
 }

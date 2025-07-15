@@ -364,6 +364,7 @@ void glfw_loop(void) {
   while (!glfwWindowShouldClose(gui->window)) {
     // frametimer.start();
     frame_start();
+    statusbar_count_frame();
     writef("%.2f ms\n", frame_get_time());
     if (refresh_needed) {
       place_the_cursor();
@@ -381,7 +382,7 @@ void glfw_loop(void) {
       draw_botbar();
       /* Draw the status bar, if there is any status messages. */
       draw_statusbar();
-      statusbar_draw(frametimer.fps);
+      statusbar_draw();
       context_menu_draw(gui->context_menu);
       /* Draw the suggestmenu. */
       draw_suggestmenu();

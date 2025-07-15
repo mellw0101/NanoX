@@ -282,10 +282,9 @@ void scrollbar_show(Scrollbar *const sb, bool show) {
 void scrollbar_set_thumb_color(Scrollbar *const sb, bool active) {
   ASSERT_SCROLLBAR;
   if (!active) {
-    sb->thumb->color = SB_THUMB_COLOR;
+    element_set_color(sb->thumb, SB_THUMB_COLOR);
   }
   else {
-    sb->thumb->color = SB_ACTIVE_THUMB_COLOR;
+    element_set_color(sb->thumb, SB_ACTIVE_THUMB_COLOR);
   }
-  sb->thumb->xflags |= ELEMENT_RECT_REFRESH;
 }

@@ -16,10 +16,10 @@ static Statusbar *statusbar = NULL;
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
-static void statusbar_timed_msg_internal(message_type type, float seconds, const char *const restrict format, va_list ap) {
+static void statusbar_timed_msg_internal(message_type type, double seconds, const char *const restrict format, va_list ap) {
   ASSERT(seconds);
   ASSERT(format);
-  /* If the statusbar has not been init yet just leave. */
+  /* If the statusbar has not been init yet, just leave. */
   if (!statusbar) {
     return;
   }
@@ -35,6 +35,7 @@ static void statusbar_timed_msg_internal(message_type type, float seconds, const
   statusbar->type = type;
   statusbar->msg  = free_and_assign(statusbar->msg, msg);
   statusbar->time = seconds;
+  refresh_needed  = TRUE;
 }
 
 
@@ -59,7 +60,7 @@ void statusbar_init(Element *const parent) {
   // statusbar->element->hidden                     = TRUE;
   // statusbar->element->has_relative_x_pos         = TRUE;
   // statusbar->element->has_reverse_relative_y_pos = TRUE;
-  statusbar->element->xflags |= (ELEMENT_HIDDEN | ELEMENT_REL_X | ELEMENT_REVREL_Y);
+  statusbar->element->xflags |= (ELEMENT_REL_X | ELEMENT_REVREL_Y);
   statusbar->element->rel_y = (gui_font_height(uifont) * 2);
 }
 
@@ -76,7 +77,7 @@ void statusbar_free(void) {
 
 /* Show a status message of `type`, for `seconds`.  Note that the type will determen if the
  * message will be shown, depending if there is a more urgent message already being shown. */
-void statusline_gui_timed(message_type type, float seconds, const char *format, ...) {
+void statusline_gui_timed(message_type type, double seconds, const char *format, ...) {
   ASSERT(seconds);
   ASSERT(format);
   va_list ap;
@@ -107,31 +108,29 @@ void statusbar_gui(const char *const restrict msg) {
   statusline_gui(HUSH, "%s", msg);
 }
 
+void statusbar_count_frame(void) {
+  if (statusbar->type != VACUUM) {
+    statusbar->time -= (frame_get_time() / 1000.0);
+    if (statusbar->time < 0) {
+      statusbar->type = VACUUM;
+      refresh_needed  = TRUE;
+    }
+  }
+}
+
 /* Draw the status bar for the gui. */
-void statusbar_draw(float fps) {
+void statusbar_draw(void) {
   float msg_width;
   float x;
   float y;
   if (statusbar->type != VACUUM) {
-    /* Check it the message has been shown for the set time. */
-    statusbar->time -= (1.0f / fps);
-    if (statusbar->time < 0) {
-      /* If the set time has elapsed, then reset the status element. */
-      statusbar->type            = VACUUM;
-      // statusbar->element->hidden = TRUE;
-      statusbar->element->xflags |= ELEMENT_HIDDEN;
-      return;
-    }
-    if (refresh_needed) {
-      // statusbar->element->hidden = FALSE;
-      statusbar->element->xflags &= ~ELEMENT_HIDDEN;
-      msg_width = (font_breadth(uifont, statusbar->msg) + font_breadth(uifont, "  "));
-      vertex_buffer_clear(statusbar->buffer);
-      element_move_resize(statusbar->element, ((gui_width / 2) - (msg_width / 2)), (gui_height - (gui_font_height(uifont) * 2)), msg_width, gui_font_height(uifont));
-      x = (statusbar->element->x + font_breadth(uifont, " "));
-      y = (statusbar->element->y + gui_font_row_baseline(uifont, 0));
-      font_vertbuf_add_mbstr(uifont, statusbar->buffer, statusbar->msg, strlen(statusbar->msg), " ", PACKED_UINT(255, 255, 255, 255), &x, &y);
-    }
+    statusbar->element->xflags &= ~ELEMENT_HIDDEN;
+    msg_width = (font_breadth(uifont, statusbar->msg) + font_breadth(uifont, "  "));
+    vertex_buffer_clear(statusbar->buffer);
+    element_move_resize(statusbar->element, ((gui_width / 2) - (msg_width / 2)), (gui_height - (gui_font_height(uifont) * 2)), msg_width, gui_font_height(uifont));
+    x = (statusbar->element->x + font_breadth(uifont, " "));
+    y = (statusbar->element->y + gui_font_row_baseline(uifont, 0));
+    font_vertbuf_add_mbstr(uifont, statusbar->buffer, statusbar->msg, strlen(statusbar->msg), " ", PACKED_UINT(255, 255, 255, 255), &x, &y);
     element_draw(statusbar->element);
     render_vertbuf(uifont, statusbar->buffer);
   }

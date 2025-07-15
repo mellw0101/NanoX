@@ -1769,7 +1769,7 @@ struct Statusbar {
   bool text_refresh_needed : 1;
 
   char *msg;
-  float time;
+  double time;
   message_type type;
 
   vertex_buffer_t *buffer;
