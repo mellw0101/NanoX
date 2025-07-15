@@ -365,7 +365,7 @@ void glfw_loop(void) {
     // frametimer.start();
     frame_start();
     statusbar_count_frame();
-    writef("%.2f ms\n", frame_get_time());
+    // writef("%.2f ms\n", frame_get_time());
     if (refresh_needed) {
       place_the_cursor();
       glClear(GL_COLOR_BUFFER_BIT);
