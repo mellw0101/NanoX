@@ -1010,33 +1010,11 @@ void char_callback(GLFWwindow *window, Uint ch) {
 /* Mouse button callback. */
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods) {
   /* Some static vars to track double clicking. */
-  // static double last_time     = 0.0;
-  // static int    last_button   = 0;
-  // static vec2   last_mousepos = 0.0f;
   Element *test;
   update_mouse_state(action, button);
-  /* Determen if this was a double or tripple click. */
-  // if (action == GLFW_PRESS) {
-  //   /* Give some wiggle room for the position of the mouse click as it is represented as while numbers only. */
-  //   if (last_button == button && (glfwGetTime() - last_time) < DOUBLE_PRESS_THRESHOLD && mousepos > (last_mousepos - 3.0f) && mousepos < (last_mousepos + 3.0f)) {
-  //     /* Check tripple press first. */
-  //     (is_mouse_flag_set(MOUSE_PRESS_WAS_DOUBLE) && !is_mouse_flag_set(MOUSE_PRESS_WAS_TRIPPLE))
-  //       ? mouse_flag.set<WAS_MOUSE_TRIPPLE_PRESS>() : mouse_flag.unset<WAS_MOUSE_TRIPPLE_PRESS>();
-  //     /* Then check for double press. */
-  //     (!is_mouse_flag_set(MOUSE_PRESS_WAS_DOUBLE) && !is_mouse_flag_set(MOUSE_PRESS_WAS_TRIPPLE))
-  //       ? mouse_flag.set<WAS_MOUSE_DOUBLE_PRESS>() : mouse_flag.unset<WAS_MOUSE_DOUBLE_PRESS>();
-  //   }
-  //   /* Otherwise, clear both double and tripple flags. */
-  //   else {
-  //     mouse_flag.unset<WAS_MOUSE_DOUBLE_PRESS>();
-  //     mouse_flag.unset<WAS_MOUSE_TRIPPLE_PRESS>();
-  //   }
-  // }
   /* Left mouse button. */
   if (button == GLFW_MOUSE_BUTTON_1) {
     if (action == GLFW_PRESS) {
-      /* Indicate that the left mouse button is currently held. */
-      // mouse_flag.set<LEFT_MOUSE_BUTTON_HELD>();
       /* When in prompt-mode. */
       if (gui->flag.is_set<GUI_PROMPT>()) {
         long row;
@@ -1053,7 +1031,6 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         }
       }
       test = element_grid_get(get_mouse_xpos(), get_mouse_ypos());
-      // test = element_grid_get(get_mouse_xpos(), get_mouse_ypos());
       if (test) {
         gui->clicked = test;
         if (menu_get_active() && !menu_owns_element(menu_get_active(), test)) {
@@ -1111,7 +1088,6 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
       }
     }
     else if (action == GLFW_RELEASE) {
-      // mouse_flag.unset<LEFT_MOUSE_BUTTON_HELD>();
       /* If when the left mouse button is relesed without moving, set the mark to NULL. */
       if (GUI_OF->mark == GUI_OF->current && GUI_OF->mark_x == GUI_OF->current_x) {
         GUI_OF->mark = NULL;
@@ -1128,8 +1104,6 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
   /* Right mouse button. */
   else if (button == GLFW_MOUSE_BUTTON_2) {
     if (action == GLFW_PRESS) {
-      // mouse_flag.set<RIGHT_MOUSE_BUTTON_HELD>();
-      // test = element_grid_get(get_mouse_xpos(), get_mouse_ypos());
       test = element_grid_get(get_mouse_xpos(), get_mouse_ypos());
       if (test && test->dt == ELEMENT_DATA_FILE && test->parent && test->parent->dt == ELEMENT_DATA_EDITOR && etb_element_is_main(test->parent->dp_editor->tb, test->parent)) {
         etb_show_context_menu(test->parent->dp_editor->tb, test, TRUE);
@@ -1144,9 +1118,9 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         context_menu_show(gui->context_menu, TRUE);
       }
     }
-    else if (action == GLFW_RELEASE) {
+    // else if (action == GLFW_RELEASE) {
       // mouse_flag.unset<RIGHT_MOUSE_BUTTON_HELD>();
-    }
+    // }
   }
   /* Middle mouse button. */
   else if (button == GLFW_MOUSE_BUTTON_3) {
@@ -1167,13 +1141,6 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
   else if (button == GLFW_MOUSE_BUTTON_8) {
     NETLOG("Mouse button 8 pressed.\n");
   }
-  /* Set the static vars for the next callback.  But only do this for actual singular presses. */
-  // if (action == GLFW_PRESS) {
-  //   /* If we just had a tripple click ensure that the next press will not be detected as a double press. */
-  //   last_time     = (is_mouse_flag_set(MOUSE_PRESS_WAS_TRIPPLE) ? 0.0 : glfwGetTime());
-  //   last_button   = button;
-  //   last_mousepos = mousepos;
-  // }
   refresh_needed = TRUE;
 }
 

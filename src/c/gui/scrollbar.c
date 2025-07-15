@@ -272,14 +272,10 @@ void scrollbar_show(Scrollbar *const sb, bool show) {
   if (show) {
     sb->base->xflags  &= ~ELEMENT_HIDDEN;
     sb->thumb->xflags &= ~ELEMENT_HIDDEN;
-    // sb->base->hidden  = FALSE;
-    // sb->thumb->hidden = FALSE;
   }
   else {
     sb->base->xflags  |= ELEMENT_HIDDEN;
     sb->thumb->xflags |= ELEMENT_HIDDEN;
-    // sb->base->hidden  = TRUE;
-    // sb->thumb->hidden = TRUE;
   }
 }
 
@@ -291,4 +287,5 @@ void scrollbar_set_thumb_color(Scrollbar *const sb, bool active) {
   else {
     sb->thumb->color = SB_ACTIVE_THUMB_COLOR;
   }
+  sb->thumb->xflags |= ELEMENT_RECT_REFRESH;
 }
