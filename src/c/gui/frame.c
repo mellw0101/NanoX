@@ -18,14 +18,18 @@
 #define NANO_TO_MILLI(x)  ((double)(x) / 1000000.0)
 
 #define SEGMENT_INTERVAL0_MS  (1.0)
-#define SEGMENT_INTERVAL0_NS  MILLI_TO_NANO(SEGMENT_INTERVAL0_MS)
+#define SEGMENT_INTERVAL0_NS  (1000000ULL) /* MILLI_TO_NANO(SEGMENT_INTERVAL0_MS) */
 #define SEGMENT_INTERVAL1_MS  (0.3)
-#define SEGMENT_INTERVAL1_NS  MILLI_TO_NANO(SEGMENT_INTERVAL1_MS)
+#define SEGMENT_INTERVAL1_NS  (300000ULL) /* MILLI_TO_NANO(SEGMENT_INTERVAL1_MS) */
 #define SEGMENT_INTERVAL2_MS  (0.1)
-#define SEGMENT_INTERVAL2_NS  MILLI_TO_NANO(SEGMENT_INTERVAL2_MS)
+#define SEGMENT_INTERVAL2_NS  (100000ULL) /* MILLI_TO_NANO(SEGMENT_INTERVAL2_MS) */
+
+#define SEGMENT_0_JITTER_NS  (300000ULL)
+#define SEGMENT_1_JITTER_NS  (150000ULL)
+#define SEGMENT_2_JITTER_NS  (60000ULL)
 
 #define DO_SLEEP_SEGMENT(elapsed, total, start, now, stage)                             \
-  while (((elapsed) + SEGMENT_INTERVAL##stage##_NS + MILLI_TO_NANO(0.05)) < (total)) {  \
+  while (((elapsed) + SEGMENT_INTERVAL##stage##_NS + /* MILLI_TO_NANO(0.05) */ SEGMENT_##stage##_JITTER_NS) < (total)) {  \
     nanosleep(&sleeptime##stage, NULL);                                                 \
     clock_gettime(CLOCK_MONOTONIC, (now));                                              \
     (elapsed) = ELAPSED_NANOSEC((start), (now));                                        \
