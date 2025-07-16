@@ -26,6 +26,10 @@ static Ulong elapsed_frames = 0;
 static struct timespec t0;
 /* Frame end time. */ 
 static struct timespec t1;
+/* If we are currently polling for the correct framerate. */
+static bool should_poll;
+static double frame_sample_0 = -1;
+static double frame_sample_1 = -1;
 
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
@@ -108,4 +112,29 @@ void frame_poll_rate(void) {
     frame_end();
   }
   glfwSwapInterval(0);
+}
+
+/* ----------------------------- Frame should poll ----------------------------- */
+
+bool frame_should_poll(void) {
+  if (should_poll) {
+    if (frame_sample_0 < 0) {
+      frame_sample_0 = frame_get_time();
+    }
+    else if (frame_sample_1 < 0) {
+      frame_sample_1 = frame_get_time();
+    }
+    else if (!(frame_sample_0 >= (frame_sample_1 - 0.2) && frame_sample_0 <= (frame_sample_1 + 0.2))) {
+      frame_sample_0 = -1;
+      frame_sample_1 = -1;
+    }
+    else {
+      frame_set_rate((int)(1000.0 / ((frame_sample_0 + frame_sample_1) / 2.0)));
+      glfwSwapInterval(0);
+    }
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
 }
