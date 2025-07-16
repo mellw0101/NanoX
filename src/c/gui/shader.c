@@ -171,10 +171,13 @@ void shader_rect_create(void) {
   });
 }
 
+/* ----------------------------- Shader rect vertex load ----------------------------- */
+
 /* Takes a `RectVertex[4]` as `buf`. */
 void shader_rect_vertex_load(RectVertex *buf, float x, float y, float w, float h, Uint color) {
-  buf[0] = (RectVertex){x, y,             UNPACK_UINT_FLOAT(color, 0), UNPACK_UINT_FLOAT(color, 1), UNPACK_UINT_FLOAT(color, 2), UNPACK_UINT_FLOAT(color, 3)};
-  buf[1] = (RectVertex){(x + w), y,       UNPACK_UINT_FLOAT(color, 0), UNPACK_UINT_FLOAT(color, 1), UNPACK_UINT_FLOAT(color, 2), UNPACK_UINT_FLOAT(color, 3)};
-  buf[2] = (RectVertex){(x + w), (y + h), UNPACK_UINT_FLOAT(color, 0), UNPACK_UINT_FLOAT(color, 1), UNPACK_UINT_FLOAT(color, 2), UNPACK_UINT_FLOAT(color, 3)};
-  buf[3] = (RectVertex){x, (y + h),       UNPACK_UINT_FLOAT(color, 0), UNPACK_UINT_FLOAT(color, 1), UNPACK_UINT_FLOAT(color, 2), UNPACK_UINT_FLOAT(color, 3)};
+  UNPACK_FUINT_VARS(color, r, g, b, a);
+  buf[0] = (RectVertex){x, y,             r,g,b,a};
+  buf[1] = (RectVertex){(x + w), y,       r,g,b,a};
+  buf[2] = (RectVertex){(x + w), (y + h), r,g,b,a};
+  buf[3] = (RectVertex){x, (y + h),       r,g,b,a};
 }

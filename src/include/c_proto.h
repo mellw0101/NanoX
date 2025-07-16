@@ -206,10 +206,6 @@ extern syntaxtype *syntaxes;
 /* static */ extern pid_t pid_of_sender;
 /* static */ extern bool should_pipe;
 
-/* ----------------------------- search.c ----------------------------- */
-
-extern bool came_full_circle;
-
 /* ----------------------------- winio.c ----------------------------- */
 
 extern Ulong from_x;
@@ -772,10 +768,6 @@ void   menu_qsort(Menu *const menu, CmpFuncPtr cmp_func);
 /* ---------------------------------------------------------- gui/frame.c ---------------------------------------------------------- */
 
 
-/* ----------------------------- Nsleep ----------------------------- */
-void nsleep(Ulong ns);
-/* ----------------------------- Msleep ----------------------------- */
-void msleep(Ulong ms);
 /* ----------------------------- Frame start ----------------------------- */
 void frame_start(void);
 /* ----------------------------- Frame end ----------------------------- */
@@ -786,6 +778,19 @@ double frame_get_rate(void);
 void frame_set_rate(double x);
 /* ----------------------------- Frame get time ----------------------------- */
 double frame_get_time(void);
+
+void frame_poll_rate(void);
+
+
+/* ---------------------------------------------------------- gui/monitor.c ---------------------------------------------------------- */
+
+
+/* ----------------------------- Monitor current ----------------------------- */
+GLFWmonitor *monitor_current(void);
+/* ----------------------------- Monitor mode ----------------------------- */
+const GLFWvidmode *monitor_mode(void);
+/* ----------------------------- Monitor refresh rate ----------------------------- */
+int monitor_refresh_rate(void);
 
 
 /* ---------------------------------------------------------- files.c ---------------------------------------------------------- */
@@ -1136,19 +1141,6 @@ functionptrtype interpret(int keycode);
 
 /* ---------------------------------------------------------- search.c ---------------------------------------------------------- */
 
-
-/* ----------------------------- Do research ----------------------------- */
-/* static */ void do_research_for(CTX_ARGS);
-/* static */ void do_research(void);
-/* ----------------------------- Replace regexp ----------------------------- */
-/* static */ int replace_regexp_for(openfilestruct *const file, char *string, bool create);
-/* static */ int replace_regexp(char *string, bool create);
-/* ----------------------------- Replace line ----------------------------- */
-/* static */ char *replace_line_for(openfilestruct *const file, const char *const restrict needle);
-/* static */ char *replace_line(const char *const restrict needle);
-/* ----------------------------- Search init ----------------------------- */
-/* static */ void search_init_for(CTX_ARGS, bool replacing, bool retain_answer);
-/* Remove */ void search_init(bool replacing, bool retain_answer);
 
 /* ----------------------------- Regular expression init ----------------------------- */
 bool regexp_init(const char *regexp);

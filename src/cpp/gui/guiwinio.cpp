@@ -828,32 +828,34 @@ static inline const GLFWvidmode *glfw_get_primary_monitor_mode(void) {
 /* Toggle fullscreen state. */
 void do_fullscreen(GLFWwindow *window) {
   static bool is_fullscreen = FALSE;
-  static ivec4 rect = 0.0f;
-  GLFWmonitor *monitor;
-  const GLFWvidmode *mode;
+  // static ivec4 rect = 0.0f;
+  // GLFWmonitor *monitor;
+  // const GLFWvidmode *mode;
   if (!is_fullscreen) {
-    /* Save the window size and position. */
-    glfwGetWindowPos(window, &rect.x, &rect.y);
-    glfwGetWindowSize(window, &rect.width, &rect.height);
-    /* Get monitor size. */
-    monitor = glfwGetPrimaryMonitor();
-    if (!monitor) {
-      log_error_gui("%s: Monitor is invalid.\n", __func__);
-      return;
-    }
-    mode = glfwGetVideoMode(monitor);
-    if (!mode) {
-      log_error_gui("%s: Mode is invalid.\n", __func__);
-      return;
-    }
+    // /* Save the window size and position. */
+    // glfwGetWindowPos(window, &rect.x, &rect.y);
+    // glfwGetWindowSize(window, &rect.width, &rect.height);
+    // /* Get monitor size. */
+    // monitor = glfwGetPrimaryMonitor();
+    // if (!monitor) {
+    //   log_error_gui("%s: Monitor is invalid.\n", __func__);
+    //   return;
+    // }
+    // mode = glfwGetVideoMode(monitor);
+    // if (!mode) {
+    //   log_error_gui("%s: Mode is invalid.\n", __func__);
+    //   return;
+    // }
     /* Set the window pos and size. */
-    glfwSetWindowAttrib(window, GLFW_AUTO_ICONIFY, FALSE);
+    // glfwSetWindowAttrib(window, GLFW_AUTO_ICONIFY, FALSE);
     glfwMaximizeWindow(window);
-    glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, GLFW_DONT_CARE);
+    // glfwSetWindowMonitor(window, NULL, 0, 0, mode->width, mode->height, GLFW_DONT_CARE);
   }
   else {
+    // writef("x: %d\n", rect.x);
+    // writef("x: %d\n", rect.y);
     /* Set the window pos and size. */
-    glfwSetWindowMonitor(window, NULL, rect.x, rect.y, rect.width, rect.height, GLFW_DONT_CARE);
+    // glfwSetWindowMonitor(window, NULL, rect.x, rect.y, rect.width, rect.height, GLFW_DONT_CARE);
     glfwRestoreWindow(window);
   }
   /* Toggle the fullscreen flag. */

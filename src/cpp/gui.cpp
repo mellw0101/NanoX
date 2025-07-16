@@ -220,11 +220,11 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
   /* Create the fully blank guistruct. */
   make_guistruct();
   /* Set the basic data needed to init the window. */
-  gui->title      = copy_of(win_title);
-  gui->width      = win_width;
-  gui->height     = win_height;
-  gui_width  = win_width;
-  gui_height = win_height;
+  gui->title  = copy_of(win_title);
+  gui->width  = win_width;
+  gui->height = win_height;
+  gui_width   = win_width;
+  gui_height  = win_height;
   gui->projection = matrix4x4_new();
   /* Then create the glfw window. */
   gui->window = glfwCreateWindow(gui->width, gui->height, gui->title, NULL, NULL);
@@ -234,13 +234,14 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
   }
   gui_window = gui->window;
   glfwMakeContextCurrent(gui->window);
+  // glfwDefaultWindowHints();
   // frametimer.fps = ((fps == -1) ? 240 : fps);
-  frame_set_rate(((fps == -1) ? 240 : fps));
+  // frame_set_rate( /* ((fps == -1) ? 240 : fps) */);
   /* Create and start the event handler. */
   gui->handler = nevhandler_create();
   nevhandler_start(gui->handler, TRUE);
-  textfont   = gui_font_create();
-  uifont = gui_font_create();
+  textfont = gui_font_create();
+  uifont   = gui_font_create();
   // gui->root = gui_element_create(0, vec2(gui->height, gui->width), 0, FALSE);
   gui->root = element_create(0, 0, gui_width, gui_height, FALSE);
 }
@@ -317,7 +318,7 @@ void init_gui(void) {
   }
   element_grid_create(GRIDMAP_GRIDSIZE);
   /* Init the main gui structure. */
-  init_guistruct("NanoX", 1400, 800, glfw_get_framerate(), 17, 15);
+  init_guistruct("NanoX", 1400, 800, 0 /* 240 */ /* glfw_get_framerate() */, 17, 15);
   /* Init glew. */
   init_glew();
   /* Init the font shader. */
@@ -346,7 +347,8 @@ void init_gui(void) {
   glfwSetCursorPosCallback(gui->window, mouse_pos_callback);
   glfwSetCursorEnterCallback(gui->window, window_enter_callback);
   glfwSetScrollCallback(gui->window, scroll_callback);
-  writef("Current fps: %d\n", frametimer.fps);
+  frame_set_rate(monitor_refresh_rate());
+  writef("Current fps: %.0f\n", frame_get_rate());
   // glClearColor(1.00, 1.00, 1.00, 1.00);
   glDisable(GL_DEPTH_TEST);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -361,11 +363,11 @@ void init_gui(void) {
 
 /* Main gui loop. */
 void glfw_loop(void) {
+  frame_poll_rate();
   while (!glfwWindowShouldClose(gui->window)) {
-    // frametimer.start();
     frame_start();
     statusbar_count_frame();
-    // writef("%.2f ms\n", frame_get_time());
+    writef("%.6f ms\n", frame_get_time());
     if (refresh_needed) {
       place_the_cursor();
       glClear(GL_COLOR_BUFFER_BIT);
@@ -391,8 +393,6 @@ void glfw_loop(void) {
       refresh_needed = FALSE;
     }
     glfwPollEvents();
-    // glfwWaitEvents();
-    // frametimer.end();
     frame_end();
   }
   cleanup();

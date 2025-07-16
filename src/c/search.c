@@ -13,7 +13,7 @@
 /* Whether we have compiled a regular expression for the search. */
 static bool have_compiled_regexp = FALSE;
 /* Have we reached the starting line again while searching? */
-/* static */ bool came_full_circle = FALSE;
+static bool came_full_circle = FALSE;
 
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
@@ -22,7 +22,7 @@ static bool have_compiled_regexp = FALSE;
 /* ----------------------------- Do research ----------------------------- */
 
 /* Search for the last string without prompting in `file`. */
-/* static */ void do_research_for(CTX_ARGS) {
+static void do_research_for(CTX_ARGS) {
   ASSERT(file);
   /* If nothing was searched for yet during this run of nanox, but there is a search history, take the most recent item. */
   if (!*last_search && searchbot->prev) {
@@ -46,16 +46,11 @@ static bool have_compiled_regexp = FALSE;
   }
 }
 
-/* Search for the last string without prompting in the currently open buffer. */
-/* static */ void do_research(void) {
-  CTX_CALL(do_research_for);
-}
-
 /* ----------------------------- Replace regexp ----------------------------- */
 
 /* Calculate the size of the replacement text, taking possible subexpressions \1 to \9 into
  * account. Returns the replacement text in the passed string only when `create` is `TRUE`. */
-/* static */ int replace_regexp_for(openfilestruct *const file, char *string, bool create) {
+static int replace_regexp_for(openfilestruct *const file, char *string, bool create) {
   ASSERT(file);
   Ulong replacement_size = 0;
   Ulong i;
@@ -90,16 +85,10 @@ static bool have_compiled_regexp = FALSE;
   return replacement_size;
 }
 
-/* Calculate the size of the replacement text, taking possible subexpressions \1 to \9 into
- * account. Returns the replacement text in the passed string only when `create` is `TRUE`. */
-/* static */ int replace_regexp(char *string, bool create) {
-  return replace_regexp_for(CTX_OF, string, create);
-}
-
 /* ----------------------------- Replace line ----------------------------- */
 
 /* Returns a copy of the current line with one needle replaced. */
-/* static */ char *replace_line_for(openfilestruct *const file, const char *const restrict needle) {
+static char *replace_line_for(openfilestruct *const file, const char *const restrict needle) {
   ASSERT(file);
   ASSERT(needle);
   Ulong new_size = (strlen(file->current->data) + 1);
@@ -108,7 +97,7 @@ static bool have_compiled_regexp = FALSE;
   /* First adjust the size of the new line for the change. */
   if (ISSET(USE_REGEXP)) {
     match_len = (regmatches[0].rm_eo - regmatches[0].rm_so);
-    new_size += (replace_regexp(NULL, FALSE) - match_len);
+    new_size += (replace_regexp_for(file, NULL, FALSE) - match_len);
   }
   else {
     match_len = strlen(needle);
@@ -119,7 +108,7 @@ static bool have_compiled_regexp = FALSE;
   memcpy(copy, file->current->data, file->current_x);
   /* Add the replacement text. */
   if (ISSET(USE_REGEXP)) {
-    replace_regexp((copy + file->current_x), TRUE);
+    replace_regexp_for(file, (copy + file->current_x), TRUE);
   }
   else {
     strcpy((copy + file->current_x), answer);
@@ -129,17 +118,12 @@ static bool have_compiled_regexp = FALSE;
   return copy;
 }
 
-/* Returns a copy of the current line with one needle replaced. */
-/* static */ char *replace_line(const char *const restrict needle) {
-  return replace_line_for(CTX_OF, needle);
-}
-
 /* ----------------------------- Search init ----------------------------- */
 
 /* Prepare the prompt and ask the user what to search for.  Keep looping
  * as long as the user presses a toggle, and only take action and exit
  * when <Enter> is pressed or a non-toggle shortcut was executed. */
-/* static */ void search_init_for(CTX_ARGS, bool replacing, bool retain_answer) {
+static void search_init_for(CTX_ARGS, bool replacing, bool retain_answer) {
   ASSERT(file);
   functionptrtype function;
   char *disp;
@@ -229,10 +213,6 @@ static bool have_compiled_regexp = FALSE;
     tidy_up_after_search_for(file);
   }
   free(the_default);
-}
-
-void search_init(bool replacing, bool retain_answer) {
-  CTX_CALL_WARGS(search_init_for, replacing, retain_answer);
 }
 
 /* ----------------------------- Go to and confirm ----------------------------- */
