@@ -10,6 +10,53 @@
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
+/* ----------------------------- Monitor get array ----------------------------- */
+
+/* A fail-safe way to ensure we either get the monitor array or we die. */
+GLFWmonitor **monitor_get_all(int *const count) {
+  GLFWmonitor **monitors;
+  ALWAYS_ASSERT(monitors = glfwGetMonitors(count));
+  return monitors;
+}
+
+/* ----------------------------- Monitor get mode ----------------------------- */
+
+const GLFWvidmode *monitor_get_mode(GLFWmonitor *const monitor) {
+  const GLFWvidmode *mode;
+  ALWAYS_ASSERT(mode = glfwGetVideoMode(monitor));
+  return mode;
+}
+
+/* ----------------------------- Monitor refresh rate array ----------------------------- */
+
+int *monitor_refresh_rate_array(int *const count) {
+  GLFWmonitor **monitors = monitor_get_all(count);
+  int *ret = xmalloc(sizeof(int) * (*count));
+  for (int i=0; i<(*count); ++i) {
+    ret[i] = monitor_get_mode(monitors[i])->refreshRate;
+  }
+  return ret;
+}
+
+/* ----------------------------- Monitor closest refresh rate ----------------------------- */
+
+int monitor_closest_refresh_rate(int rate) {
+  int ret;
+  int count;
+  int *mon_rates = monitor_refresh_rate_array(&count);
+  int closest_index = 0;
+  int closest_value = 2400;
+  for (int i=0; i<count; ++i) {
+    if (abs(rate - mon_rates[i]) < closest_value) {
+      closest_index = i;
+      closest_value = abs(rate - mon_rates[i]);
+    }
+  }
+  ret = mon_rates[closest_index];
+  free(mon_rates);
+  return ret;
+}
+
 /* ----------------------------- Monitor current ----------------------------- */
 
 /* Always returns a valid ptr to the current monitor based on the current position of the window. */

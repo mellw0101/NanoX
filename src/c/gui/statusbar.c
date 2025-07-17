@@ -110,7 +110,7 @@ void statusbar_gui(const char *const restrict msg) {
 
 void statusbar_count_frame(void) {
   if (statusbar->type != VACUUM) {
-    statusbar->time -= (frame_get_time() / 1000.0);
+    statusbar->time -= (frame_get_time_ms() / 1000.0);
     if (statusbar->time < 0) {
       statusbar->type = VACUUM;
       refresh_needed  = TRUE;

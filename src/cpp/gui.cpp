@@ -347,8 +347,9 @@ void init_gui(void) {
   glfwSetCursorPosCallback(gui->window, mouse_pos_callback);
   glfwSetCursorEnterCallback(gui->window, window_enter_callback);
   glfwSetScrollCallback(gui->window, scroll_callback);
-  frame_set_rate(monitor_refresh_rate());
-  writef("Current fps: %.0f\n", frame_get_rate());
+  // frame_set_rate(monitor_refresh_rate());
+  // writef("Current fps: %.0f\n", frame_get_rate());
+  frame_set_poll();
   // glClearColor(1.00, 1.00, 1.00, 1.00);
   glDisable(GL_DEPTH_TEST);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -363,12 +364,12 @@ void init_gui(void) {
 
 /* Main gui loop. */
 void glfw_loop(void) {
-  frame_poll_rate();
+  // frame_poll_rate();
   while (!glfwWindowShouldClose(gui->window)) {
     frame_start();
     statusbar_count_frame();
-    writef("%.6f ms\n", frame_get_time());
-    if (refresh_needed) {
+    writef("frame: %lu: %.5f ms\n", frame_elapsed(), frame_get_time_ms());
+    if (refresh_needed || frame_should_poll()) {
       place_the_cursor();
       glClear(GL_COLOR_BUFFER_BIT);
       /* Check if any editor's has it's `should_close` flag set, and if so close them. */

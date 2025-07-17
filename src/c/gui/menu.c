@@ -241,6 +241,7 @@ static void menu_show_internal(Menu *const menu, bool show) {
     menu_reset(menu);
   }
   scrollbar_show(menu->sb, show);
+  refresh_needed = TRUE;
 }
 
 /* ----------------------------- Menu selected is visible ----------------------------- */
@@ -427,6 +428,8 @@ static void menu_push_back_submenu(Menu *const menu, const char *const restrict 
   menu->xflags |= MENU_REFRESH_WIDTH;
 }
 
+/* ----------------------------- Menu selected up internal ----------------------------- */
+
 static void menu_selected_up_internal(Menu *const menu) {
   ASSERT_MENU;
   int len = cvec_len(menu->entries);
@@ -457,8 +460,11 @@ static void menu_selected_up_internal(Menu *const menu) {
       --menu->selected;
     }
     menu_check_submenu(menu);
+    refresh_needed = TRUE;
   }
 }
+
+/* ----------------------------- Menu selected down internal ----------------------------- */
 
 static void menu_selected_down_internal(Menu *const menu) {
   ASSERT_MENU;
@@ -489,6 +495,8 @@ static void menu_selected_down_internal(Menu *const menu) {
     menu_check_submenu(menu);
   }
 }
+
+/* ----------------------------- Menu exit submenu internal ----------------------------- */
 
 /* Used to exit a submenu when pressing left, this is used by `menu_exit_submenu()`. */
 static void menu_exit_submenu_internal(Menu *const menu) {

@@ -773,18 +773,32 @@ void frame_start(void);
 /* ----------------------------- Frame end ----------------------------- */
 void frame_end(void);
 /* ----------------------------- Frame get rate ----------------------------- */
-double frame_get_rate(void);
+int frame_get_rate(void);
 /* ----------------------------- Frame set rate ----------------------------- */
-void frame_set_rate(double x);
-/* ----------------------------- Frame get time ----------------------------- */
-double frame_get_time(void);
-
-void frame_poll_rate(void);
+void frame_set_rate(int x);
+/* ----------------------------- Frame get time ms ----------------------------- */
+double frame_get_time_ms(void);
+/* ----------------------------- Frame get time ns ----------------------------- */
+Ulong frame_get_time_ns(void);
+/* ----------------------------- Frame should poll ----------------------------- */
+bool frame_should_poll(void);
+/* ----------------------------- Frame set poll ----------------------------- */
+void frame_set_poll(void);
+/* ----------------------------- Frame elapsed ----------------------------- */
+Ulong frame_elapsed(void);
 
 
 /* ---------------------------------------------------------- gui/monitor.c ---------------------------------------------------------- */
 
 
+/* ----------------------------- Monitor get array ----------------------------- */
+GLFWmonitor **monitor_get_all(int *const count);
+/* ----------------------------- Monitor get mode ----------------------------- */
+const GLFWvidmode *monitor_get_mode(GLFWmonitor *const monitor);
+/* ----------------------------- Monitor refresh rate array ----------------------------- */
+int *monitor_refresh_rate_array(int *const count);
+/* ----------------------------- Monitor closest refresh rate ----------------------------- */
+int monitor_closest_refresh_rate(int rate);
 /* ----------------------------- Monitor current ----------------------------- */
 GLFWmonitor *monitor_current(void);
 /* ----------------------------- Monitor mode ----------------------------- */
