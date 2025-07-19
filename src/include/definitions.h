@@ -1198,12 +1198,12 @@ typedef void (*MenuHoverFunc)(void *, const char *const restrict, int index);
 
   typedef struct {
     char            *title;                  /* The window title. */
-    Uint             width;                  /* The window width. */
-    Uint             height;                 /* The window height. */
-    GLFWwindow      *window;                 /* The glfw window. */
+    // Uint             width;                  /* The window width. */
+    // Uint             height;                 /* The window height. */
+    // GLFWwindow      *window;                 /* The glfw window. */
     bit_flag_t<8>    flag;                   /* Flags to track the state of the gui. */
     nevhandler      *handler;                /* Threaded event handler, to enqueue tasks to. */
-    Element         *root;                   /* The main element of the gui. */
+    // Element         *root;                   /* The main element of the gui. */
     Element         *botbar;                 /* The `bottom-bar` for the ui. */ 
     Element         *statusbar;              /* The `statusbar` for the ui. */
     Element         *entered;                /* The element that was last entered and triggered an enter event, if any, can be `NULL`. */
@@ -1212,7 +1212,7 @@ typedef void (*MenuHoverFunc)(void *, const char *const restrict, int index);
 
     vertex_buffer_t *botbuf;                 /* The text buffer for `botbar`. */
     vertex_buffer_t *statusbuf;              /* The text buffer for `statusbar`. */
-    matrix4x4       *projection;             /* The projection to pass to the shaders. */
+    // matrix4x4       *projection;             /* The projection to pass to the shaders. */
     // Uint             font_shader;            /* The font shader. */
     // Font            *uifont;
     // Font            *font;

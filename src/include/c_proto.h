@@ -134,8 +134,8 @@ extern int interface_color_pair[NUMBER_OF_ELEMENTS];
 extern Uint font_shader;
 extern Uint rect_shader;
 
-extern float gui_width;
-extern float gui_height;
+// extern float gui_width;
+// extern float gui_height;
 
 extern long tabsize;
 extern long fill;
@@ -191,7 +191,7 @@ extern regex_t quotereg;
 
 extern regmatch_t regmatches[10];
 
-extern GLFWwindow *gui_window;
+// extern GLFWwindow *gui_window;
 
 extern message_type lastmessage;
 
@@ -1469,7 +1469,7 @@ bool etb_owns_element(EditorTb *const etb, Element *const e);
 void editor_create(bool new_buffer);
 void editor_free(Editor *const editor);
 void editor_confirm_margin(Editor *const editor);
-void editor_set_rows_cols(Editor *const editor, float width, float heighr);
+void editor_set_rows_cols(Editor *const editor, float width, float height);
 Editor *editor_from_file(openfilestruct *const file);
 void editor_hide(Editor *const editor, bool hide);
 void editor_close(Editor *const editor);
@@ -1496,7 +1496,7 @@ void editor_close_a_open_buffer(openfilestruct *const file);
 /* ---------------------------------------------------------- gui/statusbar.c ---------------------------------------------------------- */
 
 
-void statusbar_init(Element *const parent);
+void statusbar_init(void);
 void statusbar_free(void);
 void statusline_gui_timed(message_type type, double seconds, const char *format, ...);
 void statusline_gui_va(message_type type, const char *const restrict format, va_list ap);
@@ -1530,15 +1530,37 @@ void clear_mouse_flags(void);
 
 
 /* ----------------------------- Shader font create ----------------------------- */
-void shader_font_create(void);
+// void shader_font_create(void);
 /* ----------------------------- Shader rect create ----------------------------- */
-void shader_rect_create(void);
+// void shader_rect_create(void);
 /* ----------------------------- Shader compile ----------------------------- */
 void shader_compile(void);
 /* ----------------------------- Shader rect vertex load ----------------------------- */
 void shader_rect_vertex_load(RectVertex *buf, float x, float y, float w, float h, Uint color);
 /* ----------------------------- Shader rect vertex load array ----------------------------- */
 void shader_rect_vertex_load_array(RectVertex *buf, float *const array, Uint color);
+void shader_set_projection(float left, float right, float top, float bot, float znear, float zfar);
+void shader_upload_projection(void);
+
+int shader_get_location_font_tex(void);
+
+int shader_get_location_font_projection(void);
+
+int shader_get_location_rect_projection(void);
+
+
+/* ----------------------------------------------------------  ---------------------------------------------------------- */
+
+
+bool gl_window_resize_needed(void);
+void gl_window_should_fetch_size(void);
+void gl_window_update_size(int new_width, int new_height);
+void gl_window_init(void);
+void gl_window_free(void);
+GLFWwindow *gl_window(void);
+int gl_window_width(void);
+int gl_window_height(void);
+void gl_window_add_root_child(Element *const e);
 
 
 /* ---------------------------------------------------------- nanox.c ---------------------------------------------------------- */

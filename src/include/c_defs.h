@@ -713,6 +713,15 @@ static const Uint RECT_INDICES[6] = { 0, 1, 2, 2, 3, 0 };
 /* ---------------------------------------------------------- Typedef's ---------------------------------------------------------- */
 
 
+/* ----------------------------- Types ----------------------------- */
+
+#ifndef __cplusplus
+typedef float vec2[2];
+typedef float vec3[3];
+typedef float vec4[4];
+typedef vec4 mat4x4[4];
+#endif
+
 /* ----------------------------- General ----------------------------- */
 
 typedef void (*FreeFuncPtr)(void *);

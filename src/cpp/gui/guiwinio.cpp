@@ -424,8 +424,10 @@ static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
             obj = (SyntaxObject *)hashmap_get(sf->objects, node->str);
             if (obj) {
               if (obj->color == SYNTAX_COLOR_BLUE) {
-                vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, font_get_font(textfont), vec4(1.0f), drawpos);
+                // vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, font_get_font(textfont), vec4(1.0f), drawpos);
+                font_vertbuf_add_mbstr(textfont, editor->buffer, (converted + index), (node->start - index), prev_char, 0xFFFFFFFFU, &drawpos->x, &drawpos->y);
                 vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, font_get_font(textfont), VEC4_8BIT(36, 114, 200, 1), drawpos);
+                // vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, font_get_font(textfont), PACKED_UINT(36, 114, 200, 0xFF), drawpos);
                 index = node->end;
                 free_node(node);
                 continue;

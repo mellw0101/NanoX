@@ -153,8 +153,9 @@ static void setup_botbar(void) {
   // gui->botbar->relative_pos = vec2(0, gui->botbar->size.h);
   // gui->botbar->flag.set<GUIELEMENT_RELATIVE_WIDTH>();
   // gui->botbar->relative_size = 0;
-  gui->botbar = element_create(0, (gui_height - font_height(uifont)), gui_width, font_height(uifont), TRUE);
-  element_set_parent(gui->botbar, gui->root);
+  gui->botbar = element_create(0, (gl_window_height() - font_height(uifont)), gl_window_width(), font_height(uifont), TRUE);
+  // element_set_parent(gui->botbar, gui->root);
+  gl_window_add_root_child(gui->botbar);
   gui->botbar->color = PACKED_UINT(0, 0, 0, 255);
   gui->botbar->xflags |= (ELEMENT_REVREL_Y | ELEMENT_REL_WIDTH);
   // gui->botbar->has_reverse_relative_y_pos = TRUE;
@@ -165,9 +166,10 @@ static void setup_botbar(void) {
 /* Set up the bottom bar. */
 static void setup_statusbar(void) {
   gui->statusbuf = make_new_font_buffer();
-  gui->statusbar = element_create(0, gui_height, gui_width, font_height(uifont), FALSE);
+  gui->statusbar = element_create(0, gl_window_height(), gl_window_width(), font_height(uifont), FALSE);
   gui->statusbar->color = PACKED_UINT_VS_CODE_RED;
-  element_set_parent(gui->statusbar, gui->root);
+  // element_set_parent(gui->statusbar, gui->root);
+  gl_window_add_root_child(gui->statusbar);
   gui->statusbar->xflags |= ELEMENT_HIDDEN;
 }
 
@@ -187,9 +189,9 @@ static void make_guistruct(void) {
   MALLOC_STRUCT(gui);
   /* Then init all fields to something invalid, this is important if we need to abort. */
   gui->title                 = NULL;
-  gui->width                 = 0;
-  gui->height                = 0;
-  gui->window                = NULL;
+  // gui->width                 = 0;
+  // gui->height                = 0;
+  // gui->window                = NULL;
   gui->flag                  = bit_flag_t<8>();
   gui->handler               = NULL;
   gui->botbar                = NULL;
@@ -198,7 +200,7 @@ static void make_guistruct(void) {
   gui->clicked               = NULL;
   gui->botbuf                = NULL;
   gui->statusbuf             = NULL;
-  gui->projection            = NULL;
+  // gui->projection            = NULL;
   // gui->font_shader           = 0;
   // rect_shader           = 0;
   gui->promptmenu            = NULL;
@@ -213,19 +215,20 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
   make_guistruct();
   /* Set the basic data needed to init the window. */
   gui->title  = copy_of(win_title);
-  gui->width  = win_width;
-  gui->height = win_height;
-  gui_width   = win_width;
-  gui_height  = win_height;
-  gui->projection = matrix4x4_new();
+  // gui->width  = win_width;
+  // gui->height = win_height;
+  // gl_window_width()   = win_width;
+  // gl_window_height()  = win_height;
+  // gui->projection = matrix4x4_new();
   /* Then create the glfw window. */
-  gui->window = glfwCreateWindow(gui->width, gui->height, gui->title, NULL, NULL);
-  if (!gui->window) {
-    glfwTerminate();
-    die("Failed to create glfw window.\n");
-  }
-  gui_window = gui->window;
-  glfwMakeContextCurrent(gui->window);
+  gl_window_init();
+  // gui->window = glfwCreateWindow(gui->width, gui->height, gui->title, NULL, NULL);
+  // if (!gui->window) {
+  //   glfwTerminate();
+  //   die("Failed to create glfw window.\n");
+  // }
+  // gui_window = gui->window;
+  // glfwMakeContextCurrent(gui->window);
   // glfwDefaultWindowHints();
   // frametimer.fps = ((fps == -1) ? 240 : fps);
   // frame_set_rate( /* ((fps == -1) ? 240 : fps) */);
@@ -235,14 +238,15 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
   // textfont = gui_font_create();
   // uifont   = gui_font_create();
   // gui->root = gui_element_create(0, vec2(gui->height, gui->width), 0, FALSE);
-  gui->root = element_create(0, 0, gui_width, gui_height, FALSE);
+  // gui->root = element_create(0, 0, gl_window_width(), gl_window_height(), FALSE);
 }
 
 /* Delete the gui struct. */
 static void delete_guistruct(void) {
   free(gui->title);
   /* Destroy glfw window, then terminate glfw. */
-  glfwDestroyWindow(gui->window);
+  // glfwDestroyWindow(gui->window);
+  gl_window_free();
   glfwTerminate();
   /* Destroy the shaders. */
   if (font_shader) {
@@ -254,7 +258,7 @@ static void delete_guistruct(void) {
   /* Delete all elements used by 'gui'. */
   // gui_element_free(gui->root);
   // gui_element_free(gui->statusbar);
-  element_free(gui->root);
+  // element_free(gui->root);
   /* Free the main font and the uifont. */
   font_free(textfont);
   font_free(uifont);
@@ -295,7 +299,8 @@ static void init_glew(void) {
   glewExperimental = TRUE;
   /* If we could not init glew, terminate directly. */
   if ((err = glewInit()) != GLEW_OK) {
-    glfwDestroyWindow(gui->window);
+    // glfwDestroyWindow(gui->window);
+    gl_window_free();
     glfwTerminate();
     die("GLEW: ERROR: %s\n", glewGetErrorString(err));
   }
@@ -319,7 +324,7 @@ void init_gui(void) {
   gui->context_menu = context_menu_create();
   /* Init the rect shader. */
   // setup_rect_shader();
-  shader_rect_create();
+  // shader_rect_create();
   /* Init the gui suggestmenu substructure. */
   gui_suggestmenu_create();
   /* Init the top bar. */
@@ -328,19 +333,20 @@ void init_gui(void) {
   setup_botbar();
   /* Init the bottom bar, that will be used for status updates, among other thing. */
   setup_statusbar();
-  statusbar_init(gui->root);
+  // statusbar_init(gui->root);
+  statusbar_init();
   /* Init the edit element. */
   setup_edit_element();
   /* Set some callbacks. */
-  glfwSetWindowSizeCallback(gui->window, window_resize_callback);
-  glfwSetWindowMaximizeCallback(gui->window, window_maximize_callback);
-  glfwSetFramebufferSizeCallback(gui->window, framebuffer_resize_callback);
-  glfwSetKeyCallback(gui->window, key_callback);
-  glfwSetCharCallback(gui->window, char_callback);
-  glfwSetMouseButtonCallback(gui->window, mouse_button_callback);
-  glfwSetCursorPosCallback(gui->window, mouse_pos_callback);
-  glfwSetCursorEnterCallback(gui->window, window_enter_callback);
-  glfwSetScrollCallback(gui->window, scroll_callback);
+  glfwSetWindowSizeCallback(gl_window(), window_resize_callback);
+  glfwSetWindowMaximizeCallback(gl_window(), window_maximize_callback);
+  glfwSetFramebufferSizeCallback(gl_window(), framebuffer_resize_callback);
+  glfwSetKeyCallback(gl_window(), key_callback);
+  glfwSetCharCallback(gl_window(), char_callback);
+  glfwSetMouseButtonCallback(gl_window(), mouse_button_callback);
+  glfwSetCursorPosCallback(gl_window(), mouse_pos_callback);
+  glfwSetCursorEnterCallback(gl_window(), window_enter_callback);
+  glfwSetScrollCallback(gl_window(), scroll_callback);
   // frame_set_rate(monitor_refresh_rate());
   // writef("Current fps: %.0f\n", frame_get_rate());
   frame_set_poll();
@@ -350,7 +356,7 @@ void init_gui(void) {
   glEnable(GL_TEXTURE_2D);
   glEnable(GL_BLEND);
   /* Set the window size. */
-  window_resize_callback(gui->window, gui->width, gui->height);
+  // window_resize_callback(gl_window(), gui->width, gui->height);
   editor_confirm_margin(openeditor);
   editor_redecorate(openeditor);
   editor_resize(openeditor);
@@ -359,10 +365,10 @@ void init_gui(void) {
 /* Main gui loop. */
 void glfw_loop(void) {
   // frame_poll_rate();
-  while (!glfwWindowShouldClose(gui->window)) {
+  while (!glfwWindowShouldClose(gl_window())) {
     frame_start();
     statusbar_count_frame();
-    writef("frame: %lu: %.4f ms\n", frame_elapsed(), frame_get_time_ms());
+    log_I_0("frame: %lu: %.4f ms", frame_elapsed(), frame_get_time_ms());
     if (refresh_needed || frame_should_poll()) {
       place_the_cursor();
       glClear(GL_COLOR_BUFFER_BIT);
@@ -384,7 +390,7 @@ void glfw_loop(void) {
       /* Draw the suggestmenu. */
       draw_suggestmenu();
       /* If refresh was needed it has been done so set it to FALSE. */
-      glfwSwapBuffers(gui->window);
+      glfwSwapBuffers(gl_window());
       refresh_needed = FALSE;
     }
     glfwPollEvents();
@@ -414,7 +420,7 @@ bool gui_quit(void) {
   else {
     /* If there is only one editor open.  We tell glfw we should quit, we also return `TRUE` so that the calling function can halt execution. */
     if (CLIST_SINGLE(openeditor)) {
-      glfwSetWindowShouldClose(gui->window, TRUE);
+      glfwSetWindowShouldClose(gl_window(), TRUE);
       return TRUE;
     }
     else {

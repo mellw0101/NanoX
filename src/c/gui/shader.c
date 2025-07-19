@@ -1,17 +1,17 @@
 /** @file gui/shader.c
 
-  @author  Melwin Svensson.
-  @date    13-7-2025.
+@author  Melwin Svensson.
+@date    13-7-2025.
 
- */
+*/
 #include "../../include/c_proto.h"
 
 
 /* ---------------------------------------------------------- Define's ---------------------------------------------------------- */
 
 
-#define SHADER_FONT_VERTEX_DATA                                           \
-  /* Font vertex shader openGL 2.0. */                                    \
+/* Font shader openGL 2.0. */
+#define SHADER_FONT_VERT_DATA_120                                         \
   "uniform mat4 projection;"                                        "\n"  \
   "attribute vec2 vertex;"                                          "\n"  \
   "attribute vec2 tex_coord;"                                       "\n"  \
@@ -21,33 +21,15 @@
   "  gl_FrontColor     = color;"                                    "\n"  \
   "  gl_Position       = (projection * vec4(vertex, 0.0f, 1.0f));"  "\n"  \
   "}"                                                               "\n"
-
-#define SHADER_FONT_FRAGMENT_DATA                                 \
-  /* Font fragment shader openGL 2.0. */                          \
+#define SHADER_FONT_FRAG_DATA_120                                 \
   "uniform sampler2D texture;"                              "\n"  \
   "void main() {"                                           "\n"  \
   "  float a = texture2D(texture, gl_TexCoord[0].xy).r;"    "\n"  \
   "  gl_FragColor = vec4(gl_Color.rgb, (gl_Color.a * a));"  "\n"  \
   "}"                                                       "\n"
 
-#define SHADER_RECT_VERTEX_DATA                                       \
-  /* Rect vertex shader openGL 2.0. */                                \
-  "uniform mat4 projection;"                                    "\n"  \
-  "attribute vec2 vertex;"                                      "\n"  \
-  "attribute vec4 color;"                                       "\n"  \
-  "void main() {"                                               "\n"  \
-  "  gl_FrontColor = color;"                                    "\n"  \
-  "  gl_Position   = (projection * vec4(vertex, 0.0f, 1.0f));"  "\n"  \
-  "}"                                                           "\n"
-
-#define SHADER_RECT_FRAGMENT_DATA         \
-  /* Rect fragment shader openGL 2.0. */  \
-  "void main() {"                   "\n"  \
-  "  gl_FragColor = gl_Color;"      "\n"  \
-  "}"                               "\n"
-
+/* Font shader openGL 3.0. */
 #define SHADER_FONT_VERT_DATA_130                                   \
-  /* Font vertex shader openGL 3.0. */                              \
   "#version 130"                                              "\n"  \
   "uniform mat4 projection;"                                  "\n"  \
   "in vec2 vertex;"                                           "\n"  \
@@ -60,9 +42,7 @@
   "  f_color     = color;"                                    "\n"  \
   "  gl_Position = (projection * vec4(vertex, 0.0f, 1.0f));"  "\n"  \
   "}"                                                         "\n"
-
 #define SHADER_FONT_FRAG_DATA_130                             \
-  /* Font fragment shader openGL 3.0. */                      \
   "#version 130"                                        "\n"  \
   "in vec2 f_tex_coord;"                                "\n"  \
   "in vec4 f_color;"                                    "\n"  \
@@ -73,8 +53,47 @@
   "  frag_color = vec4(f_color.rgb, (f_color.a * a));"  "\n"  \
   "}"                                                   "\n"
 
+/* Font shader openGL 3.3. */
+#define SHADER_FONT_VERT_DATA_330                                   \
+  "#version 330 core"                                         "\n"  \
+  "uniform mat4 projection;"                                  "\n"  \
+  "layout (location = 0) in vec2 vertex;"                     "\n"  \
+  "layout (location = 1) in vec2 tex_coord;"                  "\n"  \
+  "layout (location = 2) in vec4 color;"                      "\n"  \
+  "out vec2 f_tex_coord;"                                     "\n"  \
+  "out vec4 f_color;"                                         "\n"  \
+  "void main() {"                                             "\n"  \
+  "  f_tex_coord = tex_coord;"                                "\n"  \
+  "  f_color     = color;"                                    "\n"  \
+  "  gl_Position = (projection * vec4(vertex, 0.0f, 1.0f));"  "\n"  \
+  "}"                                                         "\n"
+#define SHADER_FONT_FRAG_DATA_330                             \
+  "#version 330 core"                                   "\n"  \
+  "in vec2 f_tex_coord;"                                "\n"  \
+  "in vec4 f_color;"                                    "\n"  \
+  "out vec4 frag_color;"                                "\n"  \
+  "uniform sampler2D tex;"                              "\n"  \
+  "void main() {"                                       "\n"  \
+  "  float a   = texture(tex, f_tex_coord).r;"          "\n"  \
+  "  frag_color = vec4(f_color.rgb, (f_color.a * a));"  "\n"  \
+  "}"                                                   "\n"
+
+/* Rect shader openGL 2.0. */
+#define SHADER_RECT_VERT_DATA_120                                     \
+  "uniform mat4 projection;"                                    "\n"  \
+  "attribute vec2 vertex;"                                      "\n"  \
+  "attribute vec4 color;"                                       "\n"  \
+  "void main() {"                                               "\n"  \
+  "  gl_FrontColor = color;"                                    "\n"  \
+  "  gl_Position   = (projection * vec4(vertex, 0.0f, 1.0f));"  "\n"  \
+  "}"                                                           "\n"
+#define SHADER_RECT_FRAG_DATA_120         \
+  "void main() {"                   "\n"  \
+  "  gl_FragColor = gl_Color;"      "\n"  \
+  "}"                               "\n"
+
+/* Font shader openGL 3.0. */
 #define SHADER_RECT_VERT_DATA_130                                   \
-  /* Rect vertex shader openGL 3.0. */                        "\n"  \
   "#version 130"                                              "\n"  \
   "uniform mat4 projection;"                                  "\n"  \
   "in vec2 vertex;"                                           "\n"  \
@@ -84,9 +103,7 @@
   "  f_color = color;"                                        "\n"  \
   "  gl_Position = (projection * vec4(vertex, 0.0f, 1.0f));"  "\n"  \
   "}"                                                         "\n"
-
 #define SHADER_RECT_FRAG_DATA_130         \
-  /* Rect fragment shader openGL 3.0. */  \
   "#version 130"                    "\n"  \
   "in vec4 f_color;"                "\n"  \
   "out vec4 frag_color;"            "\n"  \
@@ -94,8 +111,45 @@
   "  frag_color = f_color;"         "\n"  \
   "}"                               "\n"
 
+/* Font shader openGL 3.3. */
+#define SHADER_RECT_VERT_DATA_330                                   \
+  "#version 330 core"                                         "\n"  \
+  "uniform mat4 projection;"                                  "\n"  \
+  "layout (location = 0) in vec2 vertex;"                     "\n"  \
+  "layout (location = 1) in vec4 color;"                      "\n"  \
+  "out vec4 f_color;"                                         "\n"  \
+  "void main() {"                                             "\n"  \
+  "  f_color = color;"                                        "\n"  \
+  "  gl_Position = (projection * vec4(vertex, 0.0f, 1.0f));"  "\n"  \
+  "}"                                                         "\n"
+#define SHADER_RECT_FRAG_DATA_330  \
+  "#version 330 core"        "\n"  \
+  "in vec4 f_color;"         "\n"  \
+  "out vec4 frag_color;"     "\n"  \
+  "void main() {"            "\n"  \
+  "  frag_color = f_color;"  "\n"  \
+  "}"                        "\n"
+
 #define HACK_FONT_PATH     "/usr/share/fonts/TTF/Hack-Regular.ttf"
 #define DEFAULT_FONT_PATH  HACK_FONT_PATH
+
+
+/* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
+
+
+static int openGL_major = -1;
+static int openGL_minor = -1;
+
+static int shader_location_font_tex        = -1;
+static int shader_location_font_projection = -1;
+
+static int shader_location_rect_projection = -1;
+
+static mat4x4 projection;
+
+
+/* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
+
 
 /* GLSL openGL table:
  *   `GLSL/openGL` --- `Release Year`.
@@ -111,15 +165,19 @@
  *    `430 --- 4.3` --- `2012`.
  *    `440 --- 4.4` --- `2013`.
  *    `450 --- 4.5` --- `2014`.
- *    `460 --- 4.6` --- `2017`.
- */
-#define USING_OPENGL_CORE  FALSE
-#define OPENGL_MAJOR 3
-#define OPENGL_MINOR 0
-
-
-/* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
-
+ *    `460 --- 4.6` --- `2017`. */
+static bool glsl_ver(int major, int minor) {
+  static int glsl_major = -1;
+  static int glsl_minor = -1;
+  const Uchar *glsl_ver;
+  if (glsl_major == -1 || glsl_minor == -1) {
+    glsl_ver = glGetString(GL_SHADING_LANGUAGE_VERSION);
+    if (!glsl_ver ||sscanf((const char *)glsl_ver, "%d.%d", &glsl_major, &glsl_minor) != 2) {
+      die("Could not get the latest supported glsl version.\n");
+    }
+  }
+  return ((glsl_major > (major)) || (glsl_major == (major) && glsl_minor >= (minor)));
+}
 
 /* ----------------------------- Shader load ----------------------------- */
 
@@ -174,11 +232,87 @@ static Uint shader_create(Ulong len, Uint *const parts) {
 /* ----------------------------- Shader set openGL version ----------------------------- */
 
 /* Inform glfw about the openGL version we are using. */
-static inline void shader_set_openGL_version(void) {
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, OPENGL_MAJOR);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, OPENGL_MINOR);
-  if (USING_OPENGL_CORE) {
+static inline void shader_set_openGL_version(int glsl_major, int glsl_minor, bool core) {
+  if (openGL_major == -1 || openGL_minor == -1) {
+    switch (glsl_major) {
+      case 1: {
+        switch (glsl_minor) {
+          case 10: {
+            openGL_major = 2;
+            openGL_minor = 0;
+            break;
+          }
+          case 20: {
+            openGL_major = 2;
+            openGL_minor = 1;
+            break;
+          }
+          case 30: {
+            openGL_major = 3;
+            openGL_minor = 0;
+            break;
+          }
+          case 40: {
+            openGL_major = 3;
+            openGL_minor = 1;
+            break;
+          }
+          case 50: {
+            openGL_major = 3;
+            openGL_minor = 2;
+            break;
+          }
+          default: {
+            die("\nGLSL: Major version: `%d` does not have minor version: '%d'.\n", glsl_major, glsl_minor);
+          }
+        }
+        break;
+      }
+      case 3: {
+        switch (glsl_minor) {
+          case 30: {
+            openGL_major = 3;
+            openGL_minor = 3;
+            break;
+          }
+          default: {
+            die("\nGLSL: Major version: `%d` does not have minor version: '%d'.\n", glsl_major, glsl_minor);
+          }
+        }
+        break;
+      }
+      case 4: {
+        if (!((glsl_minor % 10) == 0 && glsl_minor >= 0 && glsl_minor <= 60)) {
+          die("\nGLSL: Major version: `%d` does not have minor version: '%d'.\n", glsl_major, glsl_minor);
+        }
+        openGL_major = 4;
+        openGL_minor = (glsl_minor / 10);
+        break;
+      }
+      default: {
+        die("\nGLSL: Major version: '%d' does not exist.\n", glsl_major);
+      }
+    }
+  }
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, openGL_major);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, openGL_minor);
+  if (core) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  }
+}
+
+_UNUSED
+static inline void mat4x4_orthographic(mat4x4 m, float left, float right, float top, float bot, float znear, float zfar) {
+  if (!(left == right || top == bot || znear == zfar)) {
+    /* Clear the matrix. */
+    memset(m, 0, sizeof(mat4x4));
+    m[0][0] = (+2.f / (right - left));
+    m[3][0] = (-(right + left) / (right - left));
+    m[1][1] = (+2.f / (top - bot));
+    m[3][1] = (-(top + bot) / (top - bot));
+    m[2][2] = (-2.f / (zfar - znear));
+    m[3][2] = (-(zfar + znear) / (zfar - znear));
+    m[3][3] = 1.f;
   }
 }
 
@@ -186,35 +320,49 @@ static inline void shader_set_openGL_version(void) {
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
-/* ----------------------------- Shader font create ----------------------------- */
-
-/* Create the font shader for the gui. */
-void shader_font_create(void) {
-  font_shader = shader_create(2, (Uint[]) {
-    shader_load(GL_VERTEX_SHADER,   SHADER_FONT_VERT_DATA_130),
-    shader_load(GL_FRAGMENT_SHADER, SHADER_FONT_FRAG_DATA_130)
-  });
-}
-
-/* ----------------------------- Shader rect create ----------------------------- */
-
-/* Create the rect shader for the gui. */
-void shader_rect_create(void) {
-  rect_shader = shader_create(2, (Uint[]) {
-    shader_load(GL_VERTEX_SHADER,   SHADER_RECT_VERT_DATA_130),
-    shader_load(GL_FRAGMENT_SHADER, SHADER_RECT_FRAG_DATA_130)
-  });
-}
-
 /* ----------------------------- Shader compile ----------------------------- */
 
 /* Compile the `font-shader` and the `rect-shader` and then load load the fonts. */
 void shader_compile(void) {
+  const char *font_vert;
+  const char *font_frag;
+  const char *rect_vert;
+  const char *rect_frag;
+  if (glsl_ver(3, 30)) {
+    font_vert = SHADER_FONT_VERT_DATA_330;
+    font_frag = SHADER_FONT_FRAG_DATA_330;
+    rect_vert = SHADER_RECT_VERT_DATA_330;
+    rect_frag = SHADER_RECT_FRAG_DATA_330;
+    shader_set_openGL_version(3, 30, TRUE);
+  }
+  else if (glsl_ver(1, 30)) {
+    font_vert = SHADER_FONT_VERT_DATA_130;
+    font_frag = SHADER_FONT_FRAG_DATA_130;
+    rect_vert = SHADER_RECT_VERT_DATA_130;
+    rect_frag = SHADER_RECT_FRAG_DATA_130;
+    shader_set_openGL_version(1, 30, FALSE);
+  }
+  else if (glsl_ver(1, 2)) {
+    font_vert = SHADER_FONT_VERT_DATA_120;
+    font_frag = SHADER_FONT_FRAG_DATA_120;
+    rect_vert = SHADER_RECT_VERT_DATA_120;
+    rect_frag = SHADER_RECT_FRAG_DATA_120;
+    shader_set_openGL_version(1, 20, FALSE);
+  }
+  else {
+    die(
+      "Could not verify support for even the oldest version of GLSL/OPENGL (120/2.0)\n\
+      made in 2004, maybe just burn this hardware and get something post 2004.\n"
+    );
+  }
   /* Create the font shader. */
-  shader_font_create();
+  font_shader = shader_create(2, (Uint[]) {
+    shader_load(GL_VERTEX_SHADER,   font_vert),
+    shader_load(GL_FRAGMENT_SHADER, font_frag)
+  });
   /* If we fail to compile the font-shader, we must terminate. */
   if (!font_shader) {
-    glfwDestroyWindow(gui_window);
+    gl_window_free();
     glfwTerminate();
     die("Failed to compile the font shader, this is fatal.\n");
   }
@@ -224,12 +372,23 @@ void shader_compile(void) {
   /* Then load the default font. */
   font_load(textfont, DEFAULT_FONT_PATH, 17, 4096);
   font_load(uifont,   DEFAULT_FONT_PATH, 15, 2048);
+  glUseProgram(font_shader); {
+    shader_location_font_tex        = glGetUniformLocation(font_shader, "tex");
+    shader_location_font_projection = glGetUniformLocation(font_shader, "projection");
+  }
   /* Create the rect-shader, here we can run with a failed compilation. */
-  shader_rect_create();
+  rect_shader = shader_create(2, (Uint[]) {
+    shader_load(GL_VERTEX_SHADER,   rect_vert),
+    shader_load(GL_FRAGMENT_SHADER, rect_frag)
+  });
   if (!rect_shader) {
     writeferr("Failed to comile the rect shader.  We can continue without this, but we only have text.\n");
   }
-  shader_set_openGL_version();
+  else {
+    glUseProgram(rect_shader); {
+      shader_location_rect_projection = glGetUniformLocation(rect_shader, "projection");
+    }
+  }
 }
 
 /* ----------------------------- Shader rect vertex load ----------------------------- */
@@ -247,4 +406,29 @@ void shader_rect_vertex_load(RectVertex *buf, float x, float y, float w, float h
 
 void shader_rect_vertex_load_array(RectVertex *buf, float *const array, Uint color) {
   shader_rect_vertex_load(buf, array[0], array[1], array[2], array[3], color);
+}
+
+void shader_set_projection(float left, float right, float top, float bot, float znear, float zfar) {
+  mat4x4_orthographic(projection, left, right, top, bot, znear, zfar);
+}
+
+void shader_upload_projection(void) {
+  glUseProgram(font_shader); {
+    glUniformMatrix4fv(shader_location_font_projection, 1, FALSE, &projection[0][0]);
+  }
+  glUseProgram(rect_shader); {
+    glUniformMatrix4fv(shader_location_rect_projection, 1, FALSE, &projection[0][0]);
+  }
+}
+
+int shader_get_location_font_tex(void) {
+  return shader_location_font_tex;
+}
+
+int shader_get_location_font_projection(void) {
+  return shader_location_font_projection;
+}
+
+int shader_get_location_rect_projection(void) {
+  return shader_location_rect_projection;
 }

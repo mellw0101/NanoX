@@ -310,9 +310,9 @@ Uint rect_shader = 0;
 /* The mouse y position, this is used for the gui. */
 // float mouse_y = 0;
 /* The current width of the gui. */
-float gui_width = 0;
+// float gui_width = 0;
 /* The current height of the gui. */
-float gui_height = 0;
+// float gui_height = 0;
 
 /* ----------------------------- long ----------------------------- */
 
@@ -438,7 +438,7 @@ regmatch_t regmatches[10];
 
 /* ----------------------------- GLFWwindow * ----------------------------- */
 
-GLFWwindow *gui_window = NULL;
+// GLFWwindow *gui_window = NULL;
 
 /* ----------------------------- message_type ----------------------------- */
 

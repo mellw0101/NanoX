@@ -43,7 +43,7 @@ static void statusbar_timed_msg_internal(message_type type, double seconds, cons
 
 
 /* Create and init the statusbar. */
-void statusbar_init(Element *const parent) {
+void statusbar_init(void) {
   if (statusbar) {
     return;
   }
@@ -53,8 +53,8 @@ void statusbar_init(Element *const parent) {
   statusbar->time                = 0;
   statusbar->type                = VACUUM;
   statusbar->buffer              = vertbuf_create();
-  statusbar->element             = element_create(0, 0, gui_width, gui_height, FALSE);
-  element_set_parent(statusbar->element, parent);
+  statusbar->element             = element_create(0, 0, gl_window_width(), gl_window_height(), FALSE);
+  gl_window_add_root_child(statusbar->element);
   // color_copy(statusbar->element->color, &color_vs_code_red);
   statusbar->element->color = PACKED_UINT_VS_CODE_RED;
   // statusbar->element->hidden                     = TRUE;
@@ -127,7 +127,7 @@ void statusbar_draw(void) {
     statusbar->element->xflags &= ~ELEMENT_HIDDEN;
     msg_width = (font_breadth(uifont, statusbar->msg) + font_breadth(uifont, "  "));
     vertex_buffer_clear(statusbar->buffer);
-    element_move_resize(statusbar->element, ((gui_width / 2) - (msg_width / 2)), (gui_height - (font_height(uifont) * 2)), msg_width, font_height(uifont));
+    element_move_resize(statusbar->element, ((gl_window_width() / 2.f) - (msg_width / 2)), (gl_window_height() - (font_height(uifont) * 2)), msg_width, font_height(uifont));
     x = (statusbar->element->x + font_breadth(uifont, " "));
     y = (statusbar->element->y + font_row_baseline(uifont, 0));
     font_vertbuf_add_mbstr(uifont, statusbar->buffer, statusbar->msg, strlen(statusbar->msg), " ", PACKED_UINT(255, 255, 255, 255), &x, &y);

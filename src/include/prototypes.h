@@ -868,7 +868,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void  vertex_buffer_add_mbstr(vertex_buffer_t *buf, const char *string, Ulong len, const char *previous, Font *const font, vec4 color, vec2 *penpos);
   void  add_openfile_cursor(texture_font_t *font, vertex_buffer_t *buffer, vec4 color);
   void  add_cursor(texture_font_t *font, vertex_buffer_t *buf, vec4 color, vec2 at);
-  void  update_projection_uniform(Uint shader);
+  // void  update_projection_uniform(Uint shader);
   // void vertex_buffer_add_element_lable(guielement *element, texture_font_t *font, vertex_buffer_t *buffer);
   // void vertex_buffer_add_element_lable_offset(guielement *element, texture_font_t *font, vertex_buffer_t *buf, vec2 offset);
   // bool is_ancestor(guielement *e, guielement *ancestor);

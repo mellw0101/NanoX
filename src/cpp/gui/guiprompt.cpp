@@ -405,9 +405,10 @@ void gui_promptmenu_create(void) {
   //   0.0f,
   //   vec2(gui->width, gui_font_height(uifont))
   // );
-  gui->promptmenu->element = element_create(0, 0, gui_width, font_height(uifont), TRUE);
+  gui->promptmenu->element = element_create(0, 0, gl_window_width(), font_height(uifont), TRUE);
   // gui->promptmenu->element->color = VEC4_VS_CODE_RED;
-  element_set_parent(gui->promptmenu->element, gui->root);
+  // element_set_parent(gui->promptmenu->element, gui->root);
+  gl_window_add_root_child(gui->promptmenu->element);
   // color_copy(gui->promptmenu->element->color, &color_vs_code_red);
   gui->promptmenu->element->color = PACKED_UINT_VS_CODE_RED;
   // gui->promptmenu->element->flag.set<GUIELEMENT_RELATIVE_WIDTH>();

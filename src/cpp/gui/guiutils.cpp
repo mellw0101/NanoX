@@ -181,7 +181,7 @@ float line_y_pixel_offset(linestruct *line, texture_font_t *font) {
   }
   /* Otherwise, if the cursor is below the editelement, return one line below the entire window. */
   else if (relative_row > openeditor->rows) {
-    return gui->height;
+    return gl_window_height();
   }
   return ((relative_row * FONT_HEIGHT(font)) + openeditor->text->y);
 }
@@ -274,15 +274,15 @@ void add_openfile_cursor(texture_font_t *font, vertex_buffer_t *buf, vec4 color)
 }
 
 /* Update projection for a shader. */
-void update_projection_uniform(Uint shader) {
-  ASSERT(gui);
-  ASSERT(gui->projection);
-  ALWAYS_ASSERT(shader);
-  glUseProgram(shader);
-  {
-    glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, FALSE, gui->projection->data);
-  }
-}
+// void update_projection_uniform(Uint shader) {
+//   ASSERT(gui);
+//   ASSERT(gui->projection);
+//   ALWAYS_ASSERT(shader);
+//   glUseProgram(shader);
+//   {
+//     glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, FALSE, gui->projection->data);
+//   }
+// }
 
 /* Add a ui element`s lable to the vertex-buffer. */
 // void vertex_buffer_add_element_lable(guielement *element, texture_font_t *font, vertex_buffer_t *buf) {

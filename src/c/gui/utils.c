@@ -41,7 +41,7 @@ void render_vertbuf(Font *const f, vertex_buffer_t *buf) {
   font_upload_texture_atlas(f);
   glEnable(GL_TEXTURE_2D);
   glUseProgram(font_shader); {
-    glUniform1i(glGetUniformLocation(font_shader, "texture"), 0);
+    glUniform1i(glGetUniformLocation(font_shader, "tex"), 0);
     vertex_buffer_render(buf, GL_TRIANGLES);
   }
 }
@@ -52,3 +52,17 @@ vertex_buffer_t *vertbuf_create(void) {
   ALWAYS_ASSERT(buf);
   return buf;
 }
+
+// void mat4x4_orthographic(mat4x4 m, float left, float right, float top, float bot, float znear, float zfar) {
+//   if (!(left == right || top == bot || znear == zfar)) {
+//     /* Clear the matrix. */
+//     memset(m, 0, sizeof(mat4x4));
+//     m[0][0] = (+2.f / (right - left));
+//     m[3][0] = (-(right + left) / (right - left));
+//     m[1][1] = (+2.f / (top - bot));
+//     m[3][1] = (-(top + bot) / (top - bot));
+//     m[2][2] = (-2.f / (zfar - znear));
+//     m[3][2] = (-(zfar + znear) / (zfar - znear));
+//     m[3][3] = 1.f;
+//   }
+// }

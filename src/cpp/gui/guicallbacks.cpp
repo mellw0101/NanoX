@@ -33,24 +33,25 @@ SyntaxFile *sf = NULL;
 
 /* Window resize callback. */
 void window_resize_callback(GLFWwindow *window, int width, int height) {
-  ASSERT_MSG(gui, "gui has not been init.");
-  static ivec2 was_size = -1;
+  gl_window_update_size(width, height);
+  // ASSERT_MSG(gui, "gui has not been init.");
+  // static ivec2 was_size = -1;
   /* To reduce the number of updates, only update the size when it changes. */
-  if (was_size != ivec2(width, height)) {
-    was_size = ivec2(width, height);
-    gui->width  = width;
-    gui->height = height;
-    gui_width  = width;
-    gui_height = height;
+  // if (was_size != ivec2(width, height)) {
+  //   was_size = ivec2(width, height);
+    // gl_window_width()  = width;
+    // gl_window_height() = height;
+    // gui_width  = width;
+    // gui_height = height;
     /* Set viewport. */
-    glViewport(0, 0, gui->width, gui->height);
+    // glViewport(0, 0, gl_window_width(), gl_window_height());
     /* Set the projection. */
-    matrix4x4_set_orthographic(gui->projection, 0, gui->width, gui->height, 0, -1.0f, 1.0f);
+    // matrix4x4_set_orthographic(gui->projection, 0, gl_window_width(), gl_window_height(), 0, -1.0f, 1.0f);
     /* Upload it to both the shaders. */
-    update_projection_uniform(font_shader);
-    update_projection_uniform(rect_shader);
+    // update_projection_uniform(font_shader);
+    // update_projection_uniform(rect_shader);
     /* Calculate the rows for all editors. */
-    CLIST_ITER(starteditor, editor,
+    // CLIST_ITER(starteditor, editor,
       // if (texture_font_is_mono(font_get_font(textfont))) {
       //   texture_glyph_t *glyph = texture_font_get_glyph(font_get_font(textfont), " ");
       //   if (!glyph) {
@@ -61,18 +62,19 @@ void window_resize_callback(GLFWwindow *window, int width, int height) {
       // else {
       //   editor->cols = ((editor->text->width / FONT_WIDTH(font_get_font(textfont))) * 0.9f);
       // }
-      editor_resize(editor);
-    );
-    element_resize(gui->root, gui->width, gui->height);
-    refresh_needed = TRUE;
-  }
+    //   editor_resize(editor);
+    // );
+    // element_resize(gui->root, gl_window_width(), gl_window_height());
+    // refresh_needed = TRUE;
+  // }
 }
 
 /* Maximize callback. */
 void window_maximize_callback(GLFWwindow *window, int maximized) {
-  ivec2 size;
-  glfwGetWindowSize(window, &size.w, &size.h);
-  window_resize_callback(window, size.w, size.h);
+  // ivec2 size;
+  // glfwGetWindowSize(window, &size.w, &size.h);
+  // window_resize_callback(window, size.w, size.h);
+  gl_window_should_fetch_size();
 }
 
 /* Framebuffer resize callback. */
@@ -346,7 +348,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             syntaxfile_test_read();
           }
           else if (mods == (GLFW_MOD_CONTROL | GLFW_MOD_ALT)) {
-            // gui_element_move_resize(openeditor->main, vec2(((float)gui->width / 2), openeditor->main->pos.y), vec2(((float)gui->width / 2), openeditor->main->size.h));
+            // gui_element_move_resize(openeditor->main, vec2(((float)gl_window_width() / 2), openeditor->main->pos.y), vec2(((float)gl_window_width() / 2), openeditor->main->size.h));
             // gui_editor_rows_cols(openeditor);
             // gui_etb_text_refresh_needed(openeditor->etb);
             // if (begpar(openfile->current, 0)) {
@@ -1270,17 +1272,17 @@ void window_enter_callback(GLFWwindow *window, int entered) {
   if (!entered) {
     x = get_mouse_xpos();
     y = get_mouse_ypos();
-    if (x <= ((float)gui->width / 2)) {
+    if (x <= ((float)gl_window_width() / 2)) {
       x = -30.0f;
     }
-    else if (x >= ((float)gui->width / 2)) {
-      x = (gui->width + 30.0f);
+    else if (x >= ((float)gl_window_width() / 2)) {
+      x = (gl_window_width() + 30.0f);
     }
-    if (y <= ((float)gui->height / 2)) {
+    if (y <= ((float)gl_window_height() / 2)) {
       y = -30.0f;
     }
-    else if (y >= ((float)gui->height / 2)) {
-      y = (gui->height + 30.0f);
+    else if (y >= ((float)gl_window_height() / 2)) {
+      y = (gl_window_height() + 30.0f);
     }
     update_mouse_pos(x, y);
     /* If there is a currently entered element, call its leave callback.  If it has one. */

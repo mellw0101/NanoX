@@ -94,7 +94,7 @@ void editor_create(bool new_buffer) {
     starteditor     = node;
     node->openfile  = openfile;
     node->startfile = startfile;
-    editor_set_rows_cols(node, gui_width, gui_height);
+    editor_set_rows_cols(node, gl_window_width(), gl_window_height());
     editwinrows = node->rows;
     editwincols = node->cols;
   }
@@ -110,7 +110,7 @@ void editor_create(bool new_buffer) {
   }
   openeditor = node;
   /* Main element. */
-  openeditor->main = element_create(0, 0, gui_width, gui_height, FALSE);
+  openeditor->main = element_create(0, 0, gl_window_width(), gl_window_height(), FALSE);
   element_set_editor_data(openeditor->main, openeditor);
   /* Gutter element. */
   openeditor->gutter = element_create(openeditor->main->x, (openeditor->main->y + font_height(uifont)), editor_get_gutter_width(openeditor), (openeditor->main->height - font_height(uifont)), TRUE);
@@ -239,7 +239,7 @@ void editor_resize(Editor *const editor) {
     editor->gutter->xflags &= ~ELEMENT_HIDDEN;
   }
   // editor->gutter->hidden   = !editor->gutter->width;
-  element_move_resize(editor->main, 0, 0, gui_width, (gui_height - font_height(uifont)));
+  element_move_resize(editor->main, 0, 0, gl_window_width(), (gl_window_height() - font_height(uifont)));
   editor_set_rows_cols(editor, editor->text->width, editor->text->height);
   etb_text_refresh_needed(editor->tb);
   scrollbar_refresh_needed(editor->sb);
@@ -482,7 +482,7 @@ void editor_close_a_open_buffer(openfilestruct *const file) {
   }
   else {
     if (CLIST_SINGLE(editor)) {
-      glfwSetWindowShouldClose(gui_window, TRUE);
+      glfwSetWindowShouldClose(gl_window(), TRUE);
     }
     else {
       editor->should_close = TRUE;
