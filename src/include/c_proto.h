@@ -1558,6 +1558,7 @@ void gl_window_update_size(int new_width, int new_height);
 void gl_window_init(void);
 void gl_window_free(void);
 GLFWwindow *gl_window(void);
+Element *gl_window_root(void);
 int gl_window_width(void);
 int gl_window_height(void);
 void gl_window_add_root_child(Element *const e);

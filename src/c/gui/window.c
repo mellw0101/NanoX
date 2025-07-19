@@ -41,26 +41,25 @@ bool gl_window_resize_needed(void) {
     ATOMIC_STORE(last_resize, frame_elapsed());
     glfwGetWindowSize(window, &w, &h);
     gl_window_update_size(w, h);
-    return FALSE;
+    log_I_0("fetch: %d, %d", width, height);
   }
   /* When a resize has been called, and the last refresh, or failed refresh was 4 or more frames away, we do the actual refresh. */
-  else if (ATOMIC_FETCH(resize_needed) && (ATOMIC_FETCH(last_resize) - frame_elapsed()) >= 4) {
+  else if (ATOMIC_FETCH(resize_needed) && (frame_elapsed() - ATOMIC_FETCH(last_resize)) >= 4) {
     w = ATOMIC_FETCH(width);
     h = ATOMIC_FETCH(height);
+    log_I_0("resize: %d, %d", w, h);
     /* Save the current elapsed frames for the next time. */
     ATOMIC_STORE(last_resize, frame_elapsed());
-    /* When the window size has changed, perform the resizing.  And otherwise in four frames we can try again. */
-    if (!(ATOMIC_FETCH(last_width) == w && ATOMIC_FETCH(last_height) == h)) {
-      ATOMIC_STORE(resize_needed, FALSE);
-      glViewport(0, 0, w, h);
-      shader_set_projection(0, w, 0, h, -1.f, 1.f);
-      shader_upload_projection();
-      CLIST_ITER(starteditor, editor,
-        editor_resize(editor);
-      );
-      element_resize(root, w, h);
-      return TRUE;
-    }
+    ATOMIC_STORE(resize_needed, FALSE);
+    glViewport(0, 0, w, h);
+    shader_set_projection(0, w, 0, h, -1.f, 1.f);
+    shader_upload_projection();
+    CLIST_ITER(starteditor, editor,
+      editor_resize(editor);
+    );
+    element_resize(root, w, h);
+    ATOMIC_STORE(refresh_needed, TRUE);
+    return TRUE;
   }
   /* Default to returning `FALSE`. */
   return FALSE;
@@ -75,7 +74,7 @@ void gl_window_update_size(int new_width, int new_height) {
   ATOMIC_STORE(last_height, ATOMIC_FETCH(height));
   ATOMIC_STORE(width,  new_width);
   ATOMIC_STORE(height, new_height);
-  ATOMIC_STORE(refresh_needed, TRUE);
+  ATOMIC_STORE(resize_needed, TRUE);
 }
 
 void gl_window_init(void) {
@@ -95,6 +94,10 @@ void gl_window_free(void) {
 
 GLFWwindow *gl_window(void) {
   return window;
+}
+
+Element *gl_window_root(void) {
+  return root;
 }
 
 int gl_window_width(void) {

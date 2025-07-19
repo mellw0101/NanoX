@@ -369,7 +369,7 @@ void glfw_loop(void) {
     frame_start();
     statusbar_count_frame();
     log_I_0("frame: %lu: %.4f ms", frame_elapsed(), frame_get_time_ms());
-    if (refresh_needed || frame_should_poll()) {
+    if (frame_should_poll() || gl_window_resize_needed() || refresh_needed) {
       place_the_cursor();
       glClear(GL_COLOR_BUFFER_BIT);
       /* Check if any editor's has it's `should_close` flag set, and if so close them. */

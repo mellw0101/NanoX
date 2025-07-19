@@ -61,7 +61,6 @@ int monitor_closest_refresh_rate(int rate) {
 
 /* Always returns a valid ptr to the current monitor based on the current position of the window. */
 GLFWmonitor *monitor_current(void) {
-  ASSERT(gui_window);
   int x;
   int y;
   int width;
@@ -77,8 +76,8 @@ GLFWmonitor *monitor_current(void) {
   /* Failure to get monitors means this should not be run at all as glfw has not been init. */
   ALWAYS_ASSERT_MSG((monitors = glfwGetMonitors(&mon_count)), "GLFW needs to be init");
   /* Get the windows current position and size. */
-  glfwGetWindowPos(gui_window, &x, &y);
-  glfwGetWindowSize(gui_window, &width, &height);
+  glfwGetWindowPos(gl_window(), &x, &y);
+  glfwGetWindowSize(gl_window(), &width, &height);
   writef("%d\n", x);
   writef("%d\n", y);
   writef("%d\n", width);
