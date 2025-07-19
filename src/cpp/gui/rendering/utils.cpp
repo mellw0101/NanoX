@@ -15,7 +15,7 @@ float pixnbreadth_prev(const char *const restrict string, long len, const char *
   float ret;
   const char *ch, *prev;
   for (ret=0, ch=string, prev=prev_char; len>(ch - string); ++ch) {
-    ret += glyph_width(ch, prev, gui_font_get_font(textfont));
+    ret += glyph_width(ch, prev, font_get_font(textfont));
     prev = ch;
   }
   return ret;
@@ -43,7 +43,7 @@ float pixbreadth(Font *const font, const char *const restrict string) {
   ASSERT(string);
   float ret = 0;
   for (const char *ch=string, *prev=NULL; *ch; ++ch) {
-    ret += glyph_width(ch, prev, gui_font_get_font(font));
+    ret += glyph_width(ch, prev, font_get_font(font));
     prev = ch;
   }
   return ret;

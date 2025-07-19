@@ -46,7 +46,7 @@
   "  gl_FragColor = gl_Color;"      "\n"  \
   "}"                               "\n"
 
-#define SHADER_FONT_VERTEX_DATA_130                                 \
+#define SHADER_FONT_VERT_DATA_130                                   \
   /* Font vertex shader openGL 3.0. */                              \
   "#version 130"                                              "\n"  \
   "uniform mat4 projection;"                                  "\n"  \
@@ -61,19 +61,19 @@
   "  gl_Position = (projection * vec4(vertex, 0.0f, 1.0f));"  "\n"  \
   "}"                                                         "\n"
 
-#define SHADER_FONT_FRAGMENT_DATA_130                         \
+#define SHADER_FONT_FRAG_DATA_130                             \
   /* Font fragment shader openGL 3.0. */                      \
   "#version 130"                                        "\n"  \
   "in vec2 f_tex_coord;"                                "\n"  \
   "in vec4 f_color;"                                    "\n"  \
   "out vec4 frag_color;"                                "\n"  \
-  "uniform sampler2D texture;"                          "\n"  \
+  "uniform sampler2D tex;"                              "\n"  \
   "void main() {"                                       "\n"  \
-  "  float a   = texture2D(texture, f_tex_coord).r;"    "\n"  \
+  "  float a   = texture2D(tex, f_tex_coord).r;"        "\n"  \
   "  frag_color = vec4(f_color.rgb, (f_color.a * a));"  "\n"  \
   "}"                                                   "\n"
 
-#define SHADER_RECT_VERTEX_DATA_130                                 \
+#define SHADER_RECT_VERT_DATA_130                                   \
   /* Rect vertex shader openGL 3.0. */                        "\n"  \
   "#version 130"                                              "\n"  \
   "uniform mat4 projection;"                                  "\n"  \
@@ -85,7 +85,7 @@
   "  gl_Position = (projection * vec4(vertex, 0.0f, 1.0f));"  "\n"  \
   "}"                                                         "\n"
 
-#define SHADER_RECT_FRAGMENT_DATA_130     \
+#define SHADER_RECT_FRAG_DATA_130         \
   /* Rect fragment shader openGL 3.0. */  \
   "#version 130"                    "\n"  \
   "in vec4 f_color;"                "\n"  \
@@ -93,6 +93,29 @@
   "void main() {"                   "\n"  \
   "  frag_color = f_color;"         "\n"  \
   "}"                               "\n"
+
+#define HACK_FONT_PATH     "/usr/share/fonts/TTF/Hack-Regular.ttf"
+#define DEFAULT_FONT_PATH  HACK_FONT_PATH
+
+/* GLSL openGL table:
+ *   `GLSL/openGL` --- `Release Year`.
+ *    `110 --- 2.0` --- `2004`.
+ *    `120 --- 2.1` --- `2006`.
+ *    `130 --- 3.0` --- `2008`.
+ *    `140 --- 3.1` --- `2009`.
+ *    `150 --- 3.2` --- `2009`.
+ *    `330 --- 3.3` --- `2010`.
+ *    `400 --- 4.0` --- `2010`.
+ *    `410 --- 4.1` --- `2010`.
+ *    `420 --- 4.2` --- `2011`.
+ *    `430 --- 4.3` --- `2012`.
+ *    `440 --- 4.4` --- `2013`.
+ *    `450 --- 4.5` --- `2014`.
+ *    `460 --- 4.6` --- `2017`.
+ */
+#define USING_OPENGL_CORE  FALSE
+#define OPENGL_MAJOR 3
+#define OPENGL_MINOR 0
 
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
@@ -143,8 +166,20 @@ static Uint shader_create(Ulong len, Uint *const parts) {
     glGetProgramInfoLog(ret, loglen, NULL, log);
     writeferr("Failed to link shader program.\n\nError log: %s\n", log);
     free(log);
+    return 0;
   }
   return ret;
+}
+
+/* ----------------------------- Shader set openGL version ----------------------------- */
+
+/* Inform glfw about the openGL version we are using. */
+static inline void shader_set_openGL_version(void) {
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, OPENGL_MAJOR);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, OPENGL_MINOR);
+  if (USING_OPENGL_CORE) {
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  }
 }
 
 
@@ -156,8 +191,8 @@ static Uint shader_create(Ulong len, Uint *const parts) {
 /* Create the font shader for the gui. */
 void shader_font_create(void) {
   font_shader = shader_create(2, (Uint[]) {
-    shader_load(GL_VERTEX_SHADER,   SHADER_FONT_VERTEX_DATA_130),
-    shader_load(GL_FRAGMENT_SHADER, SHADER_FONT_FRAGMENT_DATA_130)
+    shader_load(GL_VERTEX_SHADER,   SHADER_FONT_VERT_DATA_130),
+    shader_load(GL_FRAGMENT_SHADER, SHADER_FONT_FRAG_DATA_130)
   });
 }
 
@@ -166,9 +201,35 @@ void shader_font_create(void) {
 /* Create the rect shader for the gui. */
 void shader_rect_create(void) {
   rect_shader = shader_create(2, (Uint[]) {
-    shader_load(GL_VERTEX_SHADER,   SHADER_RECT_VERTEX_DATA_130),
-    shader_load(GL_FRAGMENT_SHADER, SHADER_RECT_FRAGMENT_DATA_130)
+    shader_load(GL_VERTEX_SHADER,   SHADER_RECT_VERT_DATA_130),
+    shader_load(GL_FRAGMENT_SHADER, SHADER_RECT_FRAG_DATA_130)
   });
+}
+
+/* ----------------------------- Shader compile ----------------------------- */
+
+/* Compile the `font-shader` and the `rect-shader` and then load load the fonts. */
+void shader_compile(void) {
+  /* Create the font shader. */
+  shader_font_create();
+  /* If we fail to compile the font-shader, we must terminate. */
+  if (!font_shader) {
+    glfwDestroyWindow(gui_window);
+    glfwTerminate();
+    die("Failed to compile the font shader, this is fatal.\n");
+  }
+  /* Create both fonts. */
+  textfont = font_create();
+  uifont   = font_create();
+  /* Then load the default font. */
+  font_load(textfont, DEFAULT_FONT_PATH, 17, 4096);
+  font_load(uifont,   DEFAULT_FONT_PATH, 15, 2048);
+  /* Create the rect-shader, here we can run with a failed compilation. */
+  shader_rect_create();
+  if (!rect_shader) {
+    writeferr("Failed to comile the rect shader.  We can continue without this, but we only have text.\n");
+  }
+  shader_set_openGL_version();
 }
 
 /* ----------------------------- Shader rect vertex load ----------------------------- */
@@ -180,4 +241,10 @@ void shader_rect_vertex_load(RectVertex *buf, float x, float y, float w, float h
   buf[1] = (RectVertex){(x + w), y,       r,g,b,a};
   buf[2] = (RectVertex){(x + w), (y + h), r,g,b,a};
   buf[3] = (RectVertex){x, (y + h),       r,g,b,a};
+}
+
+/* ----------------------------- Shader rect vertex load array ----------------------------- */
+
+void shader_rect_vertex_load_array(RectVertex *buf, float *const array, Uint color) {
+  shader_rect_vertex_load(buf, array[0], array[1], array[2], array[3], color);
 }

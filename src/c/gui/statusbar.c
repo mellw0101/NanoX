@@ -61,7 +61,7 @@ void statusbar_init(Element *const parent) {
   // statusbar->element->has_relative_x_pos         = TRUE;
   // statusbar->element->has_reverse_relative_y_pos = TRUE;
   statusbar->element->xflags |= (ELEMENT_REL_X | ELEMENT_REVREL_Y);
-  statusbar->element->rel_y = (gui_font_height(uifont) * 2);
+  statusbar->element->rel_y = (font_height(uifont) * 2);
 }
 
 /* Free the statusbar structure. */
@@ -127,9 +127,9 @@ void statusbar_draw(void) {
     statusbar->element->xflags &= ~ELEMENT_HIDDEN;
     msg_width = (font_breadth(uifont, statusbar->msg) + font_breadth(uifont, "  "));
     vertex_buffer_clear(statusbar->buffer);
-    element_move_resize(statusbar->element, ((gui_width / 2) - (msg_width / 2)), (gui_height - (gui_font_height(uifont) * 2)), msg_width, gui_font_height(uifont));
+    element_move_resize(statusbar->element, ((gui_width / 2) - (msg_width / 2)), (gui_height - (font_height(uifont) * 2)), msg_width, font_height(uifont));
     x = (statusbar->element->x + font_breadth(uifont, " "));
-    y = (statusbar->element->y + gui_font_row_baseline(uifont, 0));
+    y = (statusbar->element->y + font_row_baseline(uifont, 0));
     font_vertbuf_add_mbstr(uifont, statusbar->buffer, statusbar->msg, strlen(statusbar->msg), " ", PACKED_UINT(255, 255, 255, 255), &x, &y);
     element_draw(statusbar->element);
     render_vertbuf(uifont, statusbar->buffer);

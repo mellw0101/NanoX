@@ -81,12 +81,12 @@ static Ulong scrollbar_closest_step_index(Uint idx, float rawpos, float *const a
   ASSERT(arraylen);
   /* Start of with the first index as the closest, as that would happen no matter what. */
   Ulong index=0;
-  float closest = absf(array[0] - rawpos);
+  float closest = FABSF(array[0] - rawpos);
   float value;
   /* Then check the remaining indexes. */
   for (Ulong i=1; i<arraylen; ++i) {
     /* Set the closest entry as index. */
-    if ((value = absf(array[i] - rawpos)) < closest) {
+    if ((value = FABSF(array[i] - rawpos)) < closest) {
       index = i;
       closest = value;
     }
@@ -146,19 +146,15 @@ static void scrollbar_calc_routine(Scrollbar *const sb) {
   /* Calculate the size and position of the thumb. */
   scrollbar_calculate(total_length, start, end, visible, current, &length, &y_pos);
   if (total_length <= 0 || length >= total_length) {
-    // sb->base->hidden  = TRUE;
-    // sb->thumb->hidden = TRUE;
     sb->base->xflags  |= ELEMENT_HIDDEN;
     sb->thumb->xflags |= ELEMENT_HIDDEN;
   }
   else {
     /* Thumb. */
-    // sb->thumb->hidden     = FALSE;
     sb->thumb->xflags &= ~ELEMENT_HIDDEN;
     sb->thumb->rel_y = y_pos;
     element_resize(sb->thumb, sb->thumb->width, length);
     /* Base. */
-    // sb->base->hidden     = FALSE;
     sb->base->xflags &= ~ELEMENT_HIDDEN;
     sb->base->rel_x = (sb->base->width + r_offset);
     sb->base->rel_y = t_offset;
@@ -201,7 +197,7 @@ Scrollbar *scrollbar_create(Element *const parent, void *const data, ScrollbarUp
   sb->base->rel_y                 = t_offset;
   /* Thumb. */
   // sb->thumb->has_relative_pos = TRUE;
-  sb->thumb->xflags |= ELEMENT_REL_POS;
+  sb->thumb->xflags |= (ELEMENT_REL_POS | ELEMENT_ROUNDED_RECT);
   /* Data ptr. */
   sb->data = data;
   /* Update routine. */

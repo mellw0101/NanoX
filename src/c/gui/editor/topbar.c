@@ -66,14 +66,18 @@ static void etb_refresh_active(EditorTb *const etb) {
     ELEMENT_CHILDREN_ITER(etb->element, i, button,
       if (button->dt == ELEMENT_DATA_FILE) {
         if (button->dp_file == etb->editor->openfile) {
+          button->xflags |= ELEMENT_ROUNDED_RECT;
           if (button->color != (Uint)ETB_ACTIVE_COLOR) {
             button->color = ETB_ACTIVE_COLOR;
             button->xflags |= ELEMENT_RECT_REFRESH;
           }
         }
-        else if (button->color != (Uint)ETB_BUTTON_COLOR) {
-          button->color   = ETB_BUTTON_COLOR;
-          button->xflags |= ELEMENT_RECT_REFRESH;
+        else {
+          button->xflags &= ~ELEMENT_ROUNDED_RECT;
+          if (button->color != (Uint)ETB_BUTTON_COLOR) {
+            button->color   = ETB_BUTTON_COLOR;
+            button->xflags |= ELEMENT_RECT_REFRESH;
+          }
         }
         // button->color = ((button->dp_file == etb->editor->openfile) ? ETB_ACTIVE_COLOR : ETB_BUTTON_COLOR);
       }
@@ -91,7 +95,7 @@ static void etb_refresh_text(EditorTb *const etb) {
     ELEMENT_CHILDREN_ITER(etb->element, i, child,
       if (child->dt == ELEMENT_DATA_FILE) {
         pen_x = (child->x + font_breadth(uifont, " "));
-        pen_y = (child->y + gui_font_row_baseline(uifont, 0));
+        pen_y = (child->y + font_row_baseline(uifont, 0));
         font_vertbuf_add_mbstr(uifont, etb->buffer, child->lable, child->lable_len, " ", child->text_color, &pen_x, &pen_y);
       }
     );
@@ -117,10 +121,12 @@ static void etb_create_button(EditorTb *const etb, openfilestruct *const f, floa
   Element *button;
   /* If `f` has a set name, then use it.  Otherwise, use the placeholder `Nameless`. */
   const char *lable = (*f->filename ? f->filename : "Nameless");
-  button = element_create((*pos_x), (*pos_y), (font_breadth(uifont, lable) + font_breadth(uifont, "  ")), gui_font_height(uifont), TRUE);
+  button = element_create((*pos_x), (*pos_y), (font_breadth(uifont, lable) + font_breadth(uifont, "  ")), font_height(uifont), TRUE);
   element_set_parent(button, etb->element);
-  // button->has_relative_pos = TRUE;
   button->xflags |= ELEMENT_REL_POS;
+  if (f == etb->editor->openfile) {
+    button->xflags |= ELEMENT_ROUNDED_RECT;
+  }
   button->cursor = GLFW_HAND_CURSOR;
   element_set_lable(button, lable, strlen(lable));
   element_set_file_data(button, f);
@@ -271,7 +277,7 @@ EditorTb *etb_create(Editor *const editor) {
   etb->entries_refresh_needed = TRUE;
   etb->buffer  = vertbuf_create();
   etb->editor  = editor;
-  etb->element = element_create(etb->editor->main->x, etb->editor->main->y, etb->editor->main->width, gui_font_height(uifont), TRUE);
+  etb->element = element_create(etb->editor->main->x, etb->editor->main->y, etb->editor->main->width, font_height(uifont), TRUE);
   element_set_parent(etb->element, etb->editor->main);
   etb->element->color = PACKED_UINT_EDIT_BACKGROUND;
   etb->element->xflags |= (ELEMENT_REL_POS | ELEMENT_REL_WIDTH);

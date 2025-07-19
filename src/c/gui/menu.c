@@ -318,7 +318,7 @@ static void menu_resize(Menu *const menu) {
     }
     /* Calculate the size of the suggestmenu window. */
     width  = menu_calculate_width(menu);
-    height = ((menu->rows * gui_font_height(menu->font)) + (menu->border_size * 2) + 2);
+    height = ((menu->rows * font_height(menu->font)) + (menu->border_size * 2) + 2);
     /* Add the size of the scrollbar if there is one. */
     if (len > menu->maxrows) {
       width += scrollbar_width(menu->sb);
@@ -350,7 +350,7 @@ static void menu_draw_selected(Menu *const menu) {
   if (row >= 0 && row < menu->rows) {
     x     = (menu->element->x + menu->border_size);
     width = (menu->element->width - (menu->border_size * 2));
-    gui_font_row_top_bot(menu->font, row, &y, &height);
+    font_row_top_bot(menu->font, row, &y, &height);
     height -= (y - ((row == menu->rows - 1) ? 1 : 0));
     y      += (menu->element->y + menu->border_size);
     // menu->selelem->hidden = FALSE;
@@ -381,7 +381,7 @@ static void menu_draw_text(Menu *const menu) {
     while (row < menu->rows) {
       str   = menu_get_entry_lable(menu, (menu->viewtop + row));
       pen_x = (menu->element->x + menu->border_size + 1);
-      pen_y = (gui_font_row_baseline(menu->font, row) + menu->element->y + menu->border_size + 1);
+      pen_y = (font_row_baseline(menu->font, row) + menu->element->y + menu->border_size + 1);
       font_vertbuf_add_mbstr(menu->font, menu->buffer, str, strlen(str), NULL, PACKED_UINT(255, 255, 255, 255), &pen_x, &pen_y);
       ++row;
     }
@@ -414,7 +414,7 @@ static void menu_submenu_pos_routine(void *arg, float width, float height, float
   /* And always ensure it falls inside it, as this function should not be called otherwise. */
   ALWAYS_ASSERT(index >= 0 && index < menu->parent->maxrows);
   (*x) = (menu->parent->element->x + menu->parent->element->width);
-  gui_font_row_top_bot(menu->font, index, y, NULL);
+  font_row_top_bot(menu->font, index, y, NULL);
   (*y) += menu->parent->element->y;
 }
 
@@ -493,6 +493,7 @@ static void menu_selected_down_internal(Menu *const menu) {
       ++menu->selected;
     }
     menu_check_submenu(menu);
+    refresh_needed = TRUE;
   }
 }
 
@@ -538,8 +539,8 @@ Menu *menu_create(Element *const parent, Font *const font, void *data, MenuPosit
   element_set_borders(menu->element, menu->border_size, menu->border_size, menu->border_size, menu->border_size, PACKED_UINT_DEFAULT_BORDERS);
   element_set_menu_data(menu->element, menu);
   /* Create the selected rect element. */
-  menu->selelem = element_create(100, 100, 100, gui_font_height(font), FALSE);
-  menu->selelem->color = PACKED_UINT_FLOAT(1, 1, 1, 0.4f);
+  menu->selelem = element_create(100, 100, 100, font_height(font), FALSE);
+  menu->selelem->color = PACKED_UINT_FLOAT(1.f, 1.f, 1.f, .4f);
   /* Row init. */
   menu->viewtop  = 0;
   menu->selected = 0;
@@ -732,7 +733,7 @@ void menu_hover_action(Menu *const menu, float x_pos, float y_pos) {
     /* Get the absolute values where events are allowed. */
     menu_event_bounds(menu, &top, &bot, &right);
     /* If `y_pos` relates to a valid row in the suggestmenu completion menu, then adjust the selected to that row. */
-    if (gui_font_row_from_pos(menu->font, top, bot, y_pos, &row) && x_pos < right) {
+    if (font_row_from_pos(menu->font, top, bot, y_pos, &row) && x_pos < right) {
       menu->selected = lclamp((menu->viewtop + row), menu->viewtop, (menu->viewtop + menu->rows - 1));
       menu_check_submenu(menu);
     }

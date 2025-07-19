@@ -185,7 +185,7 @@ extern SyntaxFile *sf;
 #ifdef HAVE_GLFW
   // extern guielement *file_menu_element;
   /* The bottom bar. */
-  extern frametimerclass frametimer;
+  // extern frametimerclass frametimer;
   // extern vec2 mousepos;
   // extern guieditor *openeditor;
   // extern guieditor *starteditor;
@@ -903,7 +903,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void draw_topbar(void);
   void draw_suggestmenu(void);
   void draw_botbar(void);
-  void draw_statusbar(void);
+  // void draw_statusbar(void);
   void do_fullscreen(GLFWwindow *window);
   int  glfw_get_framerate(void);
   

@@ -113,25 +113,20 @@ void editor_create(bool new_buffer) {
   openeditor->main = element_create(0, 0, gui_width, gui_height, FALSE);
   element_set_editor_data(openeditor->main, openeditor);
   /* Gutter element. */
-  openeditor->gutter = element_create(openeditor->main->x, (openeditor->main->y + gui_font_height(uifont)), editor_get_gutter_width(openeditor), (openeditor->main->height - gui_font_height(uifont)), TRUE);
+  openeditor->gutter = element_create(openeditor->main->x, (openeditor->main->y + font_height(uifont)), editor_get_gutter_width(openeditor), (openeditor->main->height - font_height(uifont)), TRUE);
   element_set_parent(openeditor->gutter, openeditor->main);
   element_set_editor_data(openeditor->gutter, openeditor);
-  openeditor->gutter->color               = PACKED_UINT_EDIT_BACKGROUND;
-  // openeditor->gutter->has_relative_pos    = TRUE;
-  // openeditor->gutter->has_relative_height = TRUE;
+  openeditor->gutter->color = PACKED_UINT_EDIT_BACKGROUND;
   openeditor->gutter->xflags |= (ELEMENT_REL_POS | ELEMENT_REL_HEIGHT);
-  openeditor->gutter->rel_y = gui_font_height(uifont);
+  openeditor->gutter->rel_y = font_height(uifont);
   /* Text element. */
-  openeditor->text = element_create((openeditor->main->x + openeditor->gutter->width), (openeditor->main->y + gui_font_height(uifont)), (openeditor->main->width - openeditor->gutter->width), (openeditor->main->height - gui_font_height(uifont)), TRUE);
+  openeditor->text = element_create((openeditor->main->x + openeditor->gutter->width), (openeditor->main->y + font_height(uifont)), (openeditor->main->width - openeditor->gutter->width), (openeditor->main->height - font_height(uifont)), TRUE);
   element_set_parent(openeditor->text, openeditor->main);
   element_set_editor_data(openeditor->text, openeditor);
   openeditor->text->color = PACKED_UINT_EDIT_BACKGROUND;
   openeditor->text->xflags |= (ELEMENT_REL_POS | ELEMENT_REL_SIZE);
-  // openeditor->text->has_relative_pos    = TRUE;
-  // openeditor->text->has_relative_width  = TRUE;
-  // openeditor->text->has_relative_height = TRUE;
   openeditor->text->rel_x = openeditor->gutter->width;
-  openeditor->text->rel_y = gui_font_height(uifont);
+  openeditor->text->rel_y = font_height(uifont);
   openeditor->text->cursor     = GLFW_IBEAM_CURSOR;
   /* Create the text scrollbar. */
   editor_scrollbar_create(openeditor);
@@ -174,7 +169,7 @@ void editor_set_rows_cols(Editor *const editor, float width, float height) {
   ASSERT(editor);
   int rows;
   int cols;
-  gui_font_rows_cols(textfont, width, height, &rows, &cols);
+  font_rows_cols(textfont, width, height, &rows, &cols);
   editor->rows = rows;
   editor->cols = cols;
 }
@@ -204,9 +199,6 @@ void editor_hide(Editor *const editor, bool hide) {
     editor->gutter->xflags &= ~ELEMENT_HIDDEN;
     editor->text->xflags   &= ~ELEMENT_HIDDEN;
   }
-  // editor->main->hidden   = hide;
-  // editor->gutter->hidden = hide;
-  // editor->text->hidden   = hide;
   etb_show_context_menu(editor->tb, NULL, FALSE);
 }
 
@@ -247,7 +239,7 @@ void editor_resize(Editor *const editor) {
     editor->gutter->xflags &= ~ELEMENT_HIDDEN;
   }
   // editor->gutter->hidden   = !editor->gutter->width;
-  element_move_resize(editor->main, 0, 0, gui_width, (gui_height - gui_font_height(uifont)));
+  element_move_resize(editor->main, 0, 0, gui_width, (gui_height - font_height(uifont)));
   editor_set_rows_cols(editor, editor->text->width, editor->text->height);
   etb_text_refresh_needed(editor->tb);
   scrollbar_refresh_needed(editor->sb);
@@ -432,14 +424,14 @@ linestruct *editor_get_text_line(Editor *const editor, float y_pos) {
   ASSERT(editor->openfile);
   ASSERT(editor->openfile->edittop);
   long row;
-  gui_font_row_from_pos(textfont, editor->text->y, (editor->text->y + editor->text->height), y_pos, &row);
+  font_row_from_pos(textfont, editor->text->y, (editor->text->y + editor->text->height), y_pos, &row);
   return line_from_number_for(editor->openfile, lclamp((editor->openfile->edittop->lineno + row), editor->openfile->edittop->lineno, editor->openfile->filebot->lineno));
 }
 
 Ulong editor_get_text_index(Editor *const editor, linestruct *const line, float x_pos) {
   ASSERT(editor);
   ASSERT(line);
-  return gui_font_index_from_pos(textfont, line->data, strlen(line->data), x_pos, editor->text->x);
+  return font_index_from_pos(textfont, line->data, strlen(line->data), x_pos, editor->text->x);
 }
 
 void editor_get_text_line_index(Editor *const editor, float x_pos, float y_pos, linestruct **const outline, Ulong *const outindex) {

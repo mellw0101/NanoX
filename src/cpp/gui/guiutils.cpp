@@ -239,7 +239,7 @@ void vertex_buffer_add_mbstr(vertex_buffer_t *buf, const char *string, Ulong len
   const char *cur = string;
   const char *prev = previous;
   while (*cur && cur < (string + len)) {
-    add_glyph(cur, prev, buf, gui_font_get_font(font), color, penpos);
+    add_glyph(cur, prev, buf, font_get_font(font), color, penpos);
     prev = cur;
     cur += char_length(cur);
   }

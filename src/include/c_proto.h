@@ -638,34 +638,34 @@ void set_cursor_type(GLFWwindow *const window, int type) _NONNULL(1);
 /* ---------------------------------------------------------- gui/font.c ---------------------------------------------------------- */
 
 
-Font            *gui_font_create(void);
-void             gui_font_free(Font *const f);
-void             gui_font_load(Font *const f, const char *const restrict path, Uint size, Uint atlas_size);
-texture_font_t  *gui_font_get_font(Font *const f);
-texture_atlas_t *gui_font_get_atlas(Font *const f);
-texture_glyph_t *gui_font_get_glyph(Font *const f, const char *const restrict codepoint);
-Uint             gui_font_get_size(Font *const f);
-Uint             gui_font_get_atlas_size(Font *const f);
-long             gui_font_get_line_height(Font *const f);
-bool             gui_font_is_mono(Font *const f);
-float            gui_font_height(Font *const f);
-float            gui_font_row_baseline(Font *const f, long row);
-void             gui_font_row_top_bot(Font *const f, long row, float *const top, float *const bot);
-float            font_row_top_pix(Font *const f, long row) _NODISCARD _NONNULL(1);
-float            font_row_bottom_pix(Font *const f, long row) _NODISCARD _NONNULL(1);
-void             gui_font_change_size(Font *const f, Uint new_size);
-void             gui_font_increase_size(Font *const f);
-void             gui_font_decrease_size(Font *const f);
-void             gui_font_decrease_line_height(Font *const f);
-void             gui_font_increase_line_height(Font *const f);
-void             gui_font_rows_cols(Font *const f, float width, float height, int *const outrows, int *const outcols);
-bool             gui_font_row_from_pos(Font *const f, float y_top, float y_bot, float y_pos, long *outrow);
-Ulong            gui_font_index_from_pos(Font *const f, const char *const restrict string, Ulong len, float rawx, float normx);
-float            font_breadth(Font *const f, const char *const restrict string);
-float            font_wideness(Font *const f, const char *const restrict string, Ulong to_index);
-void             font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const restrict current, const char *const restrict prev, Uint color, float *const pen_x, float *const pen_y);
-void             font_vertbuf_add_mbstr(Font *const f, vertex_buffer_t *buf, const char *string, Ulong len, const char *previous, Uint color, float *const pen_x, float *const pen_y);
-void             font_upload_texture_atlas(Font *const f);
+Font *font_create(void);
+void font_free(Font *const f);
+void font_load(Font *const f, const char *const restrict path, Uint size, Uint atlas_size);
+texture_font_t  *font_get_font(Font *const f);
+texture_atlas_t *font_get_atlas(Font *const f);
+texture_glyph_t *font_get_glyph(Font *const f, const char *const restrict codepoint);
+Uint font_get_size(Font *const f);
+Uint font_get_atlas_size(Font *const f);
+long font_get_line_height(Font *const f);
+bool font_is_mono(Font *const f);
+float font_height(Font *const f);
+float font_row_baseline(Font *const f, long row);
+void font_row_top_bot(Font *const f, long row, float *const top, float *const bot);
+float font_row_top_pix(Font *const f, long row) _NODISCARD _NONNULL(1);
+float font_row_bottom_pix(Font *const f, long row) _NODISCARD _NONNULL(1);
+void font_change_size(Font *const f, Uint new_size);
+void font_increase_size(Font *const f);
+void font_decrease_size(Font *const f);
+void font_decrease_line_height(Font *const f);
+void font_increase_line_height(Font *const f);
+void font_rows_cols(Font *const f, float width, float height, int *const outrows, int *const outcols);
+bool font_row_from_pos(Font *const f, float y_top, float y_bot, float y_pos, long *outrow);
+Ulong font_index_from_pos(Font *const f, const char *const restrict string, Ulong len, float rawx, float normx);
+float font_breadth(Font *const f, const char *const restrict string);
+float font_wideness(Font *const f, const char *const restrict string, Ulong to_index);
+void font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const restrict current, const char *const restrict prev, Uint color, float *const pen_x, float *const pen_y);
+void font_vertbuf_add_mbstr(Font *const f, vertex_buffer_t *buf, const char *string, Ulong len, const char *previous, Uint color, float *const pen_x, float *const pen_y);
+void font_upload_texture_atlas(Font *const f);
 
 
 /* ---------------------------------------------------------- gui/element_grid.c ---------------------------------------------------------- */
@@ -703,6 +703,8 @@ void     element_set_sb_data(Element *const e, Scrollbar *const data);
 void     element_set_menu_data(Element *const e, Menu *const data);
 void     element_set_file_data(Element *const e, openfilestruct *const data);
 void     element_set_editor_data(Element *const e, Editor *const data);
+
+void element_set_rounded_apex_fraction(Element *const e, float t);
 
 
 /* ---------------------------------------------------------- gui/scrollbar.c ---------------------------------------------------------- */
@@ -779,7 +781,7 @@ void frame_set_rate(int x);
 /* ----------------------------- Frame get time ms ----------------------------- */
 double frame_get_time_ms(void);
 /* ----------------------------- Frame get time ns ----------------------------- */
-Ulong frame_get_time_ns(void);
+Llong frame_get_time_ns(void);
 /* ----------------------------- Frame should poll ----------------------------- */
 bool frame_should_poll(void);
 /* ----------------------------- Frame set poll ----------------------------- */
@@ -1531,7 +1533,12 @@ void clear_mouse_flags(void);
 void shader_font_create(void);
 /* ----------------------------- Shader rect create ----------------------------- */
 void shader_rect_create(void);
+/* ----------------------------- Shader compile ----------------------------- */
+void shader_compile(void);
+/* ----------------------------- Shader rect vertex load ----------------------------- */
 void shader_rect_vertex_load(RectVertex *buf, float x, float y, float w, float h, Uint color);
+/* ----------------------------- Shader rect vertex load array ----------------------------- */
+void shader_rect_vertex_load_array(RectVertex *buf, float *const array, Uint color);
 
 
 /* ---------------------------------------------------------- nanox.c ---------------------------------------------------------- */

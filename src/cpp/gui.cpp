@@ -8,7 +8,7 @@ static glSsbo<Uint, 1> indices_ssbo;
 /* Hash based grid map for elements. */
 // uigridmapclass gridmap(GRIDMAP_GRIDSIZE);
 /* Frame timer to keep a frame rate. */
-frametimerclass frametimer;
+// frametimerclass frametimer;
 /* The file menu button element. */
 // guielement *file_menu_element = NULL;
 // guielement *open_file_element = NULL;
@@ -56,9 +56,9 @@ void log_error_gui(const char *format, ...) {
 }
 
 /* Init font shader and buffers. */
-static void setup_font_shader(void) {
+// static void setup_font_shader(void) {
   /* Create shader. */
-  shader_font_create();
+  // shader_font_create();
   // gui->font_shader = openGL_create_shader_program_raw({
   //   /* Font vertex shader. */
   //   { STRLITERAL(\
@@ -84,18 +84,18 @@ static void setup_font_shader(void) {
   //     GL_FRAGMENT_SHADER }
   // });
   /* If there is a problem with the shader creation just die as we are passing string literals so there should not be alot that can go wrong. */
-  if (!font_shader) {
-    glfwDestroyWindow(gui->window);
-    glfwTerminate();
-    die("Failed to create font shader.\n");
-  }
-  /* Load the font and uifont. */
-  gui_font_load(textfont, FALLBACK_FONT_PATH, 17, 4096);
-  gui_font_load(uifont, FALLBACK_FONT_PATH, 15, 2048);
-}
+//   if (!font_shader) {
+//     glfwDestroyWindow(gui->window);
+//     glfwTerminate();
+//     die("Failed to create font shader.\n");
+//   }
+//   /* Load the font and uifont. */
+//   font_load(textfont, FALLBACK_FONT_PATH, 17, 4096);
+//   font_load(uifont, FALLBACK_FONT_PATH, 15, 2048);
+// }
 
 /* Init the rect shader and setup the ssbo`s for indices and vertices. */
-static void setup_rect_shader(void) {
+// static void setup_rect_shader(void) {
   // gui->rect_shader = openGL_create_shader_program_raw({
   //   { STRLITERAL(\
   //       #version 450 core \n
@@ -136,8 +136,8 @@ static void setup_rect_shader(void) {
   // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertices_ssbo.ssbo());
   // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, indices_ssbo.ssbo());
   // element_rect_shader = gui->rect_shader;
-  shader_rect_create();
-}
+//   shader_rect_create();
+// }
 
 /* Setup the bottom bar for the gui. */
 static void setup_botbar(void) {
@@ -153,7 +153,7 @@ static void setup_botbar(void) {
   // gui->botbar->relative_pos = vec2(0, gui->botbar->size.h);
   // gui->botbar->flag.set<GUIELEMENT_RELATIVE_WIDTH>();
   // gui->botbar->relative_size = 0;
-  gui->botbar = element_create(0, (gui_height - gui_font_height(uifont)), gui_width, gui_font_height(uifont), TRUE);
+  gui->botbar = element_create(0, (gui_height - font_height(uifont)), gui_width, font_height(uifont), TRUE);
   element_set_parent(gui->botbar, gui->root);
   gui->botbar->color = PACKED_UINT(0, 0, 0, 255);
   gui->botbar->xflags |= (ELEMENT_REVREL_Y | ELEMENT_REL_WIDTH);
@@ -165,17 +165,9 @@ static void setup_botbar(void) {
 /* Set up the bottom bar. */
 static void setup_statusbar(void) {
   gui->statusbuf = make_new_font_buffer();
-  // gui->statusbar = gui_element_create(
-  //   vec2(0, gui->height),
-  //   vec2(gui->width, gui_font_height(uifont)),
-  //   color_idx_to_vec4(FG_VS_CODE_RED)
-  // );
-  // gui->statusbar->flag.set<GUIELEMENT_HIDDEN>();
-  gui->statusbar = element_create(0, gui_height, gui_width, gui_font_height(uifont), FALSE);
+  gui->statusbar = element_create(0, gui_height, gui_width, font_height(uifont), FALSE);
   gui->statusbar->color = PACKED_UINT_VS_CODE_RED;
-  // color_copy(gui->statusbar->color, &color_vs_code_red);
   element_set_parent(gui->statusbar, gui->root);
-  // gui->statusbar->hidden = TRUE;
   gui->statusbar->xflags |= ELEMENT_HIDDEN;
 }
 
@@ -240,8 +232,8 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
   /* Create and start the event handler. */
   gui->handler = nevhandler_create();
   nevhandler_start(gui->handler, TRUE);
-  textfont = gui_font_create();
-  uifont   = gui_font_create();
+  // textfont = gui_font_create();
+  // uifont   = gui_font_create();
   // gui->root = gui_element_create(0, vec2(gui->height, gui->width), 0, FALSE);
   gui->root = element_create(0, 0, gui_width, gui_height, FALSE);
 }
@@ -264,8 +256,8 @@ static void delete_guistruct(void) {
   // gui_element_free(gui->statusbar);
   element_free(gui->root);
   /* Free the main font and the uifont. */
-  gui_font_free(textfont);
-  gui_font_free(uifont);
+  font_free(textfont);
+  font_free(uifont);
   /* Delete all the vertex buffers. */
   if (gui->botbuf) {
     vertex_buffer_delete(gui->botbuf);
@@ -321,11 +313,13 @@ void init_gui(void) {
   init_guistruct("NanoX", 1400, 800, 0 /* 240 */ /* glfw_get_framerate() */, 17, 15);
   /* Init glew. */
   init_glew();
-  /* Init the font shader. */
-  setup_font_shader();
+  /* Compile the shaders. */
+  shader_compile();
+  // shader_setup();
   gui->context_menu = context_menu_create();
   /* Init the rect shader. */
-  setup_rect_shader();
+  // setup_rect_shader();
+  shader_rect_create();
   /* Init the gui suggestmenu substructure. */
   gui_suggestmenu_create();
   /* Init the top bar. */
@@ -368,7 +362,7 @@ void glfw_loop(void) {
   while (!glfwWindowShouldClose(gui->window)) {
     frame_start();
     statusbar_count_frame();
-    writef("frame: %lu: %.5f ms\n", frame_elapsed(), frame_get_time_ms());
+    writef("frame: %lu: %.4f ms\n", frame_elapsed(), frame_get_time_ms());
     if (refresh_needed || frame_should_poll()) {
       place_the_cursor();
       glClear(GL_COLOR_BUFFER_BIT);
@@ -384,7 +378,7 @@ void glfw_loop(void) {
       /* Draw the bottom bar. */
       draw_botbar();
       /* Draw the status bar, if there is any status messages. */
-      draw_statusbar();
+      // draw_statusbar();
       statusbar_draw();
       context_menu_draw(gui->context_menu);
       /* Draw the suggestmenu. */

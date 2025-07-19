@@ -99,7 +99,7 @@ long prompt_index_from_mouse(bool allow_outside) {
   if (no_linenums) {
     SET(LINE_NUMBERS);
   }
-  ret = index_from_mouse_x(answer, gui_font_get_font(uifont), (gui->promptmenu->element->x + (font_breadth(uifont, " ") / 2) + font_breadth(uifont, prompt)));
+  ret = index_from_mouse_x(answer, font_get_font(uifont), (gui->promptmenu->element->x + (font_breadth(uifont, " ") / 2) + font_breadth(uifont, prompt)));
   if (no_linenums) {
     UNSET(LINE_NUMBERS);
   }
@@ -176,7 +176,7 @@ static inline void gui_promptmenu_add_cursor(void) {
     uifont,
     gui->promptmenu->buffer,
     1,
-    (gui->promptmenu->element->x + pixbreadth(gui_font_get_font(uifont), " ") + pixbreadth(gui_font_get_font(uifont), prompt) + string_pixel_offset(answer, " ", typing_x, gui_font_get_font(uifont))),
+    (gui->promptmenu->element->x + pixbreadth(font_get_font(uifont), " ") + pixbreadth(font_get_font(uifont), prompt) + string_pixel_offset(answer, " ", typing_x, font_get_font(uifont))),
     gui->promptmenu->element->y
   );
 }
@@ -190,9 +190,9 @@ static inline void gui_promptmenu_add_prompt_line_text(void) {
   ASSERT(gui->promptmenu);
   ASSERT(gui->promptmenu->element);
   ASSERT(gui->promptmenu->buffer);
-  vec2 penpos((gui->promptmenu->element->x + pixbreadth(gui_font_get_font(uifont), " ")), (gui_font_row_baseline(uifont, 0) + gui->promptmenu->element->y));
-  vertex_buffer_add_string(gui->promptmenu->buffer, prompt, strlen(prompt), NULL, gui_font_get_font(uifont), vec4(1), &penpos);
-  vertex_buffer_add_string(gui->promptmenu->buffer, answer, strlen(answer), " ", gui_font_get_font(uifont), vec4(1), &penpos);
+  vec2 penpos((gui->promptmenu->element->x + pixbreadth(font_get_font(uifont), " ")), (font_row_baseline(uifont, 0) + gui->promptmenu->element->y));
+  vertex_buffer_add_string(gui->promptmenu->buffer, prompt, strlen(prompt), NULL, font_get_font(uifont), vec4(1), &penpos);
+  vertex_buffer_add_string(gui->promptmenu->buffer, answer, strlen(answer), " ", font_get_font(uifont), vec4(1), &penpos);
 }
 
 /* If there are any completions then draw them to the promptmenu.  TODO: Make a function that decides the text color of the completions based on the current prompt type. */
@@ -211,11 +211,11 @@ static inline void gui_promptmenu_add_completions_text(void) {
       while (row < gui->promptmenu->rows) {
         text = (char *)cvec_get(gui->promptmenu->completions, (gui->promptmenu->viewtop + row));
         textpen = vec2(
-          (gui->promptmenu->element->x + pixbreadth(gui_font_get_font(uifont), " ")),
-          (gui_font_row_baseline(uifont, (row + 1)) + gui->promptmenu->element->y)
+          (gui->promptmenu->element->x + pixbreadth(font_get_font(uifont), " ")),
+          (font_row_baseline(uifont, (row + 1)) + gui->promptmenu->element->y)
           // (row_baseline_pixel((row + 1), uifont) + gui->promptmenu->element->pos.y)
         );
-        vertex_buffer_add_string(gui->promptmenu->buffer, text, strlen(text), NULL, gui_font_get_font(uifont), 1, &textpen);
+        vertex_buffer_add_string(gui->promptmenu->buffer, text, strlen(text), NULL, font_get_font(uifont), 1, &textpen);
         ++row;
       }
       was_viewtop = gui->promptmenu->viewtop;
@@ -333,8 +333,8 @@ static void gui_promptmenu_set_font_search(void) {
 }
 
 static void gui_promptmenu_set_font_enter_action(void) {
-  Uint size       = gui_font_get_size(textfont);
-  Uint atlas_size = gui_font_get_atlas_size(textfont);
+  Uint size       = font_get_size(textfont);
+  Uint atlas_size = font_get_atlas_size(textfont);
   directory_t dir;
   char *path;
   if (!dir_exists(FONT_DIR_PATH) || !*answer) {
@@ -349,7 +349,7 @@ static void gui_promptmenu_set_font_enter_action(void) {
     }
   );
   directory_data_free(&dir);
-  gui_font_load(textfont, path, size, atlas_size);
+  font_load(textfont, path, size, atlas_size);
   free(path);
   CLIST_ITER(starteditor, editor,
     editor_set_rows_cols(editor, editor->text->width, editor->text->height);
@@ -364,12 +364,12 @@ static void gui_promptmenu_set_font_enter_action(void) {
 static void gui_promptmenu_scrollbar_update_routine(void *arg, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *top_offset, float *right_offset) {
   ASSERT(arg);
   GuiPromptMenu *pm = (__TYPE(pm))arg;
-  ASSIGN_IF_VALID(total_length, (pm->element->height - gui_font_height(uifont) /* FONT_HEIGHT(uifont) */));
+  ASSIGN_IF_VALID(total_length, (pm->element->height - font_height(uifont) /* FONT_HEIGHT(uifont) */));
   ASSIGN_IF_VALID(start, 0);
   ASSIGN_IF_VALID(total, (cvec_len(pm->completions) - pm->rows));
   ASSIGN_IF_VALID(visible, pm->rows);
   ASSIGN_IF_VALID(current, pm->viewtop);
-  ASSIGN_IF_VALID(top_offset, gui_font_height(uifont) /* FONT_HEIGHT(uifont) */);
+  ASSIGN_IF_VALID(top_offset, font_height(uifont) /* FONT_HEIGHT(uifont) */);
   ASSIGN_IF_VALID(right_offset, 0);
 }
 
@@ -405,7 +405,7 @@ void gui_promptmenu_create(void) {
   //   0.0f,
   //   vec2(gui->width, gui_font_height(uifont))
   // );
-  gui->promptmenu->element = element_create(0, 0, gui_width, gui_font_height(uifont), TRUE);
+  gui->promptmenu->element = element_create(0, 0, gui_width, font_height(uifont), TRUE);
   // gui->promptmenu->element->color = VEC4_VS_CODE_RED;
   element_set_parent(gui->promptmenu->element, gui->root);
   // color_copy(gui->promptmenu->element->color, &color_vs_code_red);
@@ -455,7 +455,7 @@ void gui_promptmenu_resize(void) {
       gui->promptmenu->rows = len;
     }
     width  = gui->promptmenu->element->width;
-    height = ((gui->promptmenu->rows + 1) * gui_font_height(uifont) /* FONT_HEIGHT(uifont) */);
+    height = ((gui->promptmenu->rows + 1) * font_height(uifont) /* FONT_HEIGHT(uifont) */);
     // gui_element_resize(gui->promptmenu->element, size);
     element_resize(gui->promptmenu->element, width, height);
     gui->promptmenu->size_refresh_needed = FALSE;
@@ -474,7 +474,7 @@ void gui_promptmenu_draw_text(void) {
     gui_promptmenu_add_completions_text();
     gui->promptmenu->text_refresh_needed = FALSE;
   }
-  upload_texture_atlas(gui_font_get_atlas(uifont));
+  upload_texture_atlas(font_get_atlas(uifont));
   render_vertex_buffer(font_shader, gui->promptmenu->buffer);
 }
 
@@ -490,7 +490,7 @@ void gui_promptmenu_draw_selected(void) {
     if (selected_row >= 0 && selected_row < gui->promptmenu->rows) {
       pos.x = gui->promptmenu->element->x;
       size.w = gui->promptmenu->element->width;
-      gui_font_row_top_bot(uifont, (selected_row + 1), &pos.y, &size.h);
+      font_row_top_bot(uifont, (selected_row + 1), &pos.y, &size.h);
       size.h -= pos.y;
       pos.y  += gui->promptmenu->element->y;
       // draw_rect(pos, size, vec4(vec3(1.0f), 0.4f));
@@ -641,11 +641,11 @@ void gui_promptmenu_hover_action(float y_pos) {
   float bot;
   if (cvec_len(gui->promptmenu->completions)) {
     /* Top of the completions menu. */
-    top = (gui->promptmenu->element->y + gui_font_height(uifont));
+    top = (gui->promptmenu->element->y + font_height(uifont));
     /* Bottom of the completions menu. */
     bot = (gui->promptmenu->element->y + gui->promptmenu->element->height);
     /* If `y_pos` relates to a valid row in the promptmenu completion menu, then adjust the selected to that row. */
-    if (gui_font_row_from_pos(uifont, top, bot, y_pos, &row)) {
+    if (font_row_from_pos(uifont, top, bot, y_pos, &row)) {
       gui->promptmenu->selected = lclamp((gui->promptmenu->viewtop + row), gui->promptmenu->viewtop, (gui->promptmenu->viewtop + gui->promptmenu->rows));
     }
   }
@@ -677,7 +677,7 @@ void gui_promptmenu_click_action(float y_pos) {
   float bot;
   /* Only perform any action when there are completions available. */
   if (cvec_len(gui->promptmenu->completions)) {
-    top = (gui->promptmenu->element->y + gui_font_height(uifont));
+    top = (gui->promptmenu->element->y + font_height(uifont));
     bot = (gui->promptmenu->element->y + gui->promptmenu->element->height);
     if (y_pos >= top && y_pos <= bot) {
       gui_promptmenu_hover_action(y_pos);

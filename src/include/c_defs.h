@@ -9,6 +9,7 @@
 
 #include "c/ascii_defs.h"
 #include <fcio/proto.h>
+#include <fcio/statics.h>
 
 /* NanoX */
 #include "../../config.h"
@@ -474,6 +475,18 @@
 #define dp_menu /* Shorthand to access the `Menu *` inside an `Element` structure. */ data_ptr.menu
 #define dp_file /* Shorthand to access the `openfilestruct *` inside an `Element` structure. */ data_ptr.file
 #define dp_editor /* Shorthand to access the `openfilestruct *` inside an `Element` structure. */ data_ptr.editor
+
+#define ELEMENT_CORNER_TLX(element)  ((element)->x)
+#define ELEMENT_CORNER_TLY(element)  ((element)->y)
+
+#define ELEMENT_CORNER_TRX(element)  ((element)->x + (element)->width)
+#define ELEMENT_CORNER_TRY(element)  ((element)->y)
+
+#define ELEMENT_CORNER_BLX(element)  ((element)->x)
+#define ELEMENT_CORNER_BLY(element)  ((element)->y + (element)->height)
+
+#define ELEMENT_CORNER_BRX(element)  ((element)->x + (element)->width)
+#define ELEMENT_CORNER_BRY(element)  ((element)->y + (element)->height)
 
 /* ----------------------------- color.c ----------------------------- */
 
@@ -1266,6 +1279,7 @@ typedef enum {
   ELEMENT_NOT_IN_MAP   = (1 << 10),
   ELEMENT_ABOVE        = (1 << 11),
   ELEMENT_RECT_REFRESH = (1 << 12),
+  ELEMENT_ROUNDED_RECT = (1 << 13),
   /* General flags. */
 # define ELEMENT_HIDDEN        ELEMENT_HIDDEN
 # define ELEMENT_LABLE         ELEMENT_LABLE
@@ -1280,6 +1294,7 @@ typedef enum {
 # define ELEMENT_NOT_IN_MAP    ELEMENT_NOT_IN_MAP
 # define ELEMENT_ABOVE         ELEMENT_ABOVE
 # define ELEMENT_RECT_REFRESH  ELEMENT_RECT_REFRESH
+# define ELEMENT_ROUNDED_RECT  ELEMENT_ROUNDED_RECT
   /* Group states. */
 # define ELEMENT_REL_POS         (ELEMENT_REL_X | ELEMENT_REL_Y)
 # define ELEMENT_REVREL_POS      (ELEMENT_REVREL_X | ELEMENT_REVREL_Y)
@@ -1709,7 +1724,16 @@ struct Element {
 
   int cursor;
 
+  /* Flags for this element, and how it should behave and/or look. */
   int xflags;
+
+  /* Options for this element, for instance this has 4 bytes of space, where we can hold 4
+   * -100 to 100 values reprecenting 4 precentage values or any values in the range 0-255 -127-127.
+   * .
+   * Layout `ELEMENT_ROUNDED_RECT`:
+   *   Byte `0`: The apex fraction of the rounded corner stored as a Uchar made using a float with the value 0-1.
+   */
+  Uint xrectopts;
 
   vertex_buffer_t *rect_buffer;
 

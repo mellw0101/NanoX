@@ -7,6 +7,12 @@
 #include "../../include/c_proto.h"
 
 
+/* ---------------------------------------------------------- Enum's ---------------------------------------------------------- */
+
+
+/* A private enum to represent diffrent configurable options available for all elements. */
+
+
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
@@ -14,6 +20,7 @@ static Element *element_create_internal(void) {
   Element *e = xmalloc(sizeof(*e));
   /* State flags. */
   e->xflags = ELEMENT_XFLAGS_DEFAULT;
+  e->xrectopts = 0U;
   /* Boolian flags. */
   e->dt = ELEMENT_DATA_NONE;
   /* Position. */
@@ -96,27 +103,109 @@ static void element_children_relative_pos(Element *const e) {
   );
 }
 
+// _UNUSED
+// static void element_bazier_edge(Element *const e, RectVertex **const vert, Uint **const indi);
+
+_UNUSED
+static Uint *bazier_indices_create(Ulong n, Ulong *const len) {
+  ASSERT(len);
+  *len = ((n - 1) * 3);
+  Uint *ret = xmalloc(sizeof(Uint) * (*len));
+  for (Ulong i=0, no=1; i<(*len); i+=3, ++no) {
+    ret[i]   = 0;
+    ret[i+1] = no;
+    ret[i+2] = (no + 1);
+  }
+  return ret;
+}
+
+_UNUSED
+static void bazier_corner_arc(float corner_x, float corner_y, float center_x, float center_y, float t, float *const arcx, float *const arcy, Ulong n) {
+  ASSERT(arcx);
+  ASSERT(arcy);
+  float ax;
+  float ay;
+  flerp(t, corner_x, corner_y, center_x, center_y, &ax, &ay);
+  bazier_arc(corner_x, center_y, center_x, corner_y, ax, ay, arcx, arcy, n);
+}
+
+_UNUSED
+static RectVertex *bazier_vertex_create(Ulong n) {
+  return xmalloc(sizeof(RectVertex) * (n + 1));
+}
+
+_UNUSED
+static void bazier_vertex_insert(RectVertex *vert, Ulong n, float cx, float cy, float *const arcx, float *const arcy, Uint color) {
+  UNPACK_FUINT_VARS(color, r,g,b,a);
+  vert[0] = (RectVertex){ cx,cy, r,g,b,a };
+  for (Ulong i=0; i<n; ++i) {
+    vert[i+1] = (RectVertex){ arcx[i],arcy[i], r,g,b,a };
+  }
+}
+
+_UNUSED
+static void element_add_rounded_center_rect(Element *const e, float offset) {
+  ASSERT(e);
+  RectVertex vert[4];
+  /* Create the center rect. */
+  if (e->width > e->height) {
+    shader_rect_vertex_load(vert, (e->x + offset), e->y, (e->width - (offset * 2)), e->height, e->color);
+  }
+  else {
+    shader_rect_vertex_load(vert, e->x, (e->y + offset), e->width, (e->height - (offset * 2)), e->color);
+  }
+  vertex_buffer_push_back(e->rect_buffer, ARRAY__LEN(vert), ARRAY__LEN(RECT_INDICES));
+}
+ 
+/* ----------------------------- Element rounded rect ----------------------------- */
+
+static void element_rounded_rect(Element *const e) {
+  ASSERT(e);
+  Ulong point_num = 19;
+  float fraction = UCHAR_TO_FLOAT(UNPACK_INT_DATA(e->xrectopts, 0, Uchar));
+  RectVertex *vert = bazier_vertex_create(point_num);
+  Ulong indi_len;
+  Uint *indi = bazier_indices_create(point_num, &indi_len);
+  float arcx[point_num];
+  float arcy[point_num];
+  float offset = (FMINF(e->width, e->height) / 2);
+  element_add_rounded_center_rect(e, offset);
+  /* First do the top left arc. */
+  bazier_corner_arc(e->x, e->y, (e->x + offset), (e->y + offset), fraction, arcx, arcy, point_num);
+  bazier_vertex_insert(vert, point_num, (e->x + offset), (e->y + offset), arcx, arcy, e->color);
+  vertex_buffer_push_back(e->rect_buffer, vert, (point_num + 1), indi, indi_len);
+  /* Then do the top right arc. */
+  bazier_corner_arc((e->x + e->width), e->y, ((e->x + e->width) - offset), (e->y + offset), fraction, arcx, arcy, point_num);
+  bazier_vertex_insert(vert, point_num, ((e->x + e->width) - offset), (e->y + offset), arcx, arcy, e->color);
+  vertex_buffer_push_back(e->rect_buffer, vert, (point_num + 1), indi, indi_len);
+  /* Then do the bottom left arc. */
+  bazier_corner_arc(e->x, (e->y + e->height), (e->x + offset), ((e->y + e->height) - offset), fraction, arcx, arcy, point_num);
+  bazier_vertex_insert(vert, point_num, (e->x + offset), ((e->y + e->height) - offset), arcx, arcy, e->color);
+  vertex_buffer_push_back(e->rect_buffer, vert, (point_num + 1), indi, indi_len);
+  /* Then do the bottom right arc. */
+  bazier_corner_arc((e->x + e->width), (e->y + e->height), ((e->x + e->width) - offset), ((e->y + e->height) - offset), fraction, arcx, arcy, point_num);
+  bazier_vertex_insert(vert, point_num, ((e->x + e->width) - offset), ((e->y + e->height) - offset), arcx, arcy, e->color);
+  vertex_buffer_push_back(e->rect_buffer, vert, (point_num + 1), indi, indi_len);
+  free(indi);
+  free(vert);
+}
+
+/* ----------------------------- Element draw rect ----------------------------- */
+
 static inline void element_draw_rect(Element *const e) {
-  // static int c_loc = 0;
-  // static int p_loc = 0;
-  // static int s_loc = 0;
-  // glUseProgram(element_rect_shader);
-  // !c_loc ? (c_loc = glGetUniformLocation(element_rect_shader, "rectcolor")) : ((int)0);
-  // !p_loc ? (p_loc = glGetUniformLocation(element_rect_shader, "elempos"))   : ((int)0);
-  // !s_loc ? (s_loc = glGetUniformLocation(element_rect_shader, "elemsize"))  : ((int)0);
-  // glUniform4fv(c_loc, 1, (void *)e->color);
-  // glUniform2fv(p_loc, 1, (void *)STRUCT_FIELD_PTR(e, x));
-  // glUniform2fv(s_loc, 1, (void *)STRUCT_FIELD_PTR(e, width));
-  // glDrawArrays(GL_TRIANGLES, 0, 6);
-  // draw_rect_rgba(e->x, e->y, e->width, e->height, UNPACK_UINT_FLOAT(e->color, 0), UNPACK_UINT_FLOAT(e->color, 1), UNPACK_UINT_FLOAT(e->color, 2), UNPACK_UINT_FLOAT(e->color, 3));
   ASSERT(e);
   RectVertex vert[4];
   /* Only update the rect vertex buffer when needed. */
   if (e->xflags & ELEMENT_RECT_REFRESH) {
-    e->xflags &= ~ELEMENT_RECT_REFRESH;
-    shader_rect_vertex_load(vert, e->x, e->y, e->width, e->height, e->color);
     vertex_buffer_clear(e->rect_buffer);
-    vertex_buffer_push_back(e->rect_buffer, vert, 4, RECT_INDICES, RECT_INDICES_LEN);
+    if (e->xflags & ELEMENT_ROUNDED_RECT) {
+      element_rounded_rect(e);
+    }
+    else {
+      shader_rect_vertex_load(vert, e->x, e->y, e->width, e->height, e->color);
+      vertex_buffer_push_back(e->rect_buffer, vert, 4, RECT_INDICES, RECT_INDICES_LEN);
+    }
+    e->xflags &= ~ELEMENT_RECT_REFRESH;
   }
   glUseProgram(rect_shader); {
     vertex_buffer_render(e->rect_buffer, GL_TRIANGLES);
@@ -393,4 +482,13 @@ void element_set_editor_data(Element *const e, Editor *const data) {
   ASSERT(data);
   e->dt = ELEMENT_DATA_EDITOR;
   e->dp_editor = data;
+}
+
+/* ----------------------------- Element set rounded apex  ----------------------------- */
+
+/* Set the apex fraction in terms of the precentage (0-1) in total
+ * magnitude from the true corner and the center of the arch. */
+void element_set_rounded_apex_fraction(Element *const e, float t) {
+  ASSERT(e);
+  PACK_INT_DATA(e->xrectopts, FLOAT_TO_UCHAR(t), 0);
 }
