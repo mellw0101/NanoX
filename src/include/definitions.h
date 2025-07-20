@@ -1197,7 +1197,7 @@ typedef void (*MenuHoverFunc)(void *, const char *const restrict, int index);
   // } GuiSuggestMenu;
 
   typedef struct {
-    char            *title;                  /* The window title. */
+    // char            *title;                  /* The window title. */
     // Uint             width;                  /* The window width. */
     // Uint             height;                 /* The window height. */
     // GLFWwindow      *window;                 /* The glfw window. */

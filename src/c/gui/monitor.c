@@ -57,6 +57,37 @@ int monitor_closest_refresh_rate(int rate) {
   return ret;
 }
 
+/* ----------------------------- Monitor fastest refresh rate ----------------------------- */
+
+/* Returns the fastest possible refresh rate of any monitor. */
+int monitor_fastest_refresh_rate(void) {
+  int ret;
+  int count;
+  int highest = 0;
+  int *rates = monitor_refresh_rate_array(&count);
+  for (int i=0; i<count; ++i) {
+    if (rates[i] > highest) {
+      highest = rates[i];
+      ret     = rates[i];
+    }
+  }
+  return ret;
+}
+
+/* ----------------------------- Monitor fastest refresh rate from array ----------------------------- */
+
+/* Returns the fastest possible refresh rate of any monitor. */
+int monitor_fastest_refresh_rate_from_array(int *const rates, int count) {
+  int ret;
+  int highest = 0;
+  for (int i=0; i<count; ++i) {
+    if (rates[i] > highest) {
+      ret = highest;
+    }
+  }
+  return ret;
+}
+
 /* ----------------------------- Monitor current ----------------------------- */
 
 /* Always returns a valid ptr to the current monitor based on the current position of the window. */

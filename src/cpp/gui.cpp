@@ -2,164 +2,24 @@
 
 #ifdef HAVE_GLFW
 
-/* Rect shader data. */
-static glSsbo<vec2, 0> vertices_ssbo;
-static glSsbo<Uint, 1> indices_ssbo;
-/* Hash based grid map for elements. */
-// uigridmapclass gridmap(GRIDMAP_GRIDSIZE);
-/* Frame timer to keep a frame rate. */
-// frametimerclass frametimer;
-/* The file menu button element. */
-// guielement *file_menu_element = NULL;
-// guielement *open_file_element = NULL;
 
-/* The list of all `gui-editors`. */
-// guieditor *openeditor = NULL;
-/* The first open `gui-editor`. */
-// guieditor *starteditor = NULL;
+/* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
+
 
 /* The main structure that holds all the data the gui needs. */
 guistruct *gui = NULL;
 
-// Element *test_element = NULL;
 
-// #define FALLBACK_FONT_PATH "/usr/share/root/fonts/monotype.ttf"
-#define FALLBACK_FONT_PATH  "/usr/share/fonts/TTF/Hack-Regular.ttf"
-#define FALLBACK_FONT  "fallback"
-// #define JETBRAINS_REGULAR_FONT_PATH "/home/mellw/.vscode-insiders/extensions/narasimapandiyan.jetbrainsmono-1.0.2/JetBrainsMono/JetBrainsMono-Regular.ttf"
-#define JETBRAINS_REGULAR_FONT_PATH  "/usr/share/fonts/TTF/Hack-Regular.ttf"
-#define JETBRAINS_REGULAR_FONT  "jetbrains regular"
+/* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
-/* Define the vertices of a square (centered at the origin). */
-// constexpr const vec2 vertices[] = {
-//   /* Pos. */
-//   vec2(0.0f, 0.0f), /* Bottom-left */
-//   vec2(1.0f, 0.0f), /* Bottom-right */
-//   vec2(1.0f, 1.0f), /* Top-right */
-//   vec2(0.0f, 1.0f), /* Top-left */
-// };
-// constexpr const Uint indices[] = {
-//   0, 1, 2, /* First triangle. */
-//   2, 3, 0  /* Second triangle. */
-// };
-
-/* Print a error to stderr.  Used when using the gui. */
-void log_error_gui(const char *format, ...) {
-  va_list ap;
-  int len;
-  va_start(ap, format);
-  len = vfprintf(stderr, format, ap);
-  if (len < 0) {
-    die("%s: vfprintf failed.\n", __func__);
-  }
-  va_end(ap);
-}
-
-/* Init font shader and buffers. */
-// static void setup_font_shader(void) {
-  /* Create shader. */
-  // shader_font_create();
-  // gui->font_shader = openGL_create_shader_program_raw({
-  //   /* Font vertex shader. */
-  //   { STRLITERAL(\
-  //       uniform mat4 projection;
-  //       attribute vec3 vertex;
-  //       attribute vec2 tex_coord;
-  //       attribute vec4 color;
-  //       void main() {
-  //         gl_TexCoord[0].xy = tex_coord.xy;
-  //         gl_FrontColor     = color;
-  //         gl_Position       = projection * (vec4(vertex,1.0));
-  //       }
-  //     ),
-  //     GL_VERTEX_SHADER },
-  //   /* Font fragment shader. */
-  //   { STRLITERAL(\
-  //       uniform sampler2D texture;
-  //       void main() {
-  //         float a = texture2D(texture, gl_TexCoord[0].xy).r;
-  //         gl_FragColor = vec4(gl_Color.rgb, (gl_Color.a * a));
-  //       }
-  //     ),
-  //     GL_FRAGMENT_SHADER }
-  // });
-  /* If there is a problem with the shader creation just die as we are passing string literals so there should not be alot that can go wrong. */
-//   if (!font_shader) {
-//     glfwDestroyWindow(gui->window);
-//     glfwTerminate();
-//     die("Failed to create font shader.\n");
-//   }
-//   /* Load the font and uifont. */
-//   font_load(textfont, FALLBACK_FONT_PATH, 17, 4096);
-//   font_load(uifont, FALLBACK_FONT_PATH, 15, 2048);
-// }
-
-/* Init the rect shader and setup the ssbo`s for indices and vertices. */
-// static void setup_rect_shader(void) {
-  // gui->rect_shader = openGL_create_shader_program_raw({
-  //   { STRLITERAL(\
-  //       #version 450 core \n
-  //       layout(std430, binding = 0) buffer VertexBuffer {
-  //         vec2 vertices[];
-  //       };
-  //       layout(std430, binding = 1) buffer IndexBuffer {
-  //         uint indices[];
-  //       };
-  //       /* Uniforms. */
-  //       uniform mat4 projection;
-  //       uniform vec2 elemsize;
-  //       uniform vec2 elempos;
-  //       /* Main vertex shader exec. */
-  //       void main() {
-  //         vec2 scaledPos = (vertices[indices[gl_VertexID]] * elemsize);
-  //         vec4 worldPos  = (projection * vec4(scaledPos + elempos, 0.0f, 1.0f));
-  //         gl_Position    = worldPos;
-  //       }
-  //     ),
-  //     GL_VERTEX_SHADER },
-  //   { STRLITERAL(\
-  //       #version 450 core\n
-  //       /* Output. */
-  //       out vec4 FragColor;
-  //       /* Uniforms. */
-  //       uniform vec4 rectcolor;
-  //       /* Main shader exec. */
-  //       void main() {
-  //         FragColor = rectcolor;
-  //       }
-  //     ),
-  //     GL_FRAGMENT_SHADER }
-  // });
-  /* Init and setup the static indices and vertices ssbo. */
-  // indices_ssbo.init(indices);
-  // vertices_ssbo.init(vertices);
-  // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertices_ssbo.ssbo());
-  // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, indices_ssbo.ssbo());
-  // element_rect_shader = gui->rect_shader;
-//   shader_rect_create();
-// }
 
 /* Setup the bottom bar for the gui. */
 static void setup_botbar(void) {
   gui->botbuf = make_new_font_buffer();
-  // gui->botbar = gui_element_create(gui->root, FALSE);
-  // gui_element_move_resize(
-  //   gui->botbar,
-  //   vec2(0, (gui->height - FONT_HEIGHT(gui_font_get_font(textfont)))),
-  //   vec2(gui->width, FONT_HEIGHT(gui_font_get_font(textfont)))
-  // );
-  // gui->botbar->color = GUI_BLACK_COLOR;
-  // gui->botbar->flag.set<GUIELEMENT_REVERSE_RELATIVE_Y_POS>();
-  // gui->botbar->relative_pos = vec2(0, gui->botbar->size.h);
-  // gui->botbar->flag.set<GUIELEMENT_RELATIVE_WIDTH>();
-  // gui->botbar->relative_size = 0;
   gui->botbar = element_create(0, (gl_window_height() - font_height(uifont)), gl_window_width(), font_height(uifont), TRUE);
-  // element_set_parent(gui->botbar, gui->root);
   gl_window_add_root_child(gui->botbar);
   gui->botbar->color = PACKED_UINT(0, 0, 0, 255);
   gui->botbar->xflags |= (ELEMENT_REVREL_Y | ELEMENT_REL_WIDTH);
-  // gui->botbar->has_reverse_relative_y_pos = TRUE;
-  // gui->botbar->has_relative_width         = TRUE;
   gui->botbar->rel_y = gui->botbar->height;
 }
 
@@ -168,18 +28,12 @@ static void setup_statusbar(void) {
   gui->statusbuf = make_new_font_buffer();
   gui->statusbar = element_create(0, gl_window_height(), gl_window_width(), font_height(uifont), FALSE);
   gui->statusbar->color = PACKED_UINT_VS_CODE_RED;
-  // element_set_parent(gui->statusbar, gui->root);
   gl_window_add_root_child(gui->statusbar);
   gui->statusbar->xflags |= ELEMENT_HIDDEN;
 }
 
 /* Allocate and init the edit element. */
 static void setup_edit_element(void) {
-  /* Confirm the margin first to determen how wide the gutter has to be. */
-  // confirm_margin();
-  // writef("%s: hello\n", __func__);
-  /* Create the editor circular list. */
-  // make_new_editor(FALSE);
   editor_create(FALSE);
 }
 
@@ -187,81 +41,38 @@ static void setup_edit_element(void) {
 static void make_guistruct(void) {
   /* Allocate the gui object. */
   MALLOC_STRUCT(gui);
-  /* Then init all fields to something invalid, this is important if we need to abort. */
-  gui->title                 = NULL;
-  // gui->width                 = 0;
-  // gui->height                = 0;
-  // gui->window                = NULL;
-  gui->flag                  = bit_flag_t<8>();
-  gui->handler               = NULL;
-  gui->botbar                = NULL;
-  gui->statusbar             = NULL;
-  gui->entered               = NULL;
-  gui->clicked               = NULL;
-  gui->botbuf                = NULL;
-  gui->statusbuf             = NULL;
-  // gui->projection            = NULL;
-  // gui->font_shader           = 0;
-  // rect_shader           = 0;
-  gui->promptmenu            = NULL;
-  gui->current_cursor_type   = GLFW_ARROW_CURSOR;
-  gui->suggestmenu           = NULL;
-  gui->context_menu          = NULL;
+  gui->flag                 = bit_flag_t<8>();
+  gui->handler              = NULL;
+  gui->botbar               = NULL;
+  gui->statusbar            = NULL;
+  gui->entered              = NULL;
+  gui->clicked              = NULL;
+  gui->botbuf               = NULL;
+  gui->statusbuf            = NULL;
+  gui->promptmenu           = NULL;
+  gui->current_cursor_type  = GLFW_ARROW_CURSOR;
+  gui->suggestmenu          = NULL;
+  gui->context_menu         = NULL;
 }
 
 /* Init the gui struct, it reprecents everything that the gui needs. */
-static void init_guistruct(const char *win_title, Uint win_width, Uint win_height, int fps, Uint font_size, Uint uifont_size) {
+static void init_guistruct(void) {
   /* Create the fully blank guistruct. */
   make_guistruct();
-  /* Set the basic data needed to init the window. */
-  gui->title  = copy_of(win_title);
-  // gui->width  = win_width;
-  // gui->height = win_height;
-  // gl_window_width()   = win_width;
-  // gl_window_height()  = win_height;
-  // gui->projection = matrix4x4_new();
   /* Then create the glfw window. */
   gl_window_init();
-  // gui->window = glfwCreateWindow(gui->width, gui->height, gui->title, NULL, NULL);
-  // if (!gui->window) {
-  //   glfwTerminate();
-  //   die("Failed to create glfw window.\n");
-  // }
-  // gui_window = gui->window;
-  // glfwMakeContextCurrent(gui->window);
-  // glfwDefaultWindowHints();
-  // frametimer.fps = ((fps == -1) ? 240 : fps);
-  // frame_set_rate( /* ((fps == -1) ? 240 : fps) */);
   /* Create and start the event handler. */
   gui->handler = nevhandler_create();
   nevhandler_start(gui->handler, TRUE);
-  // textfont = gui_font_create();
-  // uifont   = gui_font_create();
-  // gui->root = gui_element_create(0, vec2(gui->height, gui->width), 0, FALSE);
-  // gui->root = element_create(0, 0, gl_window_width(), gl_window_height(), FALSE);
 }
 
 /* Delete the gui struct. */
 static void delete_guistruct(void) {
-  free(gui->title);
   /* Destroy glfw window, then terminate glfw. */
-  // glfwDestroyWindow(gui->window);
   gl_window_free();
   glfwTerminate();
-  /* Destroy the shaders. */
-  if (font_shader) {
-    glDeleteProgram(font_shader);
-  }
-  if (rect_shader) {
-    glDeleteProgram(rect_shader);
-  }
-  /* Delete all elements used by 'gui'. */
-  // gui_element_free(gui->root);
-  // gui_element_free(gui->statusbar);
-  // element_free(gui->root);
-  /* Free the main font and the uifont. */
-  font_free(textfont);
-  font_free(uifont);
+  /* Destroy the shaders, and the allocated text and ui font. */
+  shader_free();
   /* Delete all the vertex buffers. */
   if (gui->botbuf) {
     vertex_buffer_delete(gui->botbuf);
@@ -298,14 +109,17 @@ static void init_glew(void) {
   /* Enable glew experimental features. */
   glewExperimental = TRUE;
   /* If we could not init glew, terminate directly. */
-  if ((err = glewInit()) != GLEW_OK) {
-    // glfwDestroyWindow(gui->window);
+  if ((err = glewInit()) != 0) {
     gl_window_free();
     glfwTerminate();
     die("GLEW: ERROR: %s\n", glewGetErrorString(err));
   }
   writef("Using GLEW %s\n", glewGetString(GLEW_VERSION));
 }
+
+
+/* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
+
 
 /* Init glfw. */
 void init_gui(void) {
@@ -315,16 +129,12 @@ void init_gui(void) {
   }
   element_grid_create(GRIDMAP_GRIDSIZE);
   /* Init the main gui structure. */
-  init_guistruct("NanoX", 1400, 800, 0 /* 240 */ /* glfw_get_framerate() */, 17, 15);
+  init_guistruct();
   /* Init glew. */
   init_glew();
   /* Compile the shaders. */
   shader_compile();
-  // shader_setup();
   gui->context_menu = context_menu_create();
-  /* Init the rect shader. */
-  // setup_rect_shader();
-  // shader_rect_create();
   /* Init the gui suggestmenu substructure. */
   gui_suggestmenu_create();
   /* Init the top bar. */
@@ -338,19 +148,18 @@ void init_gui(void) {
   /* Init the edit element. */
   setup_edit_element();
   /* Set some callbacks. */
-  glfwSetWindowSizeCallback(gl_window(), window_resize_callback);
-  glfwSetWindowMaximizeCallback(gl_window(), window_maximize_callback);
-  glfwSetFramebufferSizeCallback(gl_window(), framebuffer_resize_callback);
+  // glfwSetWindowSizeCallback(gl_window(), window_resize_callback);
+  // glfwSetWindowMaximizeCallback(gl_window(), window_maximize_callback);
+  // glfwSetFramebufferSizeCallback(gl_window(), framebuffer_resize_callback);
   glfwSetKeyCallback(gl_window(), key_callback);
   glfwSetCharCallback(gl_window(), char_callback);
   glfwSetMouseButtonCallback(gl_window(), mouse_button_callback);
   glfwSetCursorPosCallback(gl_window(), mouse_pos_callback);
   glfwSetCursorEnterCallback(gl_window(), window_enter_callback);
   glfwSetScrollCallback(gl_window(), scroll_callback);
-  // frame_set_rate(monitor_refresh_rate());
-  // writef("Current fps: %.0f\n", frame_get_rate());
+  /* Ensure we poll for the correct frame rate at the start. */
   frame_set_poll();
-  // glClearColor(1.00, 1.00, 1.00, 1.00);
+  // frame_should_report(TRUE);
   glDisable(GL_DEPTH_TEST);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_TEXTURE_2D);
@@ -364,11 +173,9 @@ void init_gui(void) {
 
 /* Main gui loop. */
 void glfw_loop(void) {
-  // frame_poll_rate();
   while (!glfwWindowShouldClose(gl_window())) {
     frame_start();
     statusbar_count_frame();
-    log_I_0("frame: %lu: %.4f ms", frame_elapsed(), frame_get_time_ms());
     if (frame_should_poll() || gl_window_resize_needed() || refresh_needed) {
       place_the_cursor();
       glClear(GL_COLOR_BUFFER_BIT);
@@ -384,7 +191,6 @@ void glfw_loop(void) {
       /* Draw the bottom bar. */
       draw_botbar();
       /* Draw the status bar, if there is any status messages. */
-      // draw_statusbar();
       statusbar_draw();
       context_menu_draw(gui->context_menu);
       /* Draw the suggestmenu. */

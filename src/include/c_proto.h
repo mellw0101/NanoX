@@ -788,6 +788,8 @@ bool frame_should_poll(void);
 void frame_set_poll(void);
 /* ----------------------------- Frame elapsed ----------------------------- */
 Ulong frame_elapsed(void);
+/* ----------------------------- Frame should report ----------------------------- */
+void frame_should_report(bool print_times);
 
 
 /* ---------------------------------------------------------- gui/monitor.c ---------------------------------------------------------- */
@@ -801,6 +803,10 @@ const GLFWvidmode *monitor_get_mode(GLFWmonitor *const monitor);
 int *monitor_refresh_rate_array(int *const count);
 /* ----------------------------- Monitor closest refresh rate ----------------------------- */
 int monitor_closest_refresh_rate(int rate);
+/* ----------------------------- Monitor fastest refresh rate ----------------------------- */
+int monitor_fastest_refresh_rate(void);
+/* ----------------------------- Monitor fastest refresh rate from array ----------------------------- */
+int monitor_fastest_refresh_rate_from_array(int *const rates, int count);
 /* ----------------------------- Monitor current ----------------------------- */
 GLFWmonitor *monitor_current(void);
 /* ----------------------------- Monitor mode ----------------------------- */
@@ -1529,38 +1535,44 @@ void clear_mouse_flags(void);
 /* ---------------------------------------------------------- gui/shader.c ---------------------------------------------------------- */
 
 
-/* ----------------------------- Shader font create ----------------------------- */
-// void shader_font_create(void);
-/* ----------------------------- Shader rect create ----------------------------- */
-// void shader_rect_create(void);
 /* ----------------------------- Shader compile ----------------------------- */
 void shader_compile(void);
+/* ----------------------------- Shader free ----------------------------- */
+void shader_free(void);
 /* ----------------------------- Shader rect vertex load ----------------------------- */
 void shader_rect_vertex_load(RectVertex *buf, float x, float y, float w, float h, Uint color);
 /* ----------------------------- Shader rect vertex load array ----------------------------- */
 void shader_rect_vertex_load_array(RectVertex *buf, float *const array, Uint color);
+/* ----------------------------- Shader set projection ----------------------------- */
 void shader_set_projection(float left, float right, float top, float bot, float znear, float zfar);
+/* ----------------------------- Shader upload projection ----------------------------- */
 void shader_upload_projection(void);
-
+/* ----------------------------- Shader get location font tex ----------------------------- */
 int shader_get_location_font_tex(void);
-
+/* ----------------------------- Shader get location font projection ----------------------------- */
 int shader_get_location_font_projection(void);
-
+/* ----------------------------- Shader get location rect projection ----------------------------- */
 int shader_get_location_rect_projection(void);
 
 
 /* ----------------------------------------------------------  ---------------------------------------------------------- */
 
 
+/* ----------------------------- Gl window resize needed ----------------------------- */
 bool gl_window_resize_needed(void);
-void gl_window_should_fetch_size(void);
-void gl_window_update_size(int new_width, int new_height);
+/* ----------------------------- Gl window init ----------------------------- */
 void gl_window_init(void);
+/* ----------------------------- Gl window free ----------------------------- */
 void gl_window_free(void);
+/* ----------------------------- Gl window ----------------------------- */
 GLFWwindow *gl_window(void);
+/* ----------------------------- Gl window root ----------------------------- */
 Element *gl_window_root(void);
+/* ----------------------------- Gl window width ----------------------------- */
 int gl_window_width(void);
+/* ----------------------------- Gl window height ----------------------------- */
 int gl_window_height(void);
+/* ----------------------------- Gl window add root child ----------------------------- */
 void gl_window_add_root_child(Element *const e);
 
 

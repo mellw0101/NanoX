@@ -417,9 +417,13 @@ static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
         Ulong index = 0;
         /* For some wierd reason this causes a crash on startup sometimes witch is wierd as this runs alot and never crashes otherwise. */
         line_word_t *head = get_line_words(converted, converted_len);
+        // log_INFO_0("after: get_line_words()");
         while (head) {
           line_word_t *node = head;
           head = node->next;
+          ASSERT(node);
+          ASSERT(node->str);
+          // log_INFO_0("%s", node->str);
           if (sf) {
             obj = (SyntaxObject *)hashmap_get(sf->objects, node->str);
             if (obj) {
@@ -479,7 +483,9 @@ static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
           }
           free_node(node);
         }
-        vertex_buffer_add_string(editor->buffer, (converted + index), (converted_len - index), prev_char, font_get_font(textfont), vec4(1.0f), drawpos);
+        /* Without this fucking log message we crash when resizing to fast. */
+        log_INFO_0("before: font_vertbuf_add_mbstr()");
+        font_vertbuf_add_mbstr(textfont, editor->buffer, (converted + index), (converted_len - index), NULL, PACKED_UINT_FLOAT(1, 1, 1, 1), &drawpos->x, &drawpos->y);
       }
       /* AT&T asm syntax. */
       else if (editor->openfile->is_atnt_asm_file /* editor->openfile->type.is_set<ATNT_ASM>() */) {

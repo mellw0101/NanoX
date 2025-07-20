@@ -92,7 +92,7 @@
   "  gl_FragColor = gl_Color;"      "\n"  \
   "}"                               "\n"
 
-/* Font shader openGL 3.0. */
+/* Rect shader openGL 3.0. */
 #define SHADER_RECT_VERT_DATA_130                                   \
   "#version 130"                                              "\n"  \
   "uniform mat4 projection;"                                  "\n"  \
@@ -111,7 +111,7 @@
   "  frag_color = f_color;"         "\n"  \
   "}"                               "\n"
 
-/* Font shader openGL 3.3. */
+/* Rect shader openGL 3.3. */
 #define SHADER_RECT_VERT_DATA_330                                   \
   "#version 330 core"                                         "\n"  \
   "uniform mat4 projection;"                                  "\n"  \
@@ -233,65 +233,63 @@ static Uint shader_create(Ulong len, Uint *const parts) {
 
 /* Inform glfw about the openGL version we are using. */
 static inline void shader_set_openGL_version(int glsl_major, int glsl_minor, bool core) {
-  if (openGL_major == -1 || openGL_minor == -1) {
-    switch (glsl_major) {
-      case 1: {
-        switch (glsl_minor) {
-          case 10: {
-            openGL_major = 2;
-            openGL_minor = 0;
-            break;
-          }
-          case 20: {
-            openGL_major = 2;
-            openGL_minor = 1;
-            break;
-          }
-          case 30: {
-            openGL_major = 3;
-            openGL_minor = 0;
-            break;
-          }
-          case 40: {
-            openGL_major = 3;
-            openGL_minor = 1;
-            break;
-          }
-          case 50: {
-            openGL_major = 3;
-            openGL_minor = 2;
-            break;
-          }
-          default: {
-            die("\nGLSL: Major version: `%d` does not have minor version: '%d'.\n", glsl_major, glsl_minor);
-          }
+  switch (glsl_major) {
+    case 1: {
+      switch (glsl_minor) {
+        case 10: {
+          openGL_major = 2;
+          openGL_minor = 0;
+          break;
         }
-        break;
-      }
-      case 3: {
-        switch (glsl_minor) {
-          case 30: {
-            openGL_major = 3;
-            openGL_minor = 3;
-            break;
-          }
-          default: {
-            die("\nGLSL: Major version: `%d` does not have minor version: '%d'.\n", glsl_major, glsl_minor);
-          }
+        case 20: {
+          openGL_major = 2;
+          openGL_minor = 1;
+          break;
         }
-        break;
-      }
-      case 4: {
-        if (!((glsl_minor % 10) == 0 && glsl_minor >= 0 && glsl_minor <= 60)) {
+        case 30: {
+          openGL_major = 3;
+          openGL_minor = 0;
+          break;
+        }
+        case 40: {
+          openGL_major = 3;
+          openGL_minor = 1;
+          break;
+        }
+        case 50: {
+          openGL_major = 3;
+          openGL_minor = 2;
+          break;
+        }
+        default: {
           die("\nGLSL: Major version: `%d` does not have minor version: '%d'.\n", glsl_major, glsl_minor);
         }
-        openGL_major = 4;
-        openGL_minor = (glsl_minor / 10);
-        break;
       }
-      default: {
-        die("\nGLSL: Major version: '%d' does not exist.\n", glsl_major);
+      break;
+    }
+    case 3: {
+      switch (glsl_minor) {
+        case 30: {
+          openGL_major = 3;
+          openGL_minor = 3;
+          break;
+        }
+        default: {
+          die("\nGLSL: Major version: `%d` does not have minor version: '%d'.\n", glsl_major, glsl_minor);
+        }
       }
+      break;
+    }
+    case 4: {
+      if (!((glsl_minor % 10) == 0 && glsl_minor >= 0 && glsl_minor <= 60)) {
+        die("\nGLSL: Major version: `%d` does not have minor version: '%d'.\n", glsl_major, glsl_minor);
+      }
+      openGL_major = 4;
+      openGL_minor = (glsl_minor / 10);
+      break;
+    }
+    default: {
+      die("\nGLSL: Major version: '%d' does not exist.\n", glsl_major);
     }
   }
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, openGL_major);
@@ -301,7 +299,8 @@ static inline void shader_set_openGL_version(int glsl_major, int glsl_minor, boo
   }
 }
 
-_UNUSED
+/* ----------------------------- Mat4x4 orthographic ----------------------------- */
+
 static inline void mat4x4_orthographic(mat4x4 m, float left, float right, float top, float bot, float znear, float zfar) {
   if (!(left == right || top == bot || znear == zfar)) {
     /* Clear the matrix. */
@@ -391,6 +390,20 @@ void shader_compile(void) {
   }
 }
 
+/* ----------------------------- Shader free ----------------------------- */
+
+/* Free the font shader and rect shader, as well as both fonts. */
+void shader_free(void) {
+  /* Free the font shader. */
+  glDeleteProgram(font_shader);
+  /* Also free the rect shader, if it was made. */
+  if (rect_shader) {
+    glDeleteProgram(rect_shader);
+  }
+  font_free(textfont);
+  font_free(uifont);
+}
+
 /* ----------------------------- Shader rect vertex load ----------------------------- */
 
 /* Takes a `RectVertex[4]` as `buf`. */
@@ -408,9 +421,13 @@ void shader_rect_vertex_load_array(RectVertex *buf, float *const array, Uint col
   shader_rect_vertex_load(buf, array[0], array[1], array[2], array[3], color);
 }
 
+/* ----------------------------- Shader set projection ----------------------------- */
+
 void shader_set_projection(float left, float right, float top, float bot, float znear, float zfar) {
   mat4x4_orthographic(projection, left, right, top, bot, znear, zfar);
 }
+
+/* ----------------------------- Shader upload projection ----------------------------- */
 
 void shader_upload_projection(void) {
   glUseProgram(font_shader); {
@@ -421,13 +438,19 @@ void shader_upload_projection(void) {
   }
 }
 
+/* ----------------------------- Shader get location font tex ----------------------------- */
+
 int shader_get_location_font_tex(void) {
   return shader_location_font_tex;
 }
 
+/* ----------------------------- Shader get location font projection ----------------------------- */
+
 int shader_get_location_font_projection(void) {
   return shader_location_font_projection;
 }
+
+/* ----------------------------- Shader get location rect projection ----------------------------- */
 
 int shader_get_location_rect_projection(void) {
   return shader_location_rect_projection;

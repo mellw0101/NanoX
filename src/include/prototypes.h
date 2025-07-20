@@ -841,7 +841,6 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   /* ---------------------------------------------------------- gui.cpp ---------------------------------------------------------- */
   
 
-  void log_error_gui(const char *format, ...);
   void init_gui(void);
   void glfw_loop(void);
   bool gui_quit(void);

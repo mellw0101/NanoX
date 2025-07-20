@@ -33,7 +33,7 @@ SyntaxFile *sf = NULL;
 
 /* Window resize callback. */
 void window_resize_callback(GLFWwindow *window, int width, int height) {
-  gl_window_update_size(width, height);
+  // gl_window_update_size(width, height);
   // ASSERT_MSG(gui, "gui has not been init.");
   // static ivec2 was_size = -1;
   /* To reduce the number of updates, only update the size when it changes. */
@@ -74,12 +74,12 @@ void window_maximize_callback(GLFWwindow *window, int maximized) {
   // ivec2 size;
   // glfwGetWindowSize(window, &size.w, &size.h);
   // window_resize_callback(window, size.w, size.h);
-  gl_window_should_fetch_size();
+  // gl_window_should_fetch_size();
 }
 
 /* Framebuffer resize callback. */
 void framebuffer_resize_callback(GLFWwindow *window, int width, int height) {
-  window_resize_callback(window, width, height);
+  // gl_window_update_size(width, height);
 }
 
 /* Key callback. */
@@ -1310,7 +1310,7 @@ void scroll_callback(GLFWwindow *window, double x, double y) {
         test->dp_editor->openfile->current_x = index;
       }
       /* Up and down scroll. */
-      edit_scroll((y > 0.0) ? BACKWARD : FORWARD);
+      edit_scroll_for(test->dp_editor->openfile, ((y > 0.0) ? BACKWARD : FORWARD));
       scrollbar_refresh_needed(test->dp_editor->sb);
       /* If the suggestmenu is active then make sure it updates the position and text. */
       if (menu_len(gui->suggestmenu->menu)) {

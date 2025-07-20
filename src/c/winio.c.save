@@ -161,7 +161,8 @@ static void read_keys_from(WINDOW *const frame) {
           wnoutrefresh(midwin);
           curs_set(1);
         }
-        if (ISSET(MINIBAR) && !ISSET(ZERO) && LINES > 1) {
+        if (ISSET(MINIBAR) && !ISSET(ZER
+        O) && LINES > 1) {
           minibar();
         }
         as_an_at = TRUE;
@@ -2728,7 +2729,7 @@ void titlebar(const char *path) {
   /* The buffer sequence number plus the total buffer count. */
   char *ranking = NULL;
   /* If the screen is to small, there is no title bar. */
-  if (!IN_CURSES_CTX || !topwin) {
+  if (ISSET(USING_GUI) || ISSET(NO_NCURSES) || !topwin) {
     return;
   }
   wattron(topwin, interface_color_pair[TITLE_BAR]);
