@@ -398,25 +398,10 @@ void gui_promptmenu_create(void) {
   MALLOC_STRUCT(gui->promptmenu);
   gui->promptmenu->text_refresh_needed = FALSE;
   gui->promptmenu->size_refresh_needed = FALSE;
-  gui->promptmenu->buffer  = make_new_font_buffer();
-  // gui->promptmenu->element = gui_element_create(gui->root);
-  // gui_element_move_resize(
-  //   gui->promptmenu->element,
-  //   0.0f,
-  //   vec2(gui->width, gui_font_height(uifont))
-  // );
+  gui->promptmenu->buffer  = vertex_buffer_new(FONT_VERTBUF);
   gui->promptmenu->element = element_create(0, 0, gl_window_width(), font_height(uifont), TRUE);
-  // gui->promptmenu->element->color = VEC4_VS_CODE_RED;
-  // element_set_parent(gui->promptmenu->element, gui->root);
   gl_window_add_root_child(gui->promptmenu->element);
-  // color_copy(gui->promptmenu->element->color, &color_vs_code_red);
   gui->promptmenu->element->color = PACKED_UINT_VS_CODE_RED;
-  // gui->promptmenu->element->flag.set<GUIELEMENT_RELATIVE_WIDTH>();
-  // gui->promptmenu->element->has_relative_width = TRUE;
-  // gui->promptmenu->element->relative_size = 0;
-  // gui->promptmenu->element->flag.set<GUIELEMENT_ABOVE>();
-  // gui->promptmenu->element->flag.set<GUIELEMENT_HIDDEN>();
-  // gui->promptmenu->element->hidden = TRUE;
   gui->promptmenu->element->xflags |= (ELEMENT_HIDDEN | ELEMENT_REL_WIDTH);
   gui->promptmenu->search_vec  = cvec_create_setfree(free);
   gui->promptmenu->completions = cvec_create_setfree(free);
@@ -489,12 +474,11 @@ void gui_promptmenu_draw_selected(void) {
   if (cvec_len(gui->promptmenu->completions)) {
     selected_row = (gui->promptmenu->selected - gui->promptmenu->viewtop);
     if (selected_row >= 0 && selected_row < gui->promptmenu->rows) {
-      pos.x = gui->promptmenu->element->x;
+      pos.x  = gui->promptmenu->element->x;
       size.w = gui->promptmenu->element->width;
       font_row_top_bot(uifont, (selected_row + 1), &pos.y, &size.h);
       size.h -= pos.y;
       pos.y  += gui->promptmenu->element->y;
-      // draw_rect(pos, size, vec4(vec3(1.0f), 0.4f));
     }
   }
 }

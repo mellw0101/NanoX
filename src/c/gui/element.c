@@ -7,12 +7,6 @@
 #include "../../include/c_proto.h"
 
 
-/* ---------------------------------------------------------- Enum's ---------------------------------------------------------- */
-
-
-/* A private enum to represent diffrent configurable options available for all elements. */
-
-
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
@@ -103,9 +97,6 @@ static void element_children_relative_pos(Element *const e) {
   );
 }
 
-// _UNUSED
-// static void element_bazier_edge(Element *const e, RectVertex **const vert, Uint **const indi);
-
 _UNUSED
 static Uint *bazier_indices_create(Ulong n, Ulong *const len) {
   ASSERT(len);
@@ -156,6 +147,19 @@ static void element_add_rounded_center_rect(Element *const e, float offset) {
   }
   vertex_buffer_push_back(e->rect_buffer, ARRAY__LEN(vert), ARRAY__LEN(RECT_INDICES));
 }
+
+_UNUSED
+static void element_insert_bazier_arc_corner(Element *const e, RectVertex *vert, Uint *indi,
+  Ulong indi_len, Ulong n, float corner_x, float corner_y, float center_x, float center_y)
+{
+  ASSERT(e);
+  float arcx[n];
+  float arcy[n];
+  float t = UCHAR_TO_FLOAT(UNPACK_INT_DATA(e->xrectopts, 0, Uchar));
+  bazier_corner_arc(corner_x, corner_y, center_x, center_y, t, arcx, arcy, n);
+  bazier_vertex_insert(vert, n, center_x, center_y, arcx, arcy, e->color);
+  vertex_buffer_push_back(e->rect_buffer, vert, (n + 1), indi, indi_len);
+}
  
 /* ----------------------------- Element rounded rect ----------------------------- */
 
@@ -171,9 +175,10 @@ static void element_rounded_rect(Element *const e) {
   float offset = (FMINF(e->width, e->height) / 2);
   element_add_rounded_center_rect(e, offset);
   /* First do the top left arc. */
-  bazier_corner_arc(e->x, e->y, (e->x + offset), (e->y + offset), fraction, arcx, arcy, point_num);
-  bazier_vertex_insert(vert, point_num, (e->x + offset), (e->y + offset), arcx, arcy, e->color);
-  vertex_buffer_push_back(e->rect_buffer, vert, (point_num + 1), indi, indi_len);
+  element_insert_bazier_arc_corner(e, vert, indi, indi_len, point_num, e->x, e->y, (e->x + offset), (e->y + offset));
+  // bazier_corner_arc(e->x, e->y, (e->x + offset), (e->y + offset), fraction, arcx, arcy, point_num);
+  // bazier_vertex_insert(vert, point_num, (e->x + offset), (e->y + offset), arcx, arcy, e->color);
+  // vertex_buffer_push_back(e->rect_buffer, vert, (point_num + 1), indi, indi_len);
   /* Then do the top right arc. */
   bazier_corner_arc((e->x + e->width), e->y, ((e->x + e->width) - offset), (e->y + offset), fraction, arcx, arcy, point_num);
   bazier_vertex_insert(vert, point_num, ((e->x + e->width) - offset), (e->y + offset), arcx, arcy, e->color);
@@ -288,7 +293,7 @@ void element_resize(Element *const e, float width, float height) {
   element_children_relative_pos(e);
   element_grid_set(e);
 }
-
+ 
 void element_move_resize(Element *const e, float x, float y, float width, float height) {
   ASSERT(e);
   element_grid_remove(e);

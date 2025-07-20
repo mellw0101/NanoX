@@ -250,8 +250,8 @@ void editor_redecorate(Editor *const editor) {
   ASSERT_EDITOR(editor);
   /* If there is a error with the currently opened file, show it in the statusbar and log it. */
   if (editor->openfile->errormessage) {
-    // show_statusmsg(ALERT, 2, editor->openfile->errormessage);
-    // logE("%s", editor->openfile->errormessage);
+    statusline(ALERT, "%s", editor->openfile->errormessage);
+    log_ERR_NF("%s", editor->openfile->errormessage);
     free(editor->openfile->errormessage);
     editor->openfile->errormessage = NULL;
   }

@@ -148,9 +148,6 @@ void init_gui(void) {
   /* Init the edit element. */
   setup_edit_element();
   /* Set some callbacks. */
-  // glfwSetWindowSizeCallback(gl_window(), window_resize_callback);
-  // glfwSetWindowMaximizeCallback(gl_window(), window_maximize_callback);
-  // glfwSetFramebufferSizeCallback(gl_window(), framebuffer_resize_callback);
   glfwSetKeyCallback(gl_window(), key_callback);
   glfwSetCharCallback(gl_window(), char_callback);
   glfwSetMouseButtonCallback(gl_window(), mouse_button_callback);
@@ -165,7 +162,6 @@ void init_gui(void) {
   glEnable(GL_TEXTURE_2D);
   glEnable(GL_BLEND);
   /* Set the window size. */
-  // window_resize_callback(gl_window(), gui->width, gui->height);
   editor_confirm_margin(openeditor);
   editor_redecorate(openeditor);
   editor_resize(openeditor);
