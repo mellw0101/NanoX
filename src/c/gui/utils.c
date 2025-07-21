@@ -41,7 +41,7 @@ void render_vertbuf(Font *const f, vertex_buffer_t *buf) {
   font_upload_texture_atlas(f);
   glEnable(GL_TEXTURE_2D);
   glUseProgram(font_shader); {
-    glUniform1i(glGetUniformLocation(font_shader, "tex"), 0);
+    glUniform1i(shader_get_location_font_tex() /* glGetUniformLocation(font_shader, "tex") */, 0);
     vertex_buffer_render(buf, GL_TRIANGLES);
   }
 }

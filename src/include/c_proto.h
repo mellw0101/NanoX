@@ -790,6 +790,8 @@ void frame_set_poll(void);
 Ulong frame_elapsed(void);
 /* ----------------------------- Frame should report ----------------------------- */
 void frame_should_report(bool print_times);
+/* ----------------------------- Frame elapsed time ----------------------------- */
+Llong frame_elapsed_time(void);
 
 
 /* ---------------------------------------------------------- gui/monitor.c ---------------------------------------------------------- */
@@ -1515,21 +1517,25 @@ void statusbar_draw(void);
 /* ---------------------------------------------------------- gui/mouse.c ---------------------------------------------------------- */
 
 
+/* ----------------------------- Mouse gui init ----------------------------- */
+void mouse_gui_init(void);
+/* ----------------------------- Mouse gui free ----------------------------- */
+void mouse_gui_free(void);
 /* ----------------------------- Update mouse state ----------------------------- */
-void update_mouse_state(int action, int button);
+void mouse_gui_update_state(int action, int button);
 /* ----------------------------- Update mouse pos ----------------------------- */
-void update_mouse_pos(float x, float y);
-/* ----------------------------- Get mouse xpos ----------------------------- */
-float get_mouse_xpos(void);
-/* ----------------------------- Get mouse ypos ----------------------------- */
-float get_mouse_ypos(void);
-/* ----------------------------- Get mouse pos ----------------------------- */
-void get_mouse_pos(float *const x, float *const y);
-float get_last_mouse_xpos(void);
-float get_last_mouse_ypos(void);
+void mouse_gui_update_pos(double x, double y);
+/* ----------------------------- Mouse gui get x ----------------------------- */
+double mouse_gui_get_x(void);
+/* ----------------------------- Mouse gui get y ----------------------------- */
+double mouse_gui_get_y(void);
+/* ----------------------------- Mouse gui get pos ----------------------------- */
+void mouse_gui_get_pos(double *const x, double *const y);
+double mouse_gui_get_last_x(void);
+double mouse_gui_get_last_y(void);
 /* ----------------------------- Is mouse flag set ----------------------------- */
-bool is_mouse_flag_set(Uint flag);
-void clear_mouse_flags(void);
+bool mouse_gui_is_flag_set(Uint flag);
+void mouse_gui_clear_flags(void);
 
 
 /* ---------------------------------------------------------- gui/shader.c ---------------------------------------------------------- */

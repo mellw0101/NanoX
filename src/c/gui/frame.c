@@ -43,6 +43,8 @@ static Llong frame_sample_1 = -1;
 static Ulong last_poll = 0;
 /* The interval in frames between polling, based on the set framerate */
 static Ulong poll_interval_frames = FRAME_POLL_INTERVAL_FRAMES(60);
+/* The total ammount of elapsed time in `nano-seconds`. */
+static Llong elapsed_time = 0;
 
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
@@ -103,6 +105,7 @@ void frame_end(void) {
     /* Calculate the total frametime after we sleept. */
     frametime = TIMESPEC_ELAPSED_NS(&t0, &t1);
   }
+  ATOMIC_STORE(elapsed_time, (ATOMIC_FETCH(elapsed_time) + frametime));
   /* Incrament the total elapsed frames. */
   ++elapsed_frames;
 }
@@ -178,7 +181,7 @@ bool frame_should_poll(void) {
 
 /* Set all preconditions to start the current frame rate polling progress. */
 void frame_set_poll(void) {
-  should_poll = TRUE;
+  ATOMIC_STORE(should_poll, TRUE);
   frame_sample_0 = -1;
   frame_sample_1 = -1;
   /* Set the frame rate to 4 times the fastest monitor, so we know for a fact vsync will kick in. */
@@ -190,11 +193,17 @@ void frame_set_poll(void) {
 
 /* Returns the total number of currently elapsed frames. */
 Ulong frame_elapsed(void) {
-  return elapsed_frames;
+  return ATOMIC_FETCH(elapsed_frames);
 }
 
 /* ----------------------------- Frame should report ----------------------------- */
 
 void frame_should_report(bool print_times) {
   ATOMIC_STORE(should_log, print_times);
+}
+
+/* ----------------------------- Frame elapsed time ----------------------------- */
+
+Llong frame_elapsed_time(void) {
+  return ATOMIC_FETCH(elapsed_time);
 }

@@ -196,7 +196,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
   /* Otherwise, do the text bindings. */
   else {
     // mouse_flag.clear();
-    clear_mouse_flags();
+    mouse_gui_clear_flags();
     /* Reset shift. */
     shift_held = FALSE;
     /* What function does the key entail. */
@@ -1013,7 +1013,7 @@ void char_callback(GLFWwindow *window, Uint ch) {
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods) {
   /* Some static vars to track double clicking. */
   Element *test;
-  update_mouse_state(action, button);
+  mouse_gui_update_state(action, button);
   /* Left mouse button. */
   if (button == GLFW_MOUSE_BUTTON_1) {
     if (action == GLFW_PRESS) {
@@ -1021,9 +1021,9 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
       if (gui->flag.is_set<GUI_PROMPT>()) {
         long row;
         /* When the mouse y position is inside the gui promptmenu element. */
-        if (font_row_from_pos(uifont, gui->promptmenu->element->y, (gui->promptmenu->element->y + gui->promptmenu->element->height), get_mouse_ypos(), &row)) {
+        if (font_row_from_pos(uifont, gui->promptmenu->element->y, (gui->promptmenu->element->y + gui->promptmenu->element->height), mouse_gui_get_y(), &row)) {
           if (row == 0) {
-            typing_x = font_index_from_pos(uifont, answer, strlen(answer), get_mouse_xpos(), (gui->promptmenu->element->x + font_breadth(uifont, " ") + font_breadth(uifont, prompt)));
+            typing_x = font_index_from_pos(uifont, answer, strlen(answer), mouse_gui_get_x(), (gui->promptmenu->element->x + font_breadth(uifont, " ") + font_breadth(uifont, prompt)));
             gui->promptmenu->text_refresh_needed = TRUE;
           }
         }
@@ -1032,26 +1032,26 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
           gui_promptmode_leave();
         }
       }
-      test = element_grid_get(get_mouse_xpos(), get_mouse_ypos());
+      test = element_grid_get(mouse_gui_get_x(), mouse_gui_get_y());
       if (test) {
         gui->clicked = test;
         if (menu_get_active() && !menu_owns_element(menu_get_active(), test)) {
           menu_show(menu_get_active(), FALSE);
         }
         else if (menu_get_active() && test->dt == ELEMENT_DATA_MENU && menu_is_ancestor(test->dp_menu, menu_get_active()) && menu_element_is_main(test->dp_menu, test)) {
-          menu_click_action(test->dp_menu, get_mouse_xpos(), get_mouse_ypos());
+          menu_click_action(test->dp_menu, mouse_gui_get_x(), mouse_gui_get_y());
         }
         else if (test->dt == ELEMENT_DATA_EDITOR && test == test->dp_editor->text) {
           /* When a click occurs in the text element of a editor, make that editor the currently active editor. */
           editor_set_open(test->dp_editor);
           /* Get the line and index from the mouse position. */
-          editor_get_text_line_index(test->dp_editor, get_mouse_xpos(), get_mouse_ypos(), &GUI_OF->current, &GUI_OF->current_x);
+          editor_get_text_line_index(test->dp_editor, mouse_gui_get_x(), mouse_gui_get_y(), &GUI_OF->current, &GUI_OF->current_x);
           GUI_OF->mark     = GUI_OF->current;
           GUI_OF->mark_x   = GUI_OF->current_x;
           GUI_OF->softmark = TRUE;
           SET_PWW(GUI_OF);
           /* If this was a double click then select the current word, if any. */
-          if (is_mouse_flag_set(MOUSE_PRESS_WAS_DOUBLE)) {
+          if (mouse_gui_is_flag_set(MOUSE_PRESS_WAS_DOUBLE)) {
             Ulong st, end;
             st  = get_prev_cursor_word_start_index(TRUE);
             end = get_current_cursor_word_end_index(TRUE);
@@ -1071,7 +1071,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
             }
           }
           /* Otherwise, if this was a tripple click then select the whole line. */
-          else if (is_mouse_flag_set(MOUSE_PRESS_WAS_TRIPPLE)) {
+          else if (mouse_gui_is_flag_set(MOUSE_PRESS_WAS_TRIPPLE)) {
             GUI_OF->mark_x = 0;
             GUI_OF->current_x = strlen(GUI_OF->current->data);
           }
@@ -1085,7 +1085,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
           }
         }
         else if (test == gui->promptmenu->element) {
-          gui_promptmenu_click_action(get_mouse_ypos());
+          gui_promptmenu_click_action(mouse_gui_get_y());
         }
       }
     }
@@ -1095,7 +1095,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         GUI_OF->mark = NULL;
       }
       if (gui->clicked && gui->clicked->dt == ELEMENT_DATA_SB) {
-        if (scrollbar_element_is_thumb(gui->clicked->dp_sb, gui->clicked) && gui->clicked != element_grid_get(get_mouse_xpos(), get_mouse_ypos())) {
+        if (scrollbar_element_is_thumb(gui->clicked->dp_sb, gui->clicked) && gui->clicked != element_grid_get(mouse_gui_get_x(), mouse_gui_get_y())) {
           scrollbar_set_thumb_color(gui->clicked->dp_sb, FALSE);
         }
         scrollbar_refresh_needed(gui->clicked->dp_sb);
@@ -1106,7 +1106,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
   /* Right mouse button. */
   else if (button == GLFW_MOUSE_BUTTON_2) {
     if (action == GLFW_PRESS) {
-      test = element_grid_get(get_mouse_xpos(), get_mouse_ypos());
+      test = element_grid_get(mouse_gui_get_x(), mouse_gui_get_y());
       if (test && test->dt == ELEMENT_DATA_FILE && test->parent && test->parent->dt == ELEMENT_DATA_EDITOR && etb_element_is_main(test->parent->dp_editor->tb, test->parent)) {
         etb_show_context_menu(test->parent->dp_editor->tb, test, TRUE);
       }
@@ -1149,9 +1149,9 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 /* Mouse pos callback. */
 void mouse_pos_callback(GLFWwindow *window, double x, double y) {
   Element *test;
-  update_mouse_pos(x, y);
+  mouse_gui_update_pos(x, y);
   /* If the left mouse button is being held. */
-  if (is_mouse_flag_set(MOUSE_BUTTON_HELD_LEFT)) {
+  if (mouse_gui_is_flag_set(MOUSE_BUTTON_HELD_LEFT)) {
     /* When inside prompt mode. */
     if (gui->flag.is_set<GUI_PROMPT>()) {
       long index = prompt_index_from_mouse(TRUE);
@@ -1164,14 +1164,14 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
     if (gui->clicked) {
       /* Scrollbar */
       if (gui->clicked->dt == ELEMENT_DATA_SB) {
-        scrollbar_mouse_pos_routine(gui->clicked->dp_sb, gui->clicked, get_last_mouse_ypos(), get_mouse_ypos());
+        scrollbar_mouse_pos_routine(gui->clicked->dp_sb, gui->clicked, mouse_gui_get_last_y(), mouse_gui_get_y());
         refresh_needed = TRUE;
       }
       /* Editor-Text */
       else if (gui->clicked->dt == ELEMENT_DATA_EDITOR && gui->clicked == gui->clicked->dp_editor->text) {
-        editor_get_text_line_index(gui->clicked->dp_editor, get_mouse_xpos(), get_mouse_ypos(), &GUI_OF->current, &GUI_OF->current_x);
+        editor_get_text_line_index(gui->clicked->dp_editor, mouse_gui_get_x(), mouse_gui_get_y(), &GUI_OF->current, &GUI_OF->current_x);
         /* If the left press was a tripple press, adjust the mark based on the current cursor line. */
-        if (is_mouse_flag_set(MOUSE_PRESS_WAS_TRIPPLE)) {
+        if (mouse_gui_is_flag_set(MOUSE_PRESS_WAS_TRIPPLE)) {
           Ulong st, end;
           st  = 0;
           end = strlen(GUI_OF->mark->data);
@@ -1190,7 +1190,7 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
           }
         }
         /* If the left press was a double press. */
-        else if (is_mouse_flag_set(MOUSE_PRESS_WAS_DOUBLE)) {
+        else if (mouse_gui_is_flag_set(MOUSE_PRESS_WAS_DOUBLE)) {
           /* Get the start and end of the word that has been marked.  It does not matter is the mark is currently at start or end of that word. */
           Ulong st, end;
           st  = get_prev_word_start_index(GUI_OF->mark->data, GUI_OF->mark_x, TRUE);
@@ -1227,7 +1227,7 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
   }
   else {
     /* Get the element that the mouse is on. */
-    test = element_grid_get(get_mouse_xpos(), get_mouse_ypos());
+    test = element_grid_get(mouse_gui_get_x(), mouse_gui_get_y());
     if (test) {
       /* If the element currently hovered on has a diffrent cursor then the active one, change it. */
       if (test->cursor != gui->current_cursor_type) {
@@ -1235,11 +1235,11 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
         gui->current_cursor_type = test->cursor;
       }
       if (!gui->clicked && menu_get_active() && test->dt == ELEMENT_DATA_MENU && menu_is_ancestor(test->dp_menu, menu_get_active()) && menu_element_is_main(test->dp_menu, test)) {
-        menu_hover_action(test->dp_menu, get_mouse_xpos(), get_mouse_ypos());
+        menu_hover_action(test->dp_menu, mouse_gui_get_x(), mouse_gui_get_y());
         refresh_needed = TRUE;
       }
       else if (!gui->clicked && test == gui->promptmenu->element) {
-        gui_promptmenu_hover_action(get_mouse_ypos());
+        gui_promptmenu_hover_action(mouse_gui_get_y());
         refresh_needed = TRUE;
       }
       if (!entered_element || test != entered_element) {
@@ -1267,24 +1267,24 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
 
 /* Window entering and leaving callback. */
 void window_enter_callback(GLFWwindow *window, int entered) {
-  float x;
-  float y;
+  double x;
+  double y;
   if (!entered) {
-    x = get_mouse_xpos();
-    y = get_mouse_ypos();
-    if (x <= ((float)gl_window_width() / 2)) {
-      x = -30.0f;
+    x = mouse_gui_get_x();
+    y = mouse_gui_get_y();
+    if (x <= ((double)gl_window_width() / 2)) {
+      x = -30;
     }
-    else if (x >= ((float)gl_window_width() / 2)) {
-      x = (gl_window_width() + 30.0f);
+    else if (x >= ((double)gl_window_width() / 2)) {
+      x = (gl_window_width() + 30);
     }
-    if (y <= ((float)gl_window_height() / 2)) {
-      y = -30.0f;
+    if (y <= ((double)gl_window_height() / 2)) {
+      y = -30;
     }
-    else if (y >= ((float)gl_window_height() / 2)) {
-      y = (gl_window_height() + 30.0f);
+    else if (y >= ((double)gl_window_height() / 2)) {
+      y = (gl_window_height() + 30);
     }
-    update_mouse_pos(x, y);
+    mouse_gui_update_pos(x, y);
     /* If there is a currently entered element, call its leave callback.  If it has one. */
     if (entered_element) {
       /* Reset the color of any scrollbar if it was the last element the mouse was on and its not currently clicked. */
@@ -1298,13 +1298,13 @@ void window_enter_callback(GLFWwindow *window, int entered) {
 
 /* Scroll callback. */
 void scroll_callback(GLFWwindow *window, double x, double y) {
-  Element *test = element_grid_get(get_mouse_xpos(), get_mouse_ypos());
+  Element *test = element_grid_get(mouse_gui_get_x(), mouse_gui_get_y());
   Ulong index;
   linestruct *line;
   if (test) {
     if (test->dt == ELEMENT_DATA_EDITOR && test == test->dp_editor->text) {
       /* If the mouse left mouse button is held while scrolling, update the cursor pos so that the marked region gets updated. */
-      if (is_mouse_flag_set(MOUSE_BUTTON_HELD_LEFT)) {
+      if (mouse_gui_is_flag_set(MOUSE_BUTTON_HELD_LEFT)) {
         line = line_and_index_from_mousepos(font_get_font(textfont), &index);
         test->dp_editor->openfile->current   = line;
         test->dp_editor->openfile->current_x = index;
@@ -1320,11 +1320,11 @@ void scroll_callback(GLFWwindow *window, double x, double y) {
       refresh_needed = TRUE;
     }
     if (menu_get_active() && test->dt == ELEMENT_DATA_MENU && menu_is_ancestor(test->dp_menu, menu_get_active()) && menu_element_is_main(test->dp_menu, test)) {
-      menu_scroll_action(test->dp_menu, ((y > 0) ? BACKWARD : FORWARD), get_mouse_xpos(), get_mouse_ypos());
+      menu_scroll_action(test->dp_menu, ((y > 0) ? BACKWARD : FORWARD), mouse_gui_get_x(), mouse_gui_get_y());
     }
     /* If this element is the gui promptmenu main element.  Then call the scroll function. */
     else if (test == gui->promptmenu->element) {
-      gui_promptmenu_scroll_action(((y > 0) ? BACKWARD : FORWARD), get_mouse_ypos());
+      gui_promptmenu_scroll_action(((y > 0) ? BACKWARD : FORWARD), mouse_gui_get_y());
       refresh_needed = TRUE;
     }
   }

@@ -20,8 +20,8 @@ static void context_menu_pos_routine(void *arg, float width, float height, float
   ASSERT(arg);
   ASSERT(x);
   ASSERT(y);
-  (*x) = get_mouse_xpos();
-  (*y) = get_mouse_ypos();
+  (*x) = mouse_gui_get_x();
+  (*y) = mouse_gui_get_y();
 }
 
 static void context_menu_accept_routine(void *arg, const char *const restrict entry_string, int index) {

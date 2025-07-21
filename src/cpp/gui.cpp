@@ -61,6 +61,7 @@ static void init_guistruct(void) {
   make_guistruct();
   /* Then create the glfw window. */
   gl_window_init();
+  mouse_gui_init();
   /* Create and start the event handler. */
   gui->handler = nevhandler_create();
   nevhandler_start(gui->handler, TRUE);
@@ -101,6 +102,7 @@ static void cleanup(void) {
   statusbar_free();
   delete_guistruct();
   element_grid_free();
+  mouse_gui_free();
 }
 
 /* Init glew and check for errors.  Terminates on fail to init glew. */
@@ -156,7 +158,7 @@ void init_gui(void) {
   glfwSetScrollCallback(gl_window(), scroll_callback);
   /* Ensure we poll for the correct frame rate at the start. */
   frame_set_poll();
-  // frame_should_report(TRUE);
+  frame_should_report(TRUE);
   glDisable(GL_DEPTH_TEST);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_TEXTURE_2D);
@@ -173,6 +175,7 @@ void glfw_loop(void) {
     frame_start();
     statusbar_count_frame();
     if (frame_should_poll() || gl_window_resize_needed() || refresh_needed) {
+      log_INFO_1("Redrawing");
       place_the_cursor();
       glClear(GL_COLOR_BUFFER_BIT);
       /* Check if any editor's has it's `should_close` flag set, and if so close them. */

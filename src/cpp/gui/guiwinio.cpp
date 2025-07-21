@@ -157,7 +157,7 @@ void render_vertex_buffer(Uint shader, vertex_buffer_t *buf) {
   ASSERT(buf);
   glEnable(GL_TEXTURE_2D);
   glUseProgram(shader); {
-    glUniform1i(glGetUniformLocation(shader, "texture"), 0);
+    glUniform1i(glGetUniformLocation(shader, "tex"), 0);
     vertex_buffer_render(buf, GL_TRIANGLES);
   }
 }
@@ -417,13 +417,11 @@ static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
         Ulong index = 0;
         /* For some wierd reason this causes a crash on startup sometimes witch is wierd as this runs alot and never crashes otherwise. */
         line_word_t *head = get_line_words(converted, converted_len);
-        // log_INFO_0("after: get_line_words()");
         while (head) {
           line_word_t *node = head;
           head = node->next;
           ASSERT(node);
           ASSERT(node->str);
-          // log_INFO_0("%s", node->str);
           if (sf) {
             obj = (SyntaxObject *)hashmap_get(sf->objects, node->str);
             if (obj) {
@@ -447,44 +445,47 @@ static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
           }
           /* The global map. */
           if (test_map.find(node->str) != test_map.end()) {
-            vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, font_get_font(textfont), vec4(1.0f), drawpos);
+            // log_INFO_1("Found: %s: in test_map", node->str);
+            font_vertbuf_add_mbstr(textfont, editor->buffer, (converted + index), (node->start - index), prev_char, PACKED_UINT_FLOAT(1,1,1,1), &drawpos->x, &drawpos->y);
             vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, font_get_font(textfont), color_idx_to_vec4(test_map[node->str].color), drawpos);
+            // font_vertbuf_add_mbstr(textfont, editor->buffer, (converted + node->start), node->len, prev_char, color_idx_to_vec4(test_map[node->str].color), drawpos);
+            // vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, font_get_font(textfont), vec4(1.0f), drawpos);
             index = node->end;
           }
-          /* The variable map in the language server. */
-          else if (LSP->index.vars.find(node->str) != LSP->index.vars.end()) {
-            for (const auto &v : LSP->index.vars[node->str]) {
-              if (strcmp(tail(v.file), tail(openfile->filename)) == 0) {
-                if (line->lineno >= v.decl_st && line->lineno <= v.decl_end) {
-                  vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, font_get_font(textfont), vec4(1.0f), drawpos);
-                  vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, font_get_font(textfont), color_idx_to_vec4(FG_VS_CODE_BRIGHT_CYAN), drawpos);
-                  index = node->end;
-                }
-              }
-            }
-          }
-          /* The define map in the language server. */
-          else if (LSP->index.defines.find(node->str) != LSP->index.defines.end()) {
-            vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, font_get_font(textfont), vec4(1.0f), drawpos);
-            vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, font_get_font(textfont), color_idx_to_vec4(FG_VS_CODE_BLUE), drawpos);
-            index = node->end;
-          }
-          /* The map for typedefined structs and normal structs. */
-          else if (LSP->index.tdstructs.find(node->str) != LSP->index.tdstructs.end() || LSP->index.structs.find(node->str) != LSP->index.structs.end()) {
-            vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, font_get_font(textfont), vec4(1.0f), drawpos);
-            vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, font_get_font(textfont), color_idx_to_vec4(FG_VS_CODE_GREEN), drawpos);
-            index = node->end;
-          }
-          /* The function name map in the language server. */
-          else if (LSP->index.functiondefs.find(node->str) != LSP->index.functiondefs.end()) {
-            vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, font_get_font(textfont), vec4(1.0f), drawpos);
-            vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, font_get_font(textfont), color_idx_to_vec4(FG_VS_CODE_BRIGHT_YELLOW), drawpos);
-            index = node->end;
-          }
+          // /* The variable map in the language server. */
+          // else if (LSP->index.vars.find(node->str) != LSP->index.vars.end()) {
+          //   for (const auto &v : LSP->index.vars[node->str]) {
+          //     if (strcmp(tail(v.file), tail(editor->openfile->filename)) == 0) {
+          //       if (line->lineno >= v.decl_st && line->lineno <= v.decl_end) {
+          //         vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, font_get_font(textfont), vec4(1.0f), drawpos);
+          //         vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, font_get_font(textfont), color_idx_to_vec4(FG_VS_CODE_BRIGHT_CYAN), drawpos);
+          //         index = node->end;
+          //       }
+          //     }
+          //   }
+          // }
+          // /* The define map in the language server. */
+          // else if (LSP->index.defines.find(node->str) != LSP->index.defines.end()) {
+          //   vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, font_get_font(textfont), vec4(1.0f), drawpos);
+          //   vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, font_get_font(textfont), color_idx_to_vec4(FG_VS_CODE_BLUE), drawpos);
+          //   index = node->end;
+          // }
+          // /* The map for typedefined structs and normal structs. */
+          // else if (LSP->index.tdstructs.find(node->str) != LSP->index.tdstructs.end() || LSP->index.structs.find(node->str) != LSP->index.structs.end()) {
+          //   vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, font_get_font(textfont), vec4(1.0f), drawpos);
+          //   vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, font_get_font(textfont), color_idx_to_vec4(FG_VS_CODE_GREEN), drawpos);
+          //   index = node->end;
+          // }
+          // /* The function name map in the language server. */
+          // else if (LSP->index.functiondefs.find(node->str) != LSP->index.functiondefs.end()) {
+          //   vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, font_get_font(textfont), vec4(1.0f), drawpos);
+          //   vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, font_get_font(textfont), color_idx_to_vec4(FG_VS_CODE_BRIGHT_YELLOW), drawpos);
+          //   index = node->end;
+          // }
           free_node(node);
         }
         /* Without this fucking log message we crash when resizing to fast. */
-        log_INFO_0("before: font_vertbuf_add_mbstr()");
+        // log_INFO_0("before: font_vertbuf_add_mbstr()");
         font_vertbuf_add_mbstr(textfont, editor->buffer, (converted + index), (converted_len - index), NULL, PACKED_UINT_FLOAT(1, 1, 1, 1), &drawpos->x, &drawpos->y);
       }
       /* AT&T asm syntax. */
@@ -715,10 +716,9 @@ void draw_editor(Editor *editor) {
   element_draw(editor->gutter);
   /* Render the text element of the editor. */
   if (refresh_needed) {
-    writef("hello\n");
     vertex_buffer_clear(editor->buffer);
     vertex_buffer_clear(editor->marked_region_buf);
-    while (line && row++ < (int)editor->rows) {
+    while (line && row++ < editor->rows) {
       pen.x = editor->text->x;
       pen.y = (font_row_baseline(textfont, (line->lineno - editor->openfile->edittop->lineno)) + editor->text->y);
       gui_draw_row(line, editor, &pen);

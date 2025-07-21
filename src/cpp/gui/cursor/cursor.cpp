@@ -41,7 +41,7 @@ linestruct *line_from_cursor_pos(Editor *const editor) {
   float top, bot;
   linestruct *line = editor->openfile->edittop;
   /* If the mouse y position is above the text of the editor return the topline. */
-  if (get_mouse_ypos() < editor->text->y) {
+  if (mouse_gui_get_y() < editor->text->y) {
     return line;
   }
   /* Check if the mouse y position is within any line in the text window. */
@@ -50,11 +50,11 @@ linestruct *line_from_cursor_pos(Editor *const editor) {
     font_row_top_bot(textfont, row, &top, &bot);
     /* When checking the first row, if the y mousepos is above the top but
      * still inside text->pos.y, break directly and return the first line. */
-    if (!row && get_mouse_ypos() < top) {
+    if (!row && mouse_gui_get_y() < top) {
       break;
     }
     /* If the mouse position falls within the position of the current line, then break. */
-    if (get_mouse_ypos() > (top + editor->text->y) && get_mouse_ypos() < (bot + editor->text->y)) {
+    if (mouse_gui_get_y() > (top + editor->text->y) && mouse_gui_get_y() < (bot + editor->text->y)) {
       break;
     }
     line = line->next;
