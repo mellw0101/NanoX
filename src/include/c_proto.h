@@ -1580,6 +1580,7 @@ int gl_window_width(void);
 int gl_window_height(void);
 /* ----------------------------- Gl window add root child ----------------------------- */
 void gl_window_add_root_child(Element *const e);
+void gl_window_borderless_fullscreen(void);
 
 
 /* ---------------------------------------------------------- nanox.c ---------------------------------------------------------- */

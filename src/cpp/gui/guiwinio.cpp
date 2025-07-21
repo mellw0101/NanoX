@@ -716,6 +716,7 @@ void draw_editor(Editor *editor) {
   element_draw(editor->gutter);
   /* Render the text element of the editor. */
   if (refresh_needed) {
+    log_INFO_1("Editor edit redraw");
     vertex_buffer_clear(editor->buffer);
     vertex_buffer_clear(editor->marked_region_buf);
     while (line && row++ < editor->rows) {

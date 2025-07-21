@@ -119,6 +119,17 @@ static void init_glew(void) {
   writef("Using GLEW %s\n", glewGetString(GLEW_VERSION));
 }
 
+static inline bool should_swap_buffer(void) {
+  bool ret = refresh_needed;
+  if (frame_should_poll()) {
+    ret = TRUE;
+  }
+  if (gl_window_resize_needed()) {
+    ret = TRUE;
+  }
+  return ret;
+}
+
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
@@ -174,8 +185,8 @@ void glfw_loop(void) {
   while (!glfwWindowShouldClose(gl_window())) {
     frame_start();
     statusbar_count_frame();
-    if (frame_should_poll() || gl_window_resize_needed() || refresh_needed) {
-      log_INFO_1("Redrawing");
+    if (should_swap_buffer()) {
+      log_INFO_1("Swapping buffer");
       place_the_cursor();
       glClear(GL_COLOR_BUFFER_BIT);
       /* Check if any editor's has it's `should_close` flag set, and if so close them. */
@@ -201,6 +212,7 @@ void glfw_loop(void) {
     glfwPollEvents();
     frame_end();
   }
+  log_INFO_1("Total time elapsed: %.2f seconds", (NANO_TO_MILLI(frame_elapsed_time()) / 1e3));
   cleanup();
   close_and_go();
 }

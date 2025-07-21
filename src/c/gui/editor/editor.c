@@ -182,13 +182,12 @@ Editor *editor_from_file(openfilestruct *const file) {
       return editor;
     }
   ););
-  ALWAYS_ASSERT_MSG(0, "This should never happen, every openfile must be linked to a editor.");
-  return NULL;
+  log_ERR_FA("This should never happen, every openfile must be linked to a editor.");
 }
 
 void editor_hide(Editor *const editor, bool hide) {
   ASSERT(editor);
-  editor->hidden         = hide;
+  editor->hidden = hide;
   if (hide) {
     editor->main->xflags   |= ELEMENT_HIDDEN;
     editor->gutter->xflags |= ELEMENT_HIDDEN;
@@ -230,8 +229,8 @@ void editor_resize(Editor *const editor) {
   ASSERT(editor);
   ASSERT(editor->text);
   editor_confirm_margin(editor);
-  editor->gutter->width    = editor_get_gutter_width(editor);
-  editor->text->rel_x = editor->gutter->width;
+  editor->gutter->width = editor_get_gutter_width(editor);
+  editor->text->rel_x   = editor->gutter->width;
   if (!editor->gutter->width) {
     editor->gutter->xflags |= ELEMENT_HIDDEN;
   }

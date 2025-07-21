@@ -10,9 +10,18 @@
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
 
 
+/* To inforce the glfw rules about only performing some things in the main thread,
+ * we will store these things and only update them when a rezing chech happens. */
+static bool gl_window_maximized = FALSE;
+static bool gl_window_decorated = TRUE;
+
+static bool gl_window_flip_maximized = FALSE;
+
 static bool resize_needed = TRUE;
 static bool fetch_needed = FALSE;
-static Ulong last_resize = 0;
+/* Start with this at the highest possible positive
+ * value so that we ensure that we will resize at startup. */
+static Ulong last_resize = HIGHEST_POSITIVE;
 
 static int width  = 1100;
 static int height = 650;
@@ -75,14 +84,35 @@ bool gl_window_resize_needed(void) {
       ATOMIC_STORE(width,  w);
       ATOMIC_STORE(height, h);
       ATOMIC_STORE(resize_needed, TRUE);
-      log_INFO_0("fetch: %d, %d", w, h);
+      log_INFO_1("Fetched window size: %d, %d", w, h);
     }
   }
   /* When a resize has been called, and the last refresh, or failed refresh was 4 or more frames away, we do the actual refresh. */
   else if (ATOMIC_FETCH(resize_needed) && (frame_elapsed() - ATOMIC_FETCH(last_resize)) >= 4) {
+    /* Load in the width, and height of the window. */
     w = ATOMIC_FETCH(width);
     h = ATOMIC_FETCH(height);
-    log_INFO_0("resize: %d, %d", w, h);
+    /* Get the borderless fullscreen state of the window. */
+    ATOMIC_STORE(gl_window_maximized, !!glfwGetWindowAttrib(window, GLFW_MAXIMIZED));
+    ATOMIC_STORE(gl_window_decorated, !!glfwGetWindowAttrib(window, GLFW_DECORATED));
+    /* If we should flip the maximized status, then do so. */
+    if (ATOMIC_FETCH(gl_window_flip_maximized)) {
+      ATOMIC_STORE(gl_window_flip_maximized, FALSE);
+      /* If we are currently maximized. */
+      if (gl_window_maximized) {
+        glfwRestoreWindow(window);
+      }
+      /* Otherwize, when we are not. */
+      else {
+        glfwMaximizeWindow(window);
+      }
+      gl_window_maximized = !gl_window_maximized;
+    }
+    /* When we have a missmatch, we are a bit smart, as only the decorations can be incorrect. */
+    if (!(gl_window_maximized ^ gl_window_decorated)) {
+      glfwSetWindowAttrib(window, GLFW_DECORATED, !gl_window_maximized);
+      gl_window_decorated = !gl_window_decorated;
+    }
     /* Save the current elapsed frames for the next time. */
     ATOMIC_STORE(last_resize, frame_elapsed());
     ATOMIC_STORE(resize_needed, FALSE);
@@ -98,6 +128,7 @@ bool gl_window_resize_needed(void) {
       ATOMIC_STORE(last_width,  w);
       ATOMIC_STORE(last_height, h);
       ATOMIC_STORE(refresh_needed, TRUE);
+      log_INFO_1("Resized window to: %d, %d", w, h);
     }
     return TRUE;
   }
@@ -155,4 +186,9 @@ int gl_window_height(void) {
 
 void gl_window_add_root_child(Element *const child) {
   element_set_parent(child, root);
+}
+
+void gl_window_borderless_fullscreen(void) {
+  ATOMIC_STORE(resize_needed, TRUE);
+  ATOMIC_STORE(gl_window_flip_maximized, TRUE);
 }

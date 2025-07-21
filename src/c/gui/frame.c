@@ -74,9 +74,30 @@ static inline bool frame_samples_within_tolerance(void) {
 /* ----------------------------- Frame log time ----------------------------- */
 
 /* Print the time the last elapsed frame took from start to finish. */
-_UNUSED
 static inline void frame_log_time(void) {
   log_INFO_0("Frame: %lu: %.4f ms", elapsed_frames, NANO_TO_MILLI(frametime));
+}
+
+/* ----------------------------- Frame log poll ----------------------------- */
+
+static inline void frame_log_poll(bool finished) {
+  log_INFO_1(
+    "Polling for correct frame-rate %s Current set frame-rate: %"D64_FMT,
+    (finished ? "ended:  " : "started:"),
+    FRAME_SWAP_RATE_TIME_NS_INT(expected_frametime)
+  );
+}
+
+/* ----------------------------- Frame stop poll ----------------------------- */
+
+_UNUSED
+static inline void frame_stop_poll(void) {
+  should_poll = FALSE;
+  last_poll   = elapsed_frames;
+  frame_set_rate(monitor_closest_refresh_rate(FRAME_SWAP_RATE_TIME_NS_INT((frame_sample_0 + frame_sample_1) / 2.0)));
+  frame_log_poll(TRUE);
+  // log_INFO_1("Re-polling ended: Fps: %ld", FRAME_SWAP_RATE_TIME_NS_INT(expected_frametime));
+  glfwSwapInterval(0);
 }
 
 
@@ -105,7 +126,7 @@ void frame_end(void) {
     /* Calculate the total frametime after we sleept. */
     frametime = TIMESPEC_ELAPSED_NS(&t0, &t1);
   }
-  ATOMIC_STORE(elapsed_time, (ATOMIC_FETCH(elapsed_time) + frametime));
+  ATOMIC_STORE(elapsed_time, (elapsed_time + frametime));
   /* Incrament the total elapsed frames. */
   ++elapsed_frames;
 }
@@ -158,17 +179,17 @@ bool frame_should_poll(void) {
       frame_sample_1 = -1;
     }
     else {
-      should_poll = FALSE;
-      last_poll   = elapsed_frames;
-      frame_set_rate(monitor_closest_refresh_rate(FRAME_SWAP_RATE_TIME_NS_INT((frame_sample_0 + frame_sample_1) / 2.0)));
-      log_INFO_1("Re-polling ended: Fps: %d", FRAME_SWAP_RATE_TIME_NS_INT(expected_frametime));
-      glfwSwapInterval(0);
+      frame_stop_poll();
+      // should_poll = FALSE;
+      // last_poll   = elapsed_frames;
+      // frame_set_rate(monitor_closest_refresh_rate(FRAME_SWAP_RATE_TIME_NS_INT((frame_sample_0 + frame_sample_1) / 2.0)));
+      // log_INFO_1("Re-polling ended: Fps: %d", FRAME_SWAP_RATE_TIME_NS_INT(expected_frametime));
+      // glfwSwapInterval(0);
       return FALSE;
     }
     return TRUE;
   }
   else if ((elapsed_frames - last_poll) > poll_interval_frames) {
-    log_INFO_1("Re-polling started: Fps: %d", FRAME_SWAP_RATE_TIME_NS_INT(expected_frametime));
     frame_set_poll();
     return TRUE;
   }
@@ -181,7 +202,9 @@ bool frame_should_poll(void) {
 
 /* Set all preconditions to start the current frame rate polling progress. */
 void frame_set_poll(void) {
-  ATOMIC_STORE(should_poll, TRUE);
+  // log_INFO_1("Frame polling started: Fps: %ld", FRAME_SWAP_RATE_TIME_NS_INT(expected_frametime));
+  frame_log_poll(FALSE);
+  should_poll    = TRUE;
   frame_sample_0 = -1;
   frame_sample_1 = -1;
   /* Set the frame rate to 4 times the fastest monitor, so we know for a fact vsync will kick in. */

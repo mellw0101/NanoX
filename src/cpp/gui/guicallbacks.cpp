@@ -816,7 +816,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         case GLFW_KEY_F11: {
           /* Fullscreen toggle. */
           if (!mods) {
-            do_fullscreen(window);
+            // do_fullscreen(window);
+            gl_window_borderless_fullscreen();
           }
           break;
         }
