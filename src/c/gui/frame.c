@@ -90,13 +90,11 @@ static inline void frame_log_poll(bool finished) {
 
 /* ----------------------------- Frame stop poll ----------------------------- */
 
-_UNUSED
 static inline void frame_stop_poll(void) {
   should_poll = FALSE;
   last_poll   = elapsed_frames;
   frame_set_rate(monitor_closest_refresh_rate(FRAME_SWAP_RATE_TIME_NS_INT((frame_sample_0 + frame_sample_1) / 2.0)));
   frame_log_poll(TRUE);
-  // log_INFO_1("Re-polling ended: Fps: %ld", FRAME_SWAP_RATE_TIME_NS_INT(expected_frametime));
   glfwSwapInterval(0);
 }
 
@@ -202,14 +200,20 @@ bool frame_should_poll(void) {
 
 /* Set all preconditions to start the current frame rate polling progress. */
 void frame_set_poll(void) {
-  // log_INFO_1("Frame polling started: Fps: %ld", FRAME_SWAP_RATE_TIME_NS_INT(expected_frametime));
-  frame_log_poll(FALSE);
-  should_poll    = TRUE;
-  frame_sample_0 = -1;
-  frame_sample_1 = -1;
-  /* Set the frame rate to 4 times the fastest monitor, so we know for a fact vsync will kick in. */
-  frame_set_rate(monitor_fastest_refresh_rate() * 4);
-  glfwSwapInterval(1);
+  /* When there is a single monitor, just set the last poll to this frame as we want to recheck later again. */
+  if (monitor_count() == 1) {
+    last_poll = elapsed_frames;
+    frame_set_rate(monitor_return_first_monitor_rate());
+  }
+  else {
+    frame_log_poll(FALSE);
+    should_poll    = TRUE;
+    frame_sample_0 = -1;
+    frame_sample_1 = -1;
+    /* Set the frame rate to 4 times the fastest monitor, so we know for a fact vsync will kick in. */
+    frame_set_rate(monitor_fastest_refresh_rate() * 4);
+    glfwSwapInterval(1);
+  }
 }
 
 /* ----------------------------- Frame elapsed ----------------------------- */

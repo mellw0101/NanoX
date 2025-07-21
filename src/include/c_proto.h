@@ -797,6 +797,8 @@ Llong frame_elapsed_time(void);
 /* ---------------------------------------------------------- gui/monitor.c ---------------------------------------------------------- */
 
 
+int monitor_count(void);
+int monitor_return_first_monitor_rate(void);
 /* ----------------------------- Monitor get array ----------------------------- */
 GLFWmonitor **monitor_get_all(int *const count);
 /* ----------------------------- Monitor get mode ----------------------------- */

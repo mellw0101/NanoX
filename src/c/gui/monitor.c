@@ -10,6 +10,17 @@
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
+int monitor_count(void) {
+  int ret;
+  ALWAYS_ASSERT(glfwGetMonitors(&ret));
+  return ret;
+}
+
+int monitor_return_first_monitor_rate(void) {
+  int count;
+  return monitor_get_mode(monitor_get_all(&count)[0])->refreshRate;
+}
+
 /* ----------------------------- Monitor get array ----------------------------- */
 
 /* A fail-safe way to ensure we either get the monitor array or we die. */
