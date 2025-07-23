@@ -2887,3 +2887,103 @@ void do_execute_for(FULL_CTX_ARGS) {
 void do_execute(void) {
   FULL_CTX_CALL(do_execute_for);
 }
+
+/* ----------------------------- Norm path ----------------------------- */
+
+/* TODO: Invest mush more time into this and ensure it always correctly normalizes the path. */
+char *norm_path(const char *const restrict path) {
+  ASSERT(path);
+  char *ret = copy_of(path);
+  const char *last_slash = ((*ret == '/') ? ret : NULL);
+  const char *ptr = ret;
+  while (*ptr) {
+    /* Double slashes. */
+    if (*ptr == '/' && ptr[1] == '/') {
+      xstr_erase_norealloc(ret, (ptr - ret), 1);
+    }
+    /* Unessesary current dir indecator. */
+    else if (*ptr == '/' && ptr[1] == '.' && ptr[2] == '/') {
+      xstr_erase_norealloc(ret, (ptr - ret), 2);
+    }
+    /* Trailing '.' character. */
+    else if (*ptr == '/' && ptr[1] == '.' && ptr[2] == NUL) {
+      xstr_erase_norealloc(ret, (ptr - ret + 1), 1);
+      break;
+    }
+    /* Parent-directory marker. */
+    else if (*ptr == '/' && ptr[1] == '.' && ptr[2] == '.' && (ptr[3] == '/' || ptr[3] == NUL)) {
+      /* When gooing up from root, we can never have a valid path, so return NULL. */
+      if (ptr == ret) {
+        free(ret);
+        return NULL;
+      }
+      else if (last_slash) {
+        xstr_erase_norealloc(ret, (last_slash - ret), ((ptr - ret) - (last_slash - ret) + 3));
+      }
+      else {
+        xstr_erase_norealloc(ret, 0, ((ptr - ret) + 3));
+      }
+      /* Start over. */
+      ptr = ret;
+      last_slash = ((*ret == '/') ? ret : NULL);
+    }
+    /* Otherwise */
+    else {
+      /* Indecate the last seen '/' char. */
+      if (*ptr == '/') {
+        last_slash = ptr;
+      }
+      ptr += char_length(ptr);
+    }
+  }
+  return ret;
+}
+
+void norm_path_test_a_path(const char *const restrict path) {
+  char *np = norm_path(path);
+  log_INFO_1("%s -> %s", path, PASS_IF_VALID(np, "NULL"));
+  free(np);
+}
+
+void norm_path_test(void) {
+  norm_path_test_a_path("//foo//bar");
+  norm_path_test_a_path("/foo/./bar/");
+  norm_path_test_a_path("/foo/bar/.");
+  norm_path_test_a_path("/foo/bar/../baz");
+  norm_path_test_a_path("/foo/../..");
+  norm_path_test_a_path("/foo/../");
+  norm_path_test_a_path("foo/bar/../baz");
+  norm_path_test_a_path("./foo/./bar");
+  norm_path_test_a_path("../foo/bar");
+  norm_path_test_a_path("/../foo");
+  norm_path_test_a_path("/foo/bar///");
+  norm_path_test_a_path("foo/bar///");
+  norm_path_test_a_path("/foo///bar///baz//");
+  norm_path_test_a_path("///");
+  norm_path_test_a_path("/");
+  norm_path_test_a_path("////foo");
+  norm_path_test_a_path("//foo//");
+  norm_path_test_a_path("/a/b/c/../../../");
+  norm_path_test_a_path("/a/b/../../../../");
+  norm_path_test_a_path("a/b/c/../../../");
+  norm_path_test_a_path("a/b/c/../../../../");
+  norm_path_test_a_path("/foo/./bar/../baz/./");
+  norm_path_test_a_path("foo/./bar/../baz/./");
+  norm_path_test_a_path("/foo/../bar/./../baz");
+  norm_path_test_a_path("/a/./././b/.././c/");
+  norm_path_test_a_path("/././.");
+  norm_path_test_a_path("././foo/./bar/../baz/");
+  norm_path_test_a_path("./../foo/");
+  norm_path_test_a_path("/usr/bin");
+  norm_path_test_a_path("foo/bar");
+  norm_path_test_a_path("/foo/bar");
+  norm_path_test_a_path(".");
+  norm_path_test_a_path("foo/../../../bar");
+  exit(0);
+}
+
+/* ----------------------------- Abs path ----------------------------- */
+
+char *abs_path(const char *const restrict path) {
+  return ((*path == '/') ? norm_path(path) : get_full_path(path));
+}

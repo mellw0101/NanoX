@@ -42,6 +42,11 @@ static Element *element_create_internal(void) {
   e->rect_buffer = vertex_buffer_new(RECT_VERTBUF);
   /* Layer. */
   e->layer = 0;
+  e->border_lsize = 0;
+  e->border_tsize = 0;
+  e->border_rsize = 0;
+  e->border_bsize = 0;
+  e->border_color = 0;
   return e;
 }
 
@@ -166,31 +171,37 @@ static void element_insert_bazier_arc_corner(Element *const e, RectVertex *vert,
 static void element_rounded_rect(Element *const e) {
   ASSERT(e);
   Ulong point_num = 19;
-  float fraction = UCHAR_TO_FLOAT(UNPACK_INT_DATA(e->xrectopts, 0, Uchar));
+  // float fraction = UCHAR_TO_FLOAT(UNPACK_INT_DATA(e->xrectopts, 0, Uchar));
   RectVertex *vert = bazier_vertex_create(point_num);
   Ulong indi_len;
   Uint *indi = bazier_indices_create(point_num, &indi_len);
-  float arcx[point_num];
-  float arcy[point_num];
+  // float arcx[point_num];
+  // float arcy[point_num];
   float offset = (FMINF(e->width, e->height) / 2);
   element_add_rounded_center_rect(e, offset);
   /* First do the top left arc. */
   element_insert_bazier_arc_corner(e, vert, indi, indi_len, point_num, e->x, e->y, (e->x + offset), (e->y + offset));
+  /* Top-Right */
+  element_insert_bazier_arc_corner(e, vert, indi, indi_len, point_num, (e->x + e->width), e->y, ((e->x + e->width - offset)), (e->y + offset));
+  /* Bottom-Left */
+  element_insert_bazier_arc_corner(e, vert, indi, indi_len, point_num, e->x, (e->y + e->height), (e->x + offset), ((e->y + e->height) - offset));
+  /* Bottom-Right */
+  element_insert_bazier_arc_corner(e, vert, indi, indi_len, point_num, (e->x + e->width), (e->y + e->height), ((e->x + e->width) - offset), ((e->y + e->height) - offset));
   // bazier_corner_arc(e->x, e->y, (e->x + offset), (e->y + offset), fraction, arcx, arcy, point_num);
   // bazier_vertex_insert(vert, point_num, (e->x + offset), (e->y + offset), arcx, arcy, e->color);
   // vertex_buffer_push_back(e->rect_buffer, vert, (point_num + 1), indi, indi_len);
   /* Then do the top right arc. */
-  bazier_corner_arc((e->x + e->width), e->y, ((e->x + e->width) - offset), (e->y + offset), fraction, arcx, arcy, point_num);
-  bazier_vertex_insert(vert, point_num, ((e->x + e->width) - offset), (e->y + offset), arcx, arcy, e->color);
-  vertex_buffer_push_back(e->rect_buffer, vert, (point_num + 1), indi, indi_len);
+  // bazier_corner_arc((e->x + e->width), e->y, ((e->x + e->width) - offset), (e->y + offset), fraction, arcx, arcy, point_num);
+  // bazier_vertex_insert(vert, point_num, ((e->x + e->width) - offset), (e->y + offset), arcx, arcy, e->color);
+  // vertex_buffer_push_back(e->rect_buffer, vert, (point_num + 1), indi, indi_len);
   /* Then do the bottom left arc. */
-  bazier_corner_arc(e->x, (e->y + e->height), (e->x + offset), ((e->y + e->height) - offset), fraction, arcx, arcy, point_num);
-  bazier_vertex_insert(vert, point_num, (e->x + offset), ((e->y + e->height) - offset), arcx, arcy, e->color);
-  vertex_buffer_push_back(e->rect_buffer, vert, (point_num + 1), indi, indi_len);
+  // bazier_corner_arc(e->x, (e->y + e->height), (e->x + offset), ((e->y + e->height) - offset), fraction, arcx, arcy, point_num);
+  // bazier_vertex_insert(vert, point_num, (e->x + offset), ((e->y + e->height) - offset), arcx, arcy, e->color);
+  // vertex_buffer_push_back(e->rect_buffer, vert, (point_num + 1), indi, indi_len);
   /* Then do the bottom right arc. */
-  bazier_corner_arc((e->x + e->width), (e->y + e->height), ((e->x + e->width) - offset), ((e->y + e->height) - offset), fraction, arcx, arcy, point_num);
-  bazier_vertex_insert(vert, point_num, ((e->x + e->width) - offset), ((e->y + e->height) - offset), arcx, arcy, e->color);
-  vertex_buffer_push_back(e->rect_buffer, vert, (point_num + 1), indi, indi_len);
+  // bazier_corner_arc((e->x + e->width), (e->y + e->height), ((e->x + e->width) - offset), ((e->y + e->height) - offset), fraction, arcx, arcy, point_num);
+  // bazier_vertex_insert(vert, point_num, ((e->x + e->width) - offset), ((e->y + e->height) - offset), arcx, arcy, e->color);
+  // vertex_buffer_push_back(e->rect_buffer, vert, (point_num + 1), indi, indi_len);
   free(indi);
   free(vert);
 }
@@ -209,6 +220,16 @@ static inline void element_draw_rect(Element *const e) {
     else {
       shader_rect_vertex_load(vert, e->x, e->y, e->width, e->height, e->color);
       vertex_buffer_push_back(e->rect_buffer, vert, 4, RECT_INDICES, RECT_INDICES_LEN);
+      if (e->xflags & ELEMENT_HAS_BORDERS) {
+        shader_rect_vertex_load(vert, e->x, e->y, e->border_lsize, e->height, e->border_color);
+        vertex_buffer_push_back(e->rect_buffer, vert, 4, RECT_INDICES, RECT_INDICES_LEN);
+        shader_rect_vertex_load(vert, e->x, e->y, e->width, e->border_tsize, e->border_color);
+        vertex_buffer_push_back(e->rect_buffer, vert, 4, RECT_INDICES, RECT_INDICES_LEN);
+        shader_rect_vertex_load(vert, (e->x + e->width - e->border_rsize), e->y, e->border_rsize, e->height, e->border_color);
+        vertex_buffer_push_back(e->rect_buffer, vert, 4, RECT_INDICES, RECT_INDICES_LEN);
+        shader_rect_vertex_load(vert, e->x, (e->y + e->height - e->border_bsize), e->width, e->border_bsize, e->border_color);
+        vertex_buffer_push_back(e->rect_buffer, vert, 4, RECT_INDICES, RECT_INDICES_LEN);
+      }
     }
     e->xflags &= ~ELEMENT_RECT_REFRESH;
   }
@@ -232,7 +253,6 @@ Element *element_create(float x, float y, float width, float height, bool in_gri
   }
   else {
     e->xflags |= ELEMENT_NOT_IN_MAP;
-    // e->not_in_gridmap = TRUE;
   }
   return e;
 }
@@ -259,14 +279,6 @@ void element_draw(Element *const e) {
   /* Only draw the element rect when the element is not hidden and the rect shader has been init. */
   if (!(e->xflags & ELEMENT_HIDDEN) && rect_shader) {
     element_draw_rect(e);
-    /* If the element has borders, draw them to. */
-    if (e->xflags & ELEMENT_HAS_BORDERS) {
-      ELEMENT_CHILDREN_ITER(e, i, c,
-        if (c->xflags & ELEMENT_IS_BORDER) {
-          element_draw_rect(c);
-        }
-      );
-    }
   }
 }
 
@@ -325,12 +337,7 @@ void element_move_y_clamp(Element *const e, float y, float min, float max) {
 /* Delete the borders of `e`.  If any exests. */
 void element_delete_borders(Element *const e) {
   ASSERT(e);
-  ELEMENT_CHILDREN_ITER(e, i, c,
-    if (c->xflags & ELEMENT_IS_BORDER) {
-      element_free(c);
-      --i;
-    }
-  );
+  e->xflags &= ~ELEMENT_HAS_BORDERS;
 }
 
 /* ----------------------------- Element set color ----------------------------- */
@@ -370,60 +377,18 @@ void element_set_lable(Element *const e, const char *const restrict lable, Ulong
   }
   e->lable_len = len;
   e->lable     = measured_copy(lable, len);
-  // e->has_lable = TRUE;
-  e->xflags |= ELEMENT_LABLE;
+  e->xflags   |= ELEMENT_LABLE;
 }
 
 void element_set_borders(Element *const e, float lsize, float tsize, float rsize, float bsize, Uint color) {
   ASSERT(e);
   ASSERT(color);
-  /* Create all element's. */
-  Element *l = element_create(e->x,                      e->y,                       lsize,    e->height, FALSE);
-  Element *t = element_create(e->x,                      e->y,                       e->width, tsize,     FALSE);
-  Element *r = element_create((e->x + e->width - rsize), e->y,                       rsize,    e->height, FALSE);
-  Element *b = element_create(e->x,                      (e->y + e->height - bsize), e->width, bsize,     FALSE);
-  /* Delete the current border's of `e` if it has them.  TODO: implement resizing and recoloring the existing ones when they exist. */
-  element_delete_borders(e);
-  // e->has_borders = TRUE;
-  e->xflags |= ELEMENT_HAS_BORDERS;
-  /* Set `e` as the parent for all borders. */
-  element_set_parent(l, e);
-  element_set_parent(t, e);
-  element_set_parent(r, e);
-  element_set_parent(b, e);
-  /* Set the color of all borders. */
-  // color_copy(l->color, color);
-  // color_copy(t->color, color);
-  // color_copy(r->color, color);
-  // color_copy(b->color, color);
-  l->color = color;
-  t->color = color;
-  r->color = color;
-  b->color = color;
-  /* Left. */
-  l->xflags |= (ELEMENT_IS_BORDER | ELEMENT_REL_POS | ELEMENT_REL_HEIGHT);
-  // l->is_border           = TRUE;
-  // l->has_relative_pos    = TRUE;
-  // l->has_relative_height = TRUE;
-  /* Top. */
-  t->xflags |= (ELEMENT_IS_BORDER | ELEMENT_REL_POS | ELEMENT_REL_WIDTH);
-  // t->is_border          = TRUE;
-  // t->has_relative_pos   = TRUE;
-  // t->has_relative_width = TRUE;
-  /* Right. */
-  r->xflags |= (ELEMENT_IS_BORDER | ELEMENT_REVREL_X | ELEMENT_REL_Y | ELEMENT_REL_HEIGHT);
-  // r->is_border                  = TRUE;
-  // r->has_reverse_relative_x_pos = TRUE;
-  // r->has_relative_y_pos         = TRUE;
-  // r->has_relative_height        = TRUE;
-  r->rel_x = rsize;
-  /* Bottom. */
-  b->xflags |= (ELEMENT_IS_BORDER | ELEMENT_REL_X | ELEMENT_REVREL_Y | ELEMENT_REL_WIDTH);
-  // b->is_border                  = TRUE;
-  // b->has_relative_x_pos         = TRUE;
-  // b->has_reverse_relative_y_pos = TRUE;
-  // b->has_relative_width         = TRUE;
-  b->rel_y = bsize;
+  e->xflags |= (ELEMENT_HAS_BORDERS | ELEMENT_RECT_REFRESH);
+  e->border_lsize = lsize;
+  e->border_tsize = tsize;
+  e->border_rsize = rsize;
+  e->border_bsize = bsize;
+  e->border_color = color;
 }
 
 /* Set the event layer of `e`.  Note that this does not change drawing layer as that depends on the order of drawing. */
@@ -446,7 +411,7 @@ void element_set_parent(Element *const e, Element *const p) {
   ASSERT(p);
   e->parent = p;
   cvec_push(p->children, e);
-  element_set_layer(p, p->layer);
+  element_set_layer(p, 0);
 }
 
 /* Set the internal data ptr of `e` to `void *` data.  Note that this should be the only way of setting the internal data of a element. */

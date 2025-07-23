@@ -1201,37 +1201,37 @@
 // }
 
 /* Returns a normalized path.  IE: Removes all /../ correctly.  TODO: Fully remake this, correctly this time... */
-char *normalized_path(const char *path) _NOTHROW {
-  char *ret = copy_of(path);
-  const char *start = ret;
-  const char *end   = NULL;
-  while ((start = strstr(start, "/../"))) {
-    /* If the path starts with '/../' then it`s an invalid path. */
-    if (start == ret) {
-      break;
-    }
-    end = (start + 3);
-    if (!*end) {
-      break;
-    }
-    --start;
-    DCR_PTR(start, ret, (*start != '/'));
-    char *part_1 = measured_copy(ret, (start - ret));
-    char *part_2 = copy_of(end);
-    Ulong idx = (start - ret);
-    free(ret);
-    ret = alloc_str_free_substrs(part_1, part_2);
-    start = &ret[idx];
-  }
-  return ret;
-}
+// char *normalized_path(const char *path) _NOTHROW {
+//   char *ret = copy_of(path);
+//   const char *start = ret;
+//   const char *end   = NULL;
+//   while ((start = strstr(start, "/../"))) {
+//     /* If the path starts with '/../' then it`s an invalid path. */
+//     if (start == ret) {
+//       break;
+//     }
+//     end = (start + 3);
+//     if (!*end) {
+//       break;
+//     }
+//     --start;
+//     DCR_PTR(start, ret, (*start != '/'));
+//     char *part_1 = measured_copy(ret, (start - ret));
+//     char *part_2 = copy_of(end);
+//     Ulong idx = (start - ret);
+//     free(ret);
+//     ret = alloc_str_free_substrs(part_1, part_2);
+//     start = &ret[idx];
+//   }
+//   return ret;
+// }
 
 /* Optimized for repeted calls where the first call makes sure to get the
  * full path of a relative one, and once that is done normalized path is
  * used as we already know that the relative path must be correct. */
-char *abs_path(const char *path) _NOTHROW {
-  return ((*path == '/') ? normalized_path(path) : get_full_path(path));
-}
+// char *abs_path(const char *path) _NOTHROW {
+//   return ((*path == '/') ? normalized_path(path) : get_full_path(path));
+// }
 
 /* Check whether the given path refers to a directory that is writable.
  * Return the absolute form of the path on success, and 'NULL' on failure. */

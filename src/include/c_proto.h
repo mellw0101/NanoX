@@ -944,6 +944,12 @@ void do_insertfile(void);
 /* ----------------------------- Do execute ----------------------------- */
 void do_execute_for(FULL_CTX_ARGS);
 void do_execute(void);
+/* ----------------------------- Norm path ----------------------------- */
+char *norm_path(const char *const restrict path);
+void norm_path_test_a_path(const char *const restrict path);
+void norm_path_test(void) _NO_RETURN;
+/* ----------------------------- Abs path ----------------------------- */
+char *abs_path(const char *const restrict path);
 
 
 /* ---------------------------------------------------------- chars.c ---------------------------------------------------------- */

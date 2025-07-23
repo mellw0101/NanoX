@@ -1298,12 +1298,11 @@ typedef enum {
   ELEMENT_REVREL_Y     = (1 <<  5),
   ELEMENT_REL_WIDTH    = (1 <<  6),
   ELEMENT_REL_HEIGHT   = (1 <<  7),
-  ELEMENT_IS_BORDER    = (1 <<  8),
-  ELEMENT_HAS_BORDERS  = (1 <<  9),
-  ELEMENT_NOT_IN_MAP   = (1 << 10),
-  ELEMENT_ABOVE        = (1 << 11),
-  ELEMENT_RECT_REFRESH = (1 << 12),
-  ELEMENT_ROUNDED_RECT = (1 << 13),
+  ELEMENT_HAS_BORDERS  = (1 <<  8),
+  ELEMENT_NOT_IN_MAP   = (1 <<  9),
+  ELEMENT_ABOVE        = (1 << 10),
+  ELEMENT_RECT_REFRESH = (1 << 11),
+  ELEMENT_ROUNDED_RECT = (1 << 12),
   /* General flags. */
 # define ELEMENT_HIDDEN        ELEMENT_HIDDEN
 # define ELEMENT_LABLE         ELEMENT_LABLE
@@ -1313,7 +1312,6 @@ typedef enum {
 # define ELEMENT_REVREL_Y      ELEMENT_REVREL_Y
 # define ELEMENT_REL_WIDTH     ELEMENT_REL_WIDTH
 # define ELEMENT_REL_HEIGHT    ELEMENT_REL_HEIGHT
-# define ELEMENT_IS_BORDER     ELEMENT_IS_BORDER
 # define ELEMENT_HAS_BORDERS   ELEMENT_HAS_BORDERS
 # define ELEMENT_NOT_IN_MAP    ELEMENT_NOT_IN_MAP
 # define ELEMENT_ABOVE         ELEMENT_ABOVE
@@ -1771,6 +1769,12 @@ struct Element {
     openfilestruct *file;
     Editor         *editor;
   } data_ptr;
+
+  Ushort border_lsize;
+  Ushort border_tsize;
+  Ushort border_rsize;
+  Ushort border_bsize;
+  Uint border_color;
 };
 
 /* ----------------------------- gui/editor/editor.c ----------------------------- */

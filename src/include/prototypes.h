@@ -313,7 +313,7 @@ void  attr_idx_int_code(int idx, int *fg, int *bg);
 // void   do_execute(void);
 // char  *get_full_path(const char *origpath) _NOTHROW;
 char  *normalized_path(const char *path) _NOTHROW;
-char  *abs_path(const char *path) _NOTHROW;
+// char  *abs_path(const char *path) _NOTHROW;
 // char  *safe_tempfile(FILE **stream);
 // void   init_operating_dir(void) _NOTHROW;
 // bool   outside_of_confinement(const char *currpath, bool allow_tabcomp) _NOTHROW;

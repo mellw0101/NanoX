@@ -17,20 +17,27 @@
   ASSERT(etb->element); \
   ASSERT(etb->context)
 
-// #define ETB_BORDER_COLOR    vec4(vec3(0.5f),  1.0f)
-// #define ETB_ACTIVE_COLOR    vec4(vec3(0.25f), 1.0f)
-// #define ETB_INACTIVE_COLOR  vec4(vec3(0.08f), 1.0f)
-
 
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
 
 
-#define ETB_BORDER_COLOR  PACKED_UINT_FLOAT(0.5f, 0.5f, 0.5f, 1.0f)
-#define ETB_ACTIVE_COLOR  PACKED_UINT_FLOAT(0.25f, 0.25f, 0.25f, 1.0f)
-#define ETB_BUTTON_COLOR  PACKED_UINT_FLOAT(0.08f, 0.08f, 0.08f, 1.0f)
-// static Color etb_border_color = {0.5f, 0.5f, 0.5f, 1};
-// static Color etb_active_color = {0.25f, 0.25f, 0.25f, 1};
-// static Color etb_button_color = {0.08f, 0.08f, 0.08f, 1};
+#define ETB_BORDER_COLOR  PACKED_UINT_FLOAT( .5f,  .5f,  .5f, 1.f)
+#define ETB_ACTIVE_COLOR  PACKED_UINT_FLOAT(.25f, .25f, .25f, 1.f)
+#define ETB_BUTTON_COLOR  PACKED_UINT_FLOAT(.08f, .08f, .08f, 1.f)
+
+
+/* ---------------------------------------------------------- Enum's ---------------------------------------------------------- */
+
+
+typedef enum {
+  ETB_REFRESH_SELECTED = (1 << 0),
+  ETB_REFRESH_TEXT     = (1 << 1),
+  ETB_REFRESH_ENTRIES  = (1 << 2),
+# define ETB_REFRESH_SELECTED  ETB_REFRESH_SELECTED
+# define ETB_REFRESH_TEXT      ETB_REFRESH_TEXT
+# define ETB_REFRESH_ENTRIES   ETB_REFRESH_ENTRIES
+# define ETB_XFLAGS_DEFAULT    (ETB_REFRESH_SELECTED | ETB_REFRESH_TEXT | ETB_REFRESH_ENTRIES)
+} EtbStateFlag;
 
 
 /* ---------------------------------------------------------- Struct's ---------------------------------------------------------- */
@@ -44,10 +51,8 @@ typedef struct {
 } EtbContextMenu;
 
 struct EditorTb {
-  /* Boolian flags. */
-  bool active_refresh_needed  : 1;
-  bool text_refresh_needed    : 1;
-  bool entries_refresh_needed : 1;
+  /* State flags. */
+  Uint xflags;
 
   vertex_buffer_t *buffer;
   Editor          *editor;
@@ -60,29 +65,28 @@ struct EditorTb {
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
+/* ----------------------------- Etb refresh selected ----------------------------- */
+
 static void etb_refresh_active(EditorTb *const etb) {
   ASSERT_ETB;
-  if (etb->active_refresh_needed) {
+  if (etb->xflags & ETB_REFRESH_SELECTED) {
     ELEMENT_CHILDREN_ITER(etb->element, i, button,
       if (button->dt == ELEMENT_DATA_FILE) {
+        /* The currently selected file. */
         if (button->dp_file == etb->editor->openfile) {
-          button->xflags |= ELEMENT_ROUNDED_RECT;
-          if (button->color != (Uint)ETB_ACTIVE_COLOR) {
-            button->color = ETB_ACTIVE_COLOR;
+          if (button->color != ETB_ACTIVE_COLOR) {
+            button->color   = ETB_ACTIVE_COLOR;
             button->xflags |= ELEMENT_RECT_REFRESH;
           }
         }
-        else {
-          button->xflags &= ~ELEMENT_ROUNDED_RECT;
-          if (button->color != (Uint)ETB_BUTTON_COLOR) {
-            button->color   = ETB_BUTTON_COLOR;
-            button->xflags |= ELEMENT_RECT_REFRESH;
-          }
+        /* All other's. */
+        else if (button->color != ETB_BUTTON_COLOR) {
+          button->color   = ETB_BUTTON_COLOR;
+          button->xflags |= ELEMENT_RECT_REFRESH;
         }
-        // button->color = ((button->dp_file == etb->editor->openfile) ? ETB_ACTIVE_COLOR : ETB_BUTTON_COLOR);
       }
     );
-    etb->active_refresh_needed = FALSE;
+    etb->xflags &= ~ETB_REFRESH_SELECTED;
   }
 }
 
@@ -90,7 +94,7 @@ static void etb_refresh_text(EditorTb *const etb) {
   ASSERT_ETB;
   float pen_x;
   float pen_y;
-  if (etb->text_refresh_needed) {
+  if (etb->xflags & ETB_REFRESH_TEXT) {
     vertex_buffer_clear(etb->buffer);
     ELEMENT_CHILDREN_ITER(etb->element, i, child,
       if (child->dt == ELEMENT_DATA_FILE) {
@@ -99,7 +103,7 @@ static void etb_refresh_text(EditorTb *const etb) {
         font_vertbuf_add_mbstr(uifont, etb->buffer, child->lable, child->lable_len, " ", child->text_color, &pen_x, &pen_y);
       }
     );
-    etb->text_refresh_needed = FALSE;
+    etb->xflags &= ~ETB_REFRESH_TEXT;
   }
 }
 
@@ -124,10 +128,7 @@ static void etb_create_button(EditorTb *const etb, openfilestruct *const f, floa
   button = element_create((*pos_x), (*pos_y), (font_breadth(uifont, lable) + font_breadth(uifont, "  ")), font_height(uifont), TRUE);
   element_set_parent(button, etb->element);
   button->xflags |= ELEMENT_REL_POS;
-  if (f == etb->editor->openfile) {
-    button->xflags |= ELEMENT_ROUNDED_RECT;
-  }
-  button->cursor = GLFW_HAND_CURSOR;
+  button->cursor  = GLFW_HAND_CURSOR;
   element_set_lable(button, lable, strlen(lable));
   element_set_file_data(button, f);
   /* Set the correct color for the button based on if it's the currently open file in the editor. */
@@ -144,7 +145,7 @@ static void etb_refresh_entries(EditorTb *const etb) {
   ASSERT_ETB;
   float x;
   float y;
-  if (etb->entries_refresh_needed) {
+  if (etb->xflags & ETB_REFRESH_ENTRIES) {
     etb_delete_entries(etb);
     /* Start at the same position as the topbar element. */
     x = etb->element->x;
@@ -153,8 +154,8 @@ static void etb_refresh_entries(EditorTb *const etb) {
     CLIST_ITER(etb->editor->startfile, f,
       etb_create_button(etb, f, &x, &y);
     );
-    etb->entries_refresh_needed = FALSE;
-    etb->text_refresh_needed = TRUE;
+    etb->xflags &= ~ETB_REFRESH_ENTRIES;
+    etb->xflags |= ETB_REFRESH_TEXT;
   }
 }
 
@@ -268,21 +269,15 @@ EditorTb *etb_create(Editor *const editor) {
   ASSERT(uifont);
   ASSERT(editor);
   ASSERT(editor->main);
-  EditorTb *etb;
-  MALLOC_STRUCT(etb);
-  /* editor->topbar = et; */
-  /* Boolian flags. */
-  etb->active_refresh_needed  = TRUE;
-  etb->text_refresh_needed    = TRUE;
-  etb->entries_refresh_needed = TRUE;
-  etb->buffer  = vertbuf_create();
+  EditorTb *etb = xmalloc(sizeof*etb);
+  /* State flags. */
+  etb->xflags  = ETB_XFLAGS_DEFAULT;
+  etb->buffer  = vertex_buffer_new(FONT_VERTBUF);
   etb->editor  = editor;
   etb->element = element_create(etb->editor->main->x, etb->editor->main->y, etb->editor->main->width, font_height(uifont), TRUE);
   element_set_parent(etb->element, etb->editor->main);
-  etb->element->color = PACKED_UINT_EDIT_BACKGROUND;
+  etb->element->color   = PACKED_UINT_EDIT_BACKGROUND;
   etb->element->xflags |= (ELEMENT_REL_POS | ELEMENT_REL_WIDTH);
-  // etb->element->has_relative_pos   = TRUE;
-  // etb->element->has_relative_width = TRUE;
   element_set_editor_data(etb->element, etb->editor);
   etb_context_menu_create(etb);
   return etb;
@@ -313,19 +308,19 @@ void etb_draw(EditorTb *const etb) {
 /* When the open file of the topbar has changed, this should be called to just update the currently active entry in the topbar. */
 void etb_active_refresh_needed(EditorTb *const etb) {
   ASSERT_ETB;
-  etb->active_refresh_needed = TRUE;
+  etb->xflags |= ETB_REFRESH_SELECTED;
 }
 
 /* When the position has changed so the text needs to be re-input into the vertex buffer. */
 void etb_text_refresh_needed(EditorTb *const etb) {
   ASSERT_ETB;
-  etb->text_refresh_needed = TRUE;
+  etb->xflags |= ETB_REFRESH_TEXT;
 }
 
 /* When rebuilding the entire topbar is requiered. */
 void etb_entries_refresh_needed(EditorTb *const etb) {
   ASSERT_ETB;
-  etb->entries_refresh_needed = TRUE;
+  etb->xflags |= ETB_REFRESH_ENTRIES;
 }
 
 void etb_show_context_menu(EditorTb *const etb, Element *const from_element, bool show) {

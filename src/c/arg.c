@@ -193,7 +193,7 @@ static void consume_argument(int *const argc, char **argv, int i) {
   ASSERT(argc);
   ASSERT(argv);
   /* Consume the argument. */
-  memmove((argv + i), (argv + i + 1), (((*argc) - i - 1) * _PTRSIZE));
+  MEMMOVE((argv + i), (argv + i + 1), (((*argc) - i - 1) * _PTRSIZE));
   /* Decrament the total size. */
   --(*argc);
 }
@@ -378,8 +378,9 @@ void proccess_cli_arguments(int *const argc, char **argv) {
               break;
             }
             case CLIOPT_TEST: {
-              SET(NO_NCURSES);
-              consume_argument(argc, argv, i--);
+              norm_path_test();
+              // SET(NO_NCURSES);
+              // consume_argument(argc, argv, i--);
               break;
             }
           }
