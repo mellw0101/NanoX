@@ -573,6 +573,8 @@ char *get_previous_char_match(linestruct *line, Ulong xpos, const char *const re
   bool allow_literals, linestruct **const outline, Ulong *const outxpos);
 /* ----------------------------- Tab helper ----------------------------- */
 bool tab_helper(openfilestruct *const file);
+/* ----------------------------- Lower case word ----------------------------- */
+char *lower_case_word(const char *const restrict word);
 
 
 /* ---------------------------------------------------------- arg.c ---------------------------------------------------------- */

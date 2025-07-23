@@ -529,7 +529,7 @@ void  do_find_bracket(void) _NOTHROW;
 // void  do_verbatim_input(void);
 // char *copy_completion(char *text);
 // void  complete_a_word(void);
-char *lower_case_word(const char *str);
+// char *lower_case_word(const char *str);
 
 
 /* ---------------------------------------------------------- utils.cpp ---------------------------------------------------------- */

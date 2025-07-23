@@ -4587,3 +4587,18 @@ bool tab_helper(openfilestruct *const file) {
   }
   return FALSE;
 }
+
+/* ----------------------------- Lower case word ----------------------------- */
+
+/* Returns an allocated string containing only lower case chars.
+ * TODO: Remake this as what i wanted this to be...  A convert where
+ * when all characters are uppercase, then return the lower case word. */
+char *lower_case_word(const char *const restrict word) {
+  Ulong len = strlen(word);
+  char *ret = xmalloc(len + 1);
+  for (Ulong i=0; i<len; ++i) {
+    ret[i] = ASCII_TOLOWER(word[i]);
+  }
+  ret[len] = NUL;
+  return ret; 
+}

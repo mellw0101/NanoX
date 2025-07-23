@@ -3573,16 +3573,16 @@
 // }
 
 /* Return`s a all lower case str of 'str'. */
-char *lower_case_word(const char *str) {
-  char *ret = (char *)nmalloc(strlen(str + 1));
-  const char *copy = str;
-  Uint i = 0;
-  for (; *copy; ++copy, ++i) {
-    ret[i] = *copy;
-    if (*copy >= 'A' && *copy <= 'Z') {
-      ret[i] += 32;
-    }
-  }
-  ret[i] = '\0';
-  return ret;
-}
+// char *lower_case_word(const char *str) {
+//   char *ret = (char *)nmalloc(strlen(str + 1));
+//   const char *copy = str;
+//   Uint i = 0;
+//   for (; *copy; ++copy, ++i) {
+//     ret[i] = *copy;
+//     if (*copy >= 'A' && *copy <= 'Z') {
+//       ret[i] += 32;
+//     }
+//   }
+//   ret[i] = '\0';
+//   return ret;
+// }
