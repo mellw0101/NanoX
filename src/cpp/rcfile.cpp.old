@@ -1,6 +1,8 @@
 /** @file rcfile.cpp */
 #include "../include/prototypes.h"
 
+/* TODO: Finish this shit tomorrow: TODAY:21/07/2025.  Done!!! TODAY: 22/07/2025. */
+
 #ifndef RCFILE_NAME
 # define HOME_RC_NAME ".nanorc"
 # define RCFILE_NAME  "nanorc"
@@ -135,142 +137,142 @@
 /* Staticly define the number of elements in the map as a constexpr. */
 #define FUNCTION_MAP_COUNT 104
 /* Define a map of 'string_view`s' to 'functionptrtype`s'. */
-constexpr_map<std::string_view, functionptrtype, FUNCTION_MAP_COUNT> keyMap = {{
-  {"cancel",        do_cancel},
-  {"help",          do_help},
-  {"exit",          do_exit},
-  {"discardbuffer", discard_buffer},
-  {"writeout",      do_writeout},
-  {"savefile",      do_savefile},
-  {"insert",        do_insertfile},
-  {"whereis",       do_search_forward},
-  {"wherewas",      do_search_backward},
-  {"findprevious",  do_findprevious},
-  {"findnext",      do_findnext},
-  {"replace",       do_replace},
-  {"cut",           cut_text},
-  {"copy",          copy_text},
-  {"paste",         paste_text},
-  {"execute",       do_execute},
-  {"cutrestoffile", cut_till_eof},
-  {"zap",           zap_text},
-  {"mark",          do_mark},
-  {"tospell",       do_spell},
-  {"speller",       do_spell},
-  {"linter",        do_linter},
-  {"formatter",     do_formatter},
-  {"location",      report_cursor_position},
-  {"gotoline",      do_gotolinecolumn},
-  {"justify",       do_justify},
-  {"fulljustify",   do_full_justify},
-  {"beginpara",     to_para_begin},
-  {"endpara",       to_para_end},
-  {"comment",       do_comment},
-  {"complete",      complete_a_word},
-  {"indent",        do_indent},
-  {"unindent",      do_unindent},
-  {"chopwordleft",  chop_previous_word},
-  {"chopwordright", chop_next_word},
-  {"findbracket",   do_find_bracket},
-  {"wordcount",     count_lines_words_and_characters},
-  {"recordmacro",   record_macro},
-  {"runmacro",      run_macro},
-  {"anchor",        put_or_lift_anchor},
-  {"prevanchor",    to_prev_anchor},
-  {"nextanchor",    to_next_anchor},
-  {"undo",          do_undo},
-  {"redo",          do_redo},
-  {"suspend",       do_suspend},
-  {"left",          do_left},
-  {"back",          do_left},
-  {"right",         do_right},
-  {"forward",       do_right},
-  {"up",            do_up},
-  {"prevline",      do_up},
-  {"down",          do_down},
-  {"nextline",      do_down},
-  {"scrollup",      do_scroll_up},
-  {"scrolldown",    do_scroll_down},
-  {"prevword",      to_prev_word},
-  {"nextword",      to_next_word},
-  {"home",          do_home},
-  {"end",           do_end},
-  {"prevblock",     to_prev_block},
-  {"nextblock",     to_next_block},
-  {"pageup",        do_page_up},
-  {"prevpage",      do_page_up},
-  {"pagedown",      do_page_down},
-  {"nextpage",      do_page_down},
-  {"firstline",     to_first_line},
-  {"lastline",      to_last_line},
-  {"toprow",        to_top_row},
-  {"bottomrow",     to_bottom_row},
-  {"center",        do_center},
-  {"cycle",         do_cycle},
-  {"dosformat",     dos_format},
-  {"macformat",     mac_format},
-  {"append",        append_it},
-  {"prepend",       prepend_it},
-  {"backup",        back_it_up},
-  {"flipexecute",   flip_execute},
-  {"flippipe",      flip_pipe},
-  {"flipconvert",   flip_convert},
-  {"flipnewbuffer", flip_newbuffer},
-  {"flipgoto",      flip_goto},
-  {"flipreplace",   flip_replace},
-  {"flippipe",      flip_pipe},
-  {"flipconvert",   flip_convert},
-  {"flipnewbuffer", flip_newbuffer},
-  {"verbatim",      do_verbatim_input},
-  {"tab",           do_tab},
-  {"enter",         do_enter},
-  {"delete",        do_delete},
-  {"backspace",     do_backspace},
-  {"refresh",       full_refresh},
-  {"casesens",      case_sens_void},
-  {"regexp",        regexp_void},
-  {"backwards",     backwards_void},
-  {"flipreplace",   flip_replace},
-  {"flipgoto",      flip_goto},
-  {"flippipe",      flip_pipe},
-  {"flipconvert",   flip_convert},
-  {"flipnewbuffer", flip_newbuffer},
-  {"tofiles",       to_files},
-  {"browser",       to_files},
-  {"gotodir",       goto_dir},
-  {"firstfile",     to_first_file},
-  {"lastfile",      to_last_file}
-}};
-static constexpr auto retrive_sc_from_str(std::string_view str) _NOTHROW {
-  for (const auto &[key, value] : keyMap) {
-    if (key == str) {
-      return value;
-    }
-  }
-  return (functionptrtype) NULL;
-}
+// constexpr_map<std::string_view, functionptrtype, FUNCTION_MAP_COUNT> keyMap = {{
+//   {"cancel",        do_cancel},
+//   {"help",          do_help},
+//   {"exit",          do_exit},
+//   {"discardbuffer", discard_buffer},
+//   {"writeout",      do_writeout},
+//   {"savefile",      do_savefile},
+//   {"insert",        do_insertfile},
+//   {"whereis",       do_search_forward},
+//   {"wherewas",      do_search_backward},
+//   {"findprevious",  do_findprevious},
+//   {"findnext",      do_findnext},
+//   {"replace",       do_replace},
+//   {"cut",           cut_text},
+//   {"copy",          copy_text},
+//   {"paste",         paste_text},
+//   {"execute",       do_execute},
+//   {"cutrestoffile", cut_till_eof},
+//   {"zap",           zap_text},
+//   {"mark",          do_mark},
+//   {"tospell",       do_spell},
+//   {"speller",       do_spell},
+//   {"linter",        do_linter},
+//   {"formatter",     do_formatter},
+//   {"location",      report_cursor_position},
+//   {"gotoline",      do_gotolinecolumn},
+//   {"justify",       do_justify},
+//   {"fulljustify",   do_full_justify},
+//   {"beginpara",     to_para_begin},
+//   {"endpara",       to_para_end},
+//   {"comment",       do_comment},
+//   {"complete",      complete_a_word},
+//   {"indent",        do_indent},
+//   {"unindent",      do_unindent},
+//   {"chopwordleft",  chop_previous_word},
+//   {"chopwordright", chop_next_word},
+//   {"findbracket",   do_find_bracket},
+//   {"wordcount",     count_lines_words_and_characters},
+//   {"recordmacro",   record_macro},
+//   {"runmacro",      run_macro},
+//   {"anchor",        put_or_lift_anchor},
+//   {"prevanchor",    to_prev_anchor},
+//   {"nextanchor",    to_next_anchor},
+//   {"undo",          do_undo},
+//   {"redo",          do_redo},
+//   {"suspend",       do_suspend},
+//   {"left",          do_left},
+//   {"back",          do_left},
+//   {"right",         do_right},
+//   {"forward",       do_right},
+//   {"up",            do_up},
+//   {"prevline",      do_up},
+//   {"down",          do_down},
+//   {"nextline",      do_down},
+//   {"scrollup",      do_scroll_up},
+//   {"scrolldown",    do_scroll_down},
+//   {"prevword",      to_prev_word},
+//   {"nextword",      to_next_word},
+//   {"home",          do_home},
+//   {"end",           do_end},
+//   {"prevblock",     to_prev_block},
+//   {"nextblock",     to_next_block},
+//   {"pageup",        do_page_up},
+//   {"prevpage",      do_page_up},
+//   {"pagedown",      do_page_down},
+//   {"nextpage",      do_page_down},
+//   {"firstline",     to_first_line},
+//   {"lastline",      to_last_line},
+//   {"toprow",        to_top_row},
+//   {"bottomrow",     to_bottom_row},
+//   {"center",        do_center},
+//   {"cycle",         do_cycle},
+//   {"dosformat",     dos_format},
+//   {"macformat",     mac_format},
+//   {"append",        append_it},
+//   {"prepend",       prepend_it},
+//   {"backup",        back_it_up},
+//   {"flipexecute",   flip_execute},
+//   {"flippipe",      flip_pipe},
+//   {"flipconvert",   flip_convert},
+//   {"flipnewbuffer", flip_newbuffer},
+//   {"flipgoto",      flip_goto},
+//   {"flipreplace",   flip_replace},
+//   {"flippipe",      flip_pipe},
+//   {"flipconvert",   flip_convert},
+//   {"flipnewbuffer", flip_newbuffer},
+//   {"verbatim",      do_verbatim_input},
+//   {"tab",           do_tab},
+//   {"enter",         do_enter},
+//   {"delete",        do_delete},
+//   {"backspace",     do_backspace},
+//   {"refresh",       full_refresh},
+//   {"casesens",      case_sens_void},
+//   {"regexp",        regexp_void},
+//   {"backwards",     backwards_void},
+//   {"flipreplace",   flip_replace},
+//   {"flipgoto",      flip_goto},
+//   {"flippipe",      flip_pipe},
+//   {"flipconvert",   flip_convert},
+//   {"flipnewbuffer", flip_newbuffer},
+//   {"tofiles",       to_files},
+//   {"browser",       to_files},
+//   {"gotodir",       goto_dir},
+//   {"firstfile",     to_first_file},
+//   {"lastfile",      to_last_file}
+// }};
+// static constexpr auto retrive_sc_from_str(std::string_view str) _NOTHROW {
+//   for (const auto &[key, value] : keyMap) {
+//     if (key == str) {
+//       return value;
+//     }
+//   }
+//   return (functionptrtype) NULL;
+// }
 
 /* Interpret a function string given in the rc file, and return a shortcut record with the corresponding function filled in. */
-keystruct *strtosc(const char *input) {
-  keystruct *s = (keystruct *)nmalloc(sizeof(keystruct));
-  s->toggle = 0;
-  const functionptrtype it = retrive_sc_from_str(input);
-  if (it) {
-    s->func = it;
-  }
-  else {
-    s->func = do_toggle;
-    const Uint toggle = retriveToggleOptionFromStr(input);
-    if (toggle) {
-      s->toggle = toggle;
-    }
-    else {
-      free(s);
-      return NULL;
-    }
-  }
-  return s;
-}
+// keystruct *strtosc(const char *input) {
+//   keystruct *s = (keystruct *)nmalloc(sizeof(keystruct));
+//   s->toggle = 0;
+//   const functionptrtype it = retrive_sc_from_str(input);
+//   if (it) {
+//     s->func = it;
+//   }
+//   else {
+//     s->func = do_toggle;
+//     const Uint toggle = retriveToggleOptionFromStr(input);
+//     if (toggle) {
+//       s->toggle = toggle;
+//     }
+//     else {
+//       free(s);
+//       return NULL;
+//     }
+//   }
+//   return s;
+// }
 
 /* Parse the next word from the string, null-terminate it, and return a pointer to the first character
  * after the null terminator.  The returned pointer will point to '\0' if we hit the end of the line. */
@@ -431,152 +433,152 @@ keystruct *strtosc(const char *input) {
 // }
 
 /* Return TRUE when the given function is present in almost all menus. */
-static bool is_universal(void (*f)(void)) {
-  return (f == do_left || f == do_right || f == do_home || f == do_end || f == to_prev_word || f == to_next_word ||
-    f == do_delete || f == do_backspace || f == cut_text || f == paste_text || f == do_tab || f == do_enter || f == do_verbatim_input);
-}
+// static bool is_universal(void (*f)(void)) {
+//   return (f == do_left || f == do_right || f == do_home || f == do_end || f == to_prev_word || f == to_next_word ||
+//     f == do_delete || f == do_backspace || f == cut_text || f == paste_text || f == do_tab || f == do_enter || f == do_verbatim_input);
+// }
 
 /* Bind or unbind a key combo, to or from a function. */
-void parse_binding(char *ptr, bool dobind) {
-  char      *keyptr  = NULL;
-  char      *keycopy = NULL;
-  char      *funcptr = NULL;
-  char      *menuptr = NULL;
-  int        keycode;
-  int        menu;
-  int        mask  = 0;
-  keystruct *newsc = NULL;
-  check_for_nonempty_syntax();
-  if (!*ptr) {
-    jot_error(N_("Missing key name"));
-    return;
-  }
-  keyptr  = ptr;
-  ptr     = parse_next_word(ptr);
-  keycopy = copy_of(keyptr);
-  /* Uppercase either the second or the first character of the key name. */
-  if (keycopy[0] == '^') {
-    keycopy[1] = toupper((Uchar)keycopy[1]);
-  }
-  else {
-    keycopy[0] = toupper((Uchar)keycopy[0]);
-  }
-  /* Verify that the key name is not too short, to allow the next call. */
-  if (!keycopy[1] || (keycopy[0] == 'M' && !keycopy[2])) {
-    jot_error(N_("Key name %s is invalid"), keycopy);
-    goto free_things;
-  }
-  keycode = keycode_from_string(keycopy);
-  if (keycode < 0) {
-    jot_error(N_("Key name %s is invalid"), keycopy);
-    goto free_things;
-  }
-  if (dobind) {
-    funcptr = ptr;
-    ptr     = parse_argument(ptr);
-    if (funcptr[0] == '\0') {
-      jot_error(N_("Must specify a function to bind the key to"));
-      goto free_things;
-    }
-    else if (!ptr) {
-      goto free_things;
-    }
-  }
-  menuptr = ptr;
-  ptr     = parse_next_word(ptr);
-  if (!menuptr[0]) {
-    /* TRANSLATORS: Do not translate the word "all". */
-    jot_error(N_("Must specify a menu (or \"all\") in which to bind/unbind the key"));
-    goto free_things;
-  }
-  menu = nameToMenu(menuptr);
-  if (!menu) {
-    jot_error(N_("Unknown menu: %s"), menuptr);
-    goto free_things;
-  }
-  if (dobind) {
-    /* If the thing to bind starts with a double quote, it is a string, otherwise it is the name of a function. */
-    if (*funcptr == '"') {
-      newsc            = (keystruct *)nmalloc(sizeof(keystruct));
-      newsc->func      = (functionptrtype)implant;
-      newsc->expansion = copy_of(funcptr + 1);
-      newsc->toggle    = 0;
-    }
-    else {
-      newsc = strtosc(funcptr);
-    }
-    if (!newsc) {
-      jot_error(N_("Unknown function: %s"), funcptr);
-      goto free_things;
-    }
-  }
-  /* Wipe the given shortcut from the given menu. */
-  for (keystruct *s = sclist; s; s = s->next) {
-    if ((s->menus & menu) && s->keycode == keycode) {
-      s->menus &= ~menu;
-    }
-  }
-  /* When unbinding, we are done now. */
-  if (!dobind) {
-    goto free_things;
-  }
-  /* Limit the given menu to those where the function exists; first handle five special cases, then the general case. */
-  if (is_universal(newsc->func)) {
-    menu &= MMOST | MBROWSER;
-  }
-  else if (newsc->func == do_toggle && newsc->toggle == NO_HELP) {
-    menu &= (MMOST | MBROWSER | MYESNO) & ~MFINDINHELP;
-  }
-  else if (newsc->func == do_toggle) {
-    menu &= MMAIN;
-  }
-  else if (newsc->func == full_refresh) {
-    menu &= MMOST | MBROWSER | MHELP | MYESNO;
-  }
-  else if (newsc->func == (functionptrtype)implant) {
-    menu &= MMOST | MBROWSER | MHELP;
-  }
-  else {
-    /* Tally up the menus where the function exists. */
-    for (funcstruct *f = allfuncs; f != NULL; f = f->next) {
-      if (f->func == newsc->func) {
-        mask |= f->menus;
-      }
-    }
-    menu &= mask;
-  }
-  if (!menu) {
-    if (!ISSET(RESTRICTED) && !ISSET(VIEW_MODE)) {
-      jot_error(N_("Function '%s' does not exist in menu '%s'"), funcptr, menuptr);
-    }
-    goto free_things;
-  }
-  newsc->menus   = menu;
-  newsc->keystr  = keycopy;
-  newsc->keycode = keycode;
-  /* Disallow rebinding <Esc> (^[). */
-  if (newsc->keycode == ESC_CODE) {
-    jot_error(N_("Keystroke %s may not be rebound"), keycopy);
-  free_things:
-    free(keycopy);
-    free(newsc);
-    return;
-  }
-  /* If this is a toggle, find and copy its sequence number. */
-  if (newsc->func == do_toggle) {
-    for (keystruct *s = sclist; s; s = s->next) {
-      if (s->func == do_toggle && s->toggle == newsc->toggle) {
-        newsc->ordinal = s->ordinal;
-      }
-    }
-  }
-  else {
-    newsc->ordinal = 0;
-  }
-  /* Add the new shortcut at the start of the list. */
-  newsc->next = sclist;
-  sclist      = newsc;
-}
+// void parse_binding(char *ptr, bool dobind) {
+//   char      *keyptr  = NULL;
+//   char      *keycopy = NULL;
+//   char      *funcptr = NULL;
+//   char      *menuptr = NULL;
+//   int        keycode;
+//   int        menu;
+//   int        mask  = 0;
+//   keystruct *newsc = NULL;
+//   check_for_nonempty_syntax();
+//   if (!*ptr) {
+//     jot_error(N_("Missing key name"));
+//     return;
+//   }
+//   keyptr  = ptr;
+//   ptr     = parse_next_word(ptr);
+//   keycopy = copy_of(keyptr);
+//   /* Uppercase either the second or the first character of the key name. */
+//   if (keycopy[0] == '^') {
+//     keycopy[1] = toupper((Uchar)keycopy[1]);
+//   }
+//   else {
+//     keycopy[0] = toupper((Uchar)keycopy[0]);
+//   }
+//   /* Verify that the key name is not too short, to allow the next call. */
+//   if (!keycopy[1] || (keycopy[0] == 'M' && !keycopy[2])) {
+//     jot_error(N_("Key name %s is invalid"), keycopy);
+//     goto free_things;
+//   }
+//   keycode = keycode_from_string(keycopy);
+//   if (keycode < 0) {
+//     jot_error(N_("Key name %s is invalid"), keycopy);
+//     goto free_things;
+//   }
+//   if (dobind) {
+//     funcptr = ptr;
+//     ptr     = parse_argument(ptr);
+//     if (funcptr[0] == '\0') {
+//       jot_error(N_("Must specify a function to bind the key to"));
+//       goto free_things;
+//     }
+//     else if (!ptr) {
+//       goto free_things;
+//     }
+//   }
+//   menuptr = ptr;
+//   ptr     = parse_next_word(ptr);
+//   if (!menuptr[0]) {
+//     /* TRANSLATORS: Do not translate the word "all". */
+//     jot_error(N_("Must specify a menu (or \"all\") in which to bind/unbind the key"));
+//     goto free_things;
+//   }
+//   menu = name_to_menu(menuptr);
+//   if (!menu) {
+//     jot_error(N_("Unknown menu: %s"), menuptr);
+//     goto free_things;
+//   }
+//   if (dobind) {
+//     /* If the thing to bind starts with a double quote, it is a string, otherwise it is the name of a function. */
+//     if (*funcptr == '"') {
+//       newsc            = (keystruct *)nmalloc(sizeof(keystruct));
+//       newsc->func      = (functionptrtype)implant;
+//       newsc->expansion = copy_of(funcptr + 1);
+//       newsc->toggle    = 0;
+//     }
+//     else {
+//       newsc = strtosc(funcptr);
+//     }
+//     if (!newsc) {
+//       jot_error(N_("Unknown function: %s"), funcptr);
+//       goto free_things;
+//     }
+//   }
+//   /* Wipe the given shortcut from the given menu. */
+//   for (keystruct *s = sclist; s; s = s->next) {
+//     if ((s->menus & menu) && s->keycode == keycode) {
+//       s->menus &= ~menu;
+//     }
+//   }
+//   /* When unbinding, we are done now. */
+//   if (!dobind) {
+//     goto free_things;
+//   }
+//   /* Limit the given menu to those where the function exists; first handle five special cases, then the general case. */
+//   if (is_universal(newsc->func)) {
+//     menu &= MMOST | MBROWSER;
+//   }
+//   else if (newsc->func == do_toggle && newsc->toggle == NO_HELP) {
+//     menu &= (MMOST | MBROWSER | MYESNO) & ~MFINDINHELP;
+//   }
+//   else if (newsc->func == do_toggle) {
+//     menu &= MMAIN;
+//   }
+//   else if (newsc->func == full_refresh) {
+//     menu &= MMOST | MBROWSER | MHELP | MYESNO;
+//   }
+//   else if (newsc->func == (functionptrtype)implant) {
+//     menu &= MMOST | MBROWSER | MHELP;
+//   }
+//   else {
+//     /* Tally up the menus where the function exists. */
+//     for (funcstruct *f = allfuncs; f != NULL; f = f->next) {
+//       if (f->func == newsc->func) {
+//         mask |= f->menus;
+//       }
+//     }
+//     menu &= mask;
+//   }
+//   if (!menu) {
+//     if (!ISSET(RESTRICTED) && !ISSET(VIEW_MODE)) {
+//       jot_error(N_("Function '%s' does not exist in menu '%s'"), funcptr, menuptr);
+//     }
+//     goto free_things;
+//   }
+//   newsc->menus   = menu;
+//   newsc->keystr  = keycopy;
+//   newsc->keycode = keycode;
+//   /* Disallow rebinding <Esc> (^[). */
+//   if (newsc->keycode == ESC_CODE) {
+//     jot_error(N_("Keystroke %s may not be rebound"), keycopy);
+//   free_things:
+//     free(keycopy);
+//     free(newsc);
+//     return;
+//   }
+//   /* If this is a toggle, find and copy its sequence number. */
+//   if (newsc->func == do_toggle) {
+//     for (keystruct *s = sclist; s; s = s->next) {
+//       if (s->func == do_toggle && s->toggle == newsc->toggle) {
+//         newsc->ordinal = s->ordinal;
+//       }
+//     }
+//   }
+//   else {
+//     newsc->ordinal = 0;
+//   }
+//   /* Add the new shortcut at the start of the list. */
+//   newsc->next = sclist;
+//   sclist      = newsc;
+// }
 
 /* Verify that the given file exists, is not a folder nor a device. */
 // bool is_good_file(char *file) _NOTHROW {
@@ -1020,23 +1022,23 @@ void parse_binding(char *ptr, bool dobind) {
 
 #define VITALS 4
 /* Verify that the user has not unmapped every shortcut for a function that we consider 'vital' (such as 'do_exit'). */
-void check_vitals_mapped(void) {
-  void (*vitals[VITALS])() = { do_exit, do_exit, do_exit, do_cancel };
-  int inmenus[VITALS]      = { MMAIN, MBROWSER, MHELP, MYESNO };
-  for (Uint v = 0; v < VITALS; ++v) {
-    for (funcstruct *f = allfuncs; f; f = f->next) {
-      if (f->func == vitals[v] && (f->menus & inmenus[v])) {
-        if (first_sc_for(inmenus[v], f->func) == NULL) {
-          jot_error(N_("No key is bound to function '%s' in menu '%s'.  Exiting.\n"), f->tag, menu_to_name(inmenus[v]));
-          die(_("If needed, use nano with the -I option to adjust your nanorc settings.\n"));
-        }
-        else {
-          break;
-        }
-      }
-    }
-  }
-}
+// void check_vitals_mapped(void) {
+//   void (*vitals[VITALS])() = { do_exit, do_exit, do_exit, do_cancel };
+//   int inmenus[VITALS]      = { MMAIN, MBROWSER, MHELP, MYESNO };
+//   for (Uint v = 0; v < VITALS; ++v) {
+//     for (funcstruct *f = allfuncs; f; f = f->next) {
+//       if (f->func == vitals[v] && (f->menus & inmenus[v])) {
+//         if (first_sc_for(inmenus[v], f->func) == NULL) {
+//           jot_error(N_("No key is bound to function '%s' in menu '%s'.  Exiting.\n"), f->tag, menu_to_name(inmenus[v]));
+//           die(_("If needed, use nano with the -I option to adjust your nanorc settings.\n"));
+//         }
+//         else {
+//           break;
+//         }
+//       }
+//     }
+//   }
+// }
 
 /* Parse the rcfile, once it has been opened successfully at rcstream, and close it afterwards.
  * If just_syntax is TRUE, allow the file to to contain only color syntax commands. */

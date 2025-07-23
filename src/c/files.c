@@ -2010,6 +2010,51 @@ bool open_buffer(const char *const restrict path, bool new_one) {
   }
 }
 
+/* ----------------------------- Open buffer browser ----------------------------- */
+
+/* Open a file using the browser. */
+void open_buffer_browser_for(FULL_CTX_ARGS) {
+  ASSERT(start);
+  ASSERT(open);
+  ASSERT(*start);
+  ASSERT(*open);
+  char *file;
+  openfilestruct *was_open;
+  /* Let the user pick a file using the browser. */
+  if (IN_CURSES_CTX && ((file = browse_in(*(*open)->filename ? (*open)->filename : "./")))) {
+    /* Save the currently open buffer. */
+    was_open = (*open);
+    open_buffer_for(FULL_STACK_CTX, file, TRUE);
+    free(file);
+    /* If the file the user was at when opening the new one was fully empty and without a name, then remove it. */
+    if (!*was_open->filename && !was_open->totsize) {
+      close_buffer_for(was_open, start, open);
+    }
+    refresh_needed = TRUE;
+  }
+}
+
+void open_buffer_browser(void) {
+  FULL_CTX_CALL(open_buffer_browser_for);
+}
+
+/* ----------------------------- Open new empty buffer ----------------------------- */
+
+/* Open a new empty buffer. */
+void open_new_empty_buffer_for(openfilestruct **const start, openfilestruct **const open) {
+  make_new_buffer_for(start, open);
+  refresh_needed = TRUE;
+}
+
+void open_new_empty_buffer(void) {
+  if (IN_GUI_CTX) {
+    open_new_empty_buffer_for(&GUI_SF, &GUI_OF);
+  }
+  else {
+    open_new_empty_buffer_for(&TUI_SF, &TUI_OF);
+  }
+}
+
 /* ----------------------------- Username completion ----------------------------- */
 
 /* Try to complete the given fragment of given length to a username. */

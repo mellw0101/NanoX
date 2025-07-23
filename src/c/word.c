@@ -69,3 +69,14 @@ bool more_than_a_blank_away(const char *const restrict string, Ulong index, bool
     return FALSE;
   }
 }
+
+/* ----------------------------- Prev word get ----------------------------- */
+
+char *prev_word_get(const char *const restrict data, Ulong index, Ulong *const outlen) {
+  Ulong start = wordstartindex(data, index, TRUE);
+  if (start != index) {
+    ASSIGN_IF_VALID(outlen, (index - start));
+    return measured_copy((data + start), (index - start));
+  }
+  return NULL;
+}

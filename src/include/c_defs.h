@@ -741,6 +741,7 @@ typedef vec4 mat4x4[4];
 typedef void (*FreeFuncPtr)(void *);
 typedef void (*functionptrtype)(void);
 typedef void (*funcptr)(void);
+typedef void (*VoidFuncPtr)(void);
 
 /* ----------------------------- nevhandler.c ----------------------------- */
 

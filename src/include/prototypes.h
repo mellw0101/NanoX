@@ -296,8 +296,8 @@ void  attr_idx_int_code(int idx, int *fg, int *bg);
 // bool   delete_lockfile(const char *lockfilename);
 // bool   has_valid_path(const char *filename) _NOTHROW;
 // bool   open_buffer(const char *filename, bool new_one);
-void   open_buffer_browser(void);
-void   open_new_empty_buffer(void);
+// void   open_buffer_browser(void);
+// void   open_new_empty_buffer(void);
 // void   set_modified(void) _NOTHROW;
 // void   prepare_for_display(void) _NOTHROW;
 // void   mention_name_and_linecount(void) _NOTHROW;
@@ -528,7 +528,7 @@ void  do_find_bracket(void) _NOTHROW;
 // void  count_lines_words_and_characters(void);
 // void  do_verbatim_input(void);
 // char *copy_completion(char *text);
-void  complete_a_word(void);
+// void  complete_a_word(void);
 char *lower_case_word(const char *str);
 
 

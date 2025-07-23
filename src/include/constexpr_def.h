@@ -501,41 +501,41 @@ constexpr const char *epithet_of_flag(const Uint flag) {
 //   #define MSOME MSOME
 // } menu_type;
 /* The menus map. */
-constexpr_map<string_view, Ushort, 16> menu_name_map = {{
-  {        "main", MMAIN                               },
-  {      "search", MWHEREIS                            },
-  {     "replace", MREPLACE                            },
-  { "replacewith", MREPLACEWITH                        },
-  {       "yesno", MYESNO                              },
-  {    "gotoline", MGOTOLINE                           },
-  {    "writeout", MWRITEFILE                          },
-  {      "insert", MINSERTFILE                         },
-  {     "execute", MEXECUTE                            },
-  {        "help", MHELP                               },
-  {       "spell", MSPELL                              },
-  {      "linter", MLINTER                             },
-  {     "browser", MBROWSER                            },
-  { "whereisfile", MWHEREISFILE                        },
-  {     "gotodir", MGOTODIR                            },
-  {         "all", (MMOST | MBROWSER | MHELP | MYESNO) }
-}};
+// constexpr_map<string_view, Ushort, 16> menu_name_map = {{
+//   {        "main", MMAIN                               },
+//   {      "search", MWHEREIS                            },
+//   {     "replace", MREPLACE                            },
+//   { "replacewith", MREPLACEWITH                        },
+//   {       "yesno", MYESNO                              },
+//   {    "gotoline", MGOTOLINE                           },
+//   {    "writeout", MWRITEFILE                          },
+//   {      "insert", MINSERTFILE                         },
+//   {     "execute", MEXECUTE                            },
+//   {        "help", MHELP                               },
+//   {       "spell", MSPELL                              },
+//   {      "linter", MLINTER                             },
+//   {     "browser", MBROWSER                            },
+//   { "whereisfile", MWHEREISFILE                        },
+//   {     "gotodir", MGOTODIR                            },
+//   {         "all", (MMOST | MBROWSER | MHELP | MYESNO) }
+// }};
 /* Function to retrive the menu option from a string literal. */
-constexpr Uint nameToMenu(string_view str) {
-  for (const auto &[key, val] : menu_name_map) {
-    if (key == str) {
-      return val;
-    }
-  }
-  return 0;
-}
-constexpr string_view menu_to_name(const Ushort value) {
-  for (const auto &[key, val] : menu_name_map) {
-    if (val == value) {
-      return key;
-    }
-  }
-  return "boooo";
-}
+// constexpr Uint nameToMenu(string_view str) {
+//   for (const auto &[key, val] : menu_name_map) {
+//     if (key == str) {
+//       return val;
+//     }
+//   }
+//   return 0;
+// }
+// constexpr string_view menu_to_name(const Ushort value) {
+//   for (const auto &[key, val] : menu_name_map) {
+//     if (val == value) {
+//       return key;
+//     }
+//   }
+//   return "boooo";
+// }
 
 constexpr_map<string_view, Uint, 14> toggleOptionMap = {
   {{"nohelp", NO_HELP},

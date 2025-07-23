@@ -4149,6 +4149,148 @@ void do_linter(void) {
   }
 }
 
+/* ----------------------------- Complete a word ----------------------------- */
+
+/* TODO: This will be broken if ran on a file, then swapping to another file, maybe...?  But
+ * probebly not as the `pletion_line` should be set to `NULL` when handleing the file swapping. */
+void complete_a_word_for(CTX_ARGS_REF_OF) {
+  ASSERT(file);
+  ASSERT(*file);
+  /* The buffer that is beeing searched for possible completions. */
+  static openfilestruct *scouring = NULL;
+  /* A linked list of the completions that have been attempted. */
+  static completionstruct *list_of_completions;
+  /* The x postition in `pletion line` of the last found completion. */
+  static int pletion_x = 0;
+  completionstruct *dropit;
+  completionstruct *some_word;
+  /* The point where we can stop searching for shard. */
+  long threshold;
+  bool was_set_wrapping = ISSET(BREAK_LONG_LINES);
+  Ulong shard_length = 0;
+  char *shard;
+  char *completion;
+  long i;
+  long j;
+  if (!IN_CURSES_CTX) {
+    return;
+  }
+  /* If this is a fresh completion attempt... */
+  if (!pletion_line) {
+    /* Clear the list of words of a previous completion run. */
+    while (list_of_completions) {
+      dropit = list_of_completions;
+      list_of_completions = dropit->next;
+      free(dropit->word);
+      free(dropit);
+    }
+    /* Prevent a completion from being merged with typed text. */
+    (*file)->last_action = OTHER;
+    /* Initalize the starting point for searching. */
+    scouring     = (*file);
+    pletion_line = (*file)->filetop;
+    pletion_x    = 0;
+    /* Wipe the `No further matches` message. */
+    wipe_statusbar();
+  }
+  else {
+    /* Remove the attempted completion from the buffer. */
+    do_undo_for(STACK_CTX_DF);
+  }
+  /* Find the start of the fragment that the user typed. */
+  shard = prev_word_get((*file)->current->data, (*file)->current_x, &shard_length);
+  if (!shard) {
+    /* TRANSLATORS: Shown when no text is directly to the left of the cursor. */
+    statusline(AHEM, _("No word fragment"));
+    pletion_line = NULL;
+    return;
+  }
+  /* Run through all of the lines in the buffer, looking for shard. */
+  while (pletion_line) {
+    threshold = (strlen(pletion_line->data) - shard_length - 1);
+    /* Traverse the whole line, looking for shard. */
+    for (i=pletion_x; i<threshold; ++i) {
+      /* If the first byte doesn't match, run on. */
+      if (pletion_line->data[i] != *shard) {
+        continue;
+      }
+      /* Compare the rest of the bytes in shard. */
+      for (j=1; LT(j,shard_length) && pletion_line->data[i+j]==shard[j]; ++j);
+      /* If not all bytes matched, continue searching. */
+      if (LT(j, shard_length)) {
+        continue;
+      }
+      /* If the found match is not /longer/ then shard, skip it. */
+      if (!is_word_char((pletion_line->data + i + j), FALSE)) {
+        continue;
+      }
+      /* If the match is not a seperate word, skip it. */
+      if (i > 0 && is_word_char((pletion_line->data + step_left(pletion_line->data, i)), FALSE)) {
+        continue;
+      }
+      /* If this match is the shard itself, ignore it. */
+      if (pletion_line == (*file)->current && EQ(i, ((*file)->current_x - shard_length))) {
+        continue;
+      }
+      completion = copy_completion(pletion_line->data + i);
+      /* Look among earlier attempted completions for a duplicate. */
+      some_word = list_of_completions;
+      while (some_word && strcmp(some_word->word, completion) != 0) {
+        DLIST_ADV_NEXT(some_word);
+      }
+      /* If we're already tried this word, skip it. */
+      if (some_word) {
+        free(completion);
+        continue;
+      }
+      /* Add the found word to the list of completions. */
+      some_word           = xmalloc(sizeof(*some_word));
+      some_word->word     = completion;
+      some_word->next     = list_of_completions;
+      list_of_completions = some_word;
+      /* Temporarily disable line wrapping so only one undo item is added. */
+      UNSET(BREAK_LONG_LINES);
+      /* Inject the completion into the buffer. */
+      inject_into_buffer(STACK_CTX_DF, (completion + shard_length), (strlen(completion) - shard_length));
+      /* If needed, reenable wrapping and wrap the current line. */
+      if (was_set_wrapping) {
+        SET(BREAK_LONG_LINES);
+        do_wrap_for(*file, cols);
+      }
+      /* Set the position for a possible next search attempt. */
+      pletion_x = ++i;
+      free(shard);
+      return;
+    }
+    DLIST_ADV_NEXT(pletion_line);
+    pletion_x = 0;
+    /* When at end off buffer and there is another, search that one. */
+    if (!pletion_line && scouring->next != (*file)) {
+      DLIST_ADV_NEXT(scouring);
+      pletion_line = scouring->filetop;
+    }
+  }
+  /* The search has gone through all buffers. */
+  if (list_of_completions) {
+    edit_refresh_for(STACK_CTX_DF);
+    statusline(AHEM, _("No further matches"));
+  }
+  else {
+    /* TRANSLATORS: Shown when there are zero possible completions. */
+    statusline(AHEM, _("No matches"));
+  }
+  free(shard);
+}
+
+void complete_a_word(void) {
+  if (IN_GUI_CTX) {
+    complete_a_word_for(&GUI_OF, GUI_RC);
+  }
+  else {
+    complete_a_word_for(&TUI_OF, TUI_RC);
+  }
+}
+
 /* ----------------------------- Find paragraph ----------------------------- */
 
 /* Find the first occurring paragraph in the forward direction.  Return `TRUE` when a paragraph was found,

@@ -551,6 +551,9 @@ void do_full_justify(void);
 /* ----------------------------- Do linter ----------------------------- */
 void do_linter_for(CTX_ARGS_REF_OF, char *const linter);
 void do_linter(void);
+/* ----------------------------- Complete a word ----------------------------- */
+void complete_a_word_for(CTX_ARGS_REF_OF);
+void complete_a_word(void);
 /* ----------------------------- Find paragraph ----------------------------- */
 bool find_paragraph(linestruct **const first, Ulong *const count);
 /* ----------------------------- Do verbatim input ----------------------------- */
@@ -609,6 +612,8 @@ void syntaxfile_parse_csyntax(SyntaxFile *const sf);
 Ulong wordstartindex(const char *const restrict string, Ulong pos, bool allowunderscore) __THROW _NODISCARD _NONNULL(1);
 Ulong wordendindex(const char *const restrict string, Ulong pos, bool allowunderscore) __THROW _NODISCARD _NONNULL(1);
 bool more_than_a_blank_away(const char *const restrict string, Ulong index, bool forward, Ulong *const restrict nsteps);
+/* ----------------------------- Prev word get ----------------------------- */
+char *prev_word_get(const char *const restrict data, Ulong index, Ulong *const outlen);
 
 
 /* ----------------------------------------------- bracket.c ----------------------------------------------- */
@@ -905,6 +910,12 @@ void read_file(FILE *f, int fd, const char *const restrict filename, bool undoab
 /* ----------------------------- Open buffer ----------------------------- */
 bool open_buffer_for(openfilestruct **const start, openfilestruct **const open, int rows, int cols, const char *const restrict path, bool new_one);
 bool open_buffer(const char *const restrict path, bool new_one);
+/* ----------------------------- Open buffer browser ----------------------------- */
+void open_buffer_browser_for(FULL_CTX_ARGS);
+void open_buffer_browser(void);
+/* ----------------------------- Open new empty buffer ----------------------------- */
+void open_new_empty_buffer_for(openfilestruct **const start, openfilestruct **const open);
+void open_new_empty_buffer(void);
 /* ----------------------------- Username completion ----------------------------- */
 char **username_completion(const char *const restrict morsel, Ulong length, Ulong *const num_matches);
 /* ----------------------------- Input tab ----------------------------- */
@@ -1285,28 +1296,52 @@ void do_scroll_down(void);
 /* ---------------------------------------------------------- rcfile.c ---------------------------------------------------------- */
 
 
-void  display_rcfile_errors(void);
-void  jot_error(const char *const restrict format, ...);
-void  check_for_nonempty_syntax(void);
-void  set_interface_color(int element, char *combotext);
-char *parse_next_word(char *ptr);
-char *parse_argument(char *ptr);
-bool  compile(const char *const restrict expression, int rex_flags, regex_t **const packed);
-void  begin_new_syntax(char *ptr);
-short closest_index_color(short red, short green, short blue);
-short color_to_short(const char *colorname, bool *vivid, bool *thick);
-// Uint  syntax_opt_type_from_str(const char *const restrict key);
-bool  parse_combination(char *combotext, short *fg, short *bg, int *attributes);
-void  grab_and_store(const char *const restrict kind, char *ptr, regexlisttype **const storage);
-bool  parse_syntax_commands(const char *keyword, char *ptr);
-void  parse_rule(char *ptr, int rex_flags);
-bool  is_good_file(const char *const restrict file);
-void  parse_one_include(char *file, syntaxtype *syntax);
-void  parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only);
-void  do_rcfiles(void);
+/* static */ bool is_universal(void (*f)(void));
 
+/* ----------------------------- Display rcfile errors ----------------------------- */
+void display_rcfile_errors(void);
+/* ----------------------------- Jot error ----------------------------- */
+void jot_error(const char *const restrict format, ...) _PRINTFLIKE(1, 2);
+/* ----------------------------- Check for nonempty syntax ----------------------------- */
+void check_for_nonempty_syntax(void);
+/* ----------------------------- Set interface color ----------------------------- */
+void set_interface_color(int element, char *combotext);
+/* ----------------------------- Parse argument ----------------------------- */
+char *parse_argument(char *ptr);
+/* ----------------------------- Parse next word ----------------------------- */
+char *parse_next_word(char *ptr);
+/* ----------------------------- Compile ----------------------------- */
+bool compile(const char *const restrict expression, int rex_flags, regex_t **const packed);
+/* ----------------------------- Begin new syntax ----------------------------- */
+void begin_new_syntax(char *ptr);
+/* ----------------------------- Closest index color ----------------------------- */
+short closest_index_color(short red, short green, short blue);
+/* ----------------------------- Color to short ----------------------------- */
+short color_to_short(const char *colorname, bool *vivid, bool *thick);
+/* ----------------------------- Parse combination ----------------------------- */
+bool parse_combination(char *combotext, short *fg, short *bg, int *attributes);
+/* ----------------------------- Grab and store ----------------------------- */
+void grab_and_store(const char *const restrict kind, char *ptr, regexlisttype **const storage);
+/* ----------------------------- Parse syntax commands ----------------------------- */
+bool parse_syntax_commands(const char *keyword, char *ptr);
+/* ----------------------------- Parse rule ----------------------------- */
+void parse_rule(char *ptr, int rex_flags);
+/* ----------------------------- Is good file ----------------------------- */
+bool is_good_file(const char *const restrict file);
+/* ----------------------------- Check vitals mapped ----------------------------- */
 void check_vitals_mapped(void);
+/* ----------------------------- Strtosc ----------------------------- */
+keystruct *strtosc(const char *const restrict input);
+/* ----------------------------- Parse one include ----------------------------- */
+void parse_one_include(char *file, syntaxtype *syntax);
+/* ----------------------------- Parse binding ----------------------------- */
 void parse_binding(char *ptr, bool dobind);
+/* ----------------------------- Parse rcfile ----------------------------- */
+void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only);
+/* ----------------------------- Do rcfile ----------------------------- */
+void do_rcfiles(void);
+
+// void parse_binding(char *ptr, bool dobind);
 
 
 /* ---------------------------------------------------------- color.c ---------------------------------------------------------- */
@@ -1680,6 +1715,10 @@ void die(const char *const restrict format, ...) _NO_RETURN;
 void version(void) _NO_RETURN;
 /* ----------------------------- Usage ----------------------------- */
 void usage(void) _NO_RETURN;
+/* ----------------------------- Name to menu ----------------------------- */
+Uint name_to_menu(const char *const restrict name);
+/* ----------------------------- Menu to name ----------------------------- */
+const char *menu_to_name(Uint menu);
 
 
 /* ---------------------------------------------------------- Defined in C++ ---------------------------------------------------------- */
@@ -1687,7 +1726,7 @@ void usage(void) _NO_RETURN;
 
 void render_line_text(int row, const char *str, linestruct *line, Ulong from_col) __THROW;
 void apply_syntax_to_line(const int row, const char *converted, linestruct *line, Ulong from_col);
-keystruct *strtosc(const char *input);
+// keystruct *strtosc(const char *input);
 void finish(void) __THROW _NO_RETURN;
 void syntax_check_file(openfilestruct *file);
 

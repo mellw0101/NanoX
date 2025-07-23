@@ -81,6 +81,25 @@ static struct sigaction newaction;
 /* The original settings of the user's terminal. */
 struct termios original_state;
 
+static const struct { const char *const restrict name; menu_type menu; } menu_name_map[] = {
+  {        "main", MMAIN                               },
+  {      "search", MWHEREIS                            },
+  {     "replace", MREPLACE                            },
+  { "replacewith", MREPLACEWITH                        },
+  {       "yesno", MYESNO                              },
+  {    "gotoline", MGOTOLINE                           },
+  {    "writeout", MWRITEFILE                          },
+  {      "insert", MINSERTFILE                         },
+  {     "execute", MEXECUTE                            },
+  {        "help", MHELP                               },
+  {       "spell", MSPELL                              },
+  {      "linter", MLINTER                             },
+  {     "browser", MBROWSER                            },
+  { "whereisfile", MWHEREISFILE                        },
+  {     "gotodir", MGOTODIR                            },
+  {         "all", (MMOST | MBROWSER | MHELP | MYESNO) }
+};
+
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
@@ -1228,4 +1247,27 @@ void usage(void) {
   print_opt(ZERO_OPT_STR);
   print_opt(MODERNBINDINGS_OPT_STR);
   exit(0);
+}
+
+/* ----------------------------- Name to menu ----------------------------- */
+
+Uint name_to_menu(const char *const restrict name) {
+  ASSERT(name);
+  for (Ulong i=0; i<ARRAY_SIZE(menu_name_map); ++i) {
+    if (strcmp(name, menu_name_map[i].name) == 0) {
+      return menu_name_map[i].menu;
+    }
+  }
+  return 0;
+}
+
+/* ----------------------------- Menu to name ----------------------------- */
+
+const char *menu_to_name(Uint menu) {
+  for (Ulong i=0; i<ARRAY_SIZE(menu_name_map); ++i) {
+    if (menu == menu_name_map[i].menu) {
+      return menu_name_map[i].name;
+    }
+  }
+  return "Ehhh... -- What menu are you in???";
 }

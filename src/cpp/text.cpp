@@ -1,6 +1,8 @@
 /** @file text.cpp */
 #include "../include/prototypes.h"
 
+/* TODO: Finish this shit tomorrow: TODAY:21/07/2025 */
+
 /* Toggle the mark. */
 // void do_mark(void) _NOTHROW {
 //   if (!openfile->mark) {
@@ -3443,132 +3445,132 @@
 
 /* Look at the fragment the user has typed, then search all buffers for the first word that starts with this fragment,
  * and tentatively complete the fragment.  If the user hits 'Complete' again, search and paste the next possible completion. */
-void complete_a_word(void) {
-  PROFILE_FUNCTION;
-  /* The buffer that is being searched for possible completions. */
-  static openfilestruct *scouring = NULL;
-  /* A linked list of the completions that have been attempted. */
-  static completionstruct *list_of_completions;
-  /* The x position in `pletion_line` of the last found completion. */
-  static int pletion_x = 0;
-  bool  was_set_wrapping = ISSET(BREAK_LONG_LINES);
-  Ulong shard_length = 0;
-  char *shard;
-  /* If this is a fresh completion attempt... */
-  if (!pletion_line) {
-    /* Clear the list of words of a previous completion run. */
-    while (list_of_completions) {
-      completionstruct *dropit = list_of_completions;
-      list_of_completions = list_of_completions->next;
-      free(dropit->word);
-      free(dropit);
-    }
-    /* Prevent a completion from being merged with typed text. */
-    openfile->last_action = OTHER;
-    /* Initialize the starting point for searching. */
-    scouring     = openfile;
-    pletion_line = openfile->filetop;
-    pletion_x    = 0;
-    /* Wipe the "No further matches" message. */
-    wipe_statusbar();
-  }
-  else {
-    /* Remove the attempted completion from the buffer. */
-    do_undo();
-  }
-  /* Find the start of the fragment that the user typed. */
-  shard = get_prev_cursor_word(&shard_length);
-  /* If there is no word fragment before the cursor, do nothing. */
-  if (!shard) {
-    /* TRANSLATORS: Shown when no text is directly left of the cursor. */
-    statusline(AHEM, _("No word fragment"));
-    pletion_line = NULL;
-    return;
-  }
-  /* Run through all of the lines in the buffer, looking for shard. */
-  while (pletion_line) {
-    /* The point where we can stop searching for shard. */
-    completionstruct *some_word;
-    long  threshold = (strlen(pletion_line->data) - shard_length - 1);
-    char *completion;
-    Ulong i, j;
-    /* Traverse the whole line, looking for shard. */
-    for (i = pletion_x; (long)i < threshold; ++i) {
-      /* If the first byte doesn't match, run on. */
-      if (pletion_line->data[i] != shard[0]) {
-        continue;
-      }
-      /* Compare the rest of the bytes in shard. */
-      for (j = 1; j < shard_length; ++j) {
-        if (pletion_line->data[i + j] != shard[j]) {
-          break;
-        }
-      }
-      /* If not all of the bytes matched, continue searching. */
-      if (j < shard_length) {
-        continue;
-      }
-      /* If the found match is not /longer/ than shard, skip it. */
-      if (!is_word_char(&pletion_line->data[i + j], FALSE)) {
-        continue;
-      }
-      /* If the match is not a separate word, skip it. */
-      if (i > 0 && is_word_char(&pletion_line->data[step_left(pletion_line->data, i)], FALSE)) {
-        continue;
-      }
-      /* If this match is the shard itself, ignore it. */
-      if (pletion_line == openfile->current && i == (openfile->current_x - shard_length)) {
-        continue;
-      }
-      completion = copy_completion(pletion_line->data + i);
-      /* Look among earlier attempted completions for a duplicate. */
-      some_word = list_of_completions;
-      while (some_word && strcmp(some_word->word, completion) != 0) {
-        some_word = some_word->next;
-      }
-      /* If we've already tried this word, skip it. */
-      if (some_word) {
-        free(completion);
-        continue;
-      }
-      /* Add the found word to the list of completions. */
-      some_word = (completionstruct *)nmalloc(sizeof(*some_word));
-      some_word->word = completion;
-      some_word->next = list_of_completions;
-      list_of_completions = some_word;
-      /* Temporarily disable wrapping so only one undo item is added. */
-      UNSET(BREAK_LONG_LINES);
-      /* Inject the completion into the buffer. */
-      inject(&completion[shard_length], (strlen(completion) - shard_length));
-      /* If needed, reenable wrapping and wrap the current line. */
-      if (was_set_wrapping) {
-        SET(BREAK_LONG_LINES);
-        do_wrap();
-      }
-      /* Set the position for a possible next search attempt. */
-      pletion_x = ++i;
-      free(shard);
-      return;
-    }
-    pletion_line = pletion_line->next;
-    pletion_x    = 0;
-    /* When at end of buffer and there is another, search that one. */
-    if (!pletion_line && scouring->next != openfile) {
-      scouring     = scouring->next;
-      pletion_line = scouring->filetop;
-    }
-  }
-  /* The search has gone through all buffers. */
-  if (list_of_completions) {
-    edit_refresh();
-    statusline(AHEM, _("No further matches"));
-  }
-  else {
-    /* TRANSLATORS: Shown when there are zero possible completions. */
-    statusline(AHEM, _("No matches"));
-  }
-  free(shard);
-}
+// void complete_a_word(void) {
+//   PROFILE_FUNCTION;
+//   /* The buffer that is being searched for possible completions. */
+//   static openfilestruct *scouring = NULL;
+//   /* A linked list of the completions that have been attempted. */
+//   static completionstruct *list_of_completions;
+//   /* The x position in `pletion_line` of the last found completion. */
+//   static int pletion_x = 0;
+//   bool  was_set_wrapping = ISSET(BREAK_LONG_LINES);
+//   Ulong shard_length = 0;
+//   char *shard;
+//   /* If this is a fresh completion attempt... */
+//   if (!pletion_line) {
+//     /* Clear the list of words of a previous completion run. */
+//     while (list_of_completions) {
+//       completionstruct *dropit = list_of_completions;
+//       list_of_completions = list_of_completions->next;
+//       free(dropit->word);
+//       free(dropit);
+//     }
+//     /* Prevent a completion from being merged with typed text. */
+//     openfile->last_action = OTHER;
+//     /* Initialize the starting point for searching. */
+//     scouring     = openfile;
+//     pletion_line = openfile->filetop;
+//     pletion_x    = 0;
+//     /* Wipe the "No further matches" message. */
+//     wipe_statusbar();
+//   }
+//   else {
+//     /* Remove the attempted completion from the buffer. */
+//     do_undo();
+//   }
+//   /* Find the start of the fragment that the user typed. */
+//   shard = get_prev_cursor_word(&shard_length);
+//   /* If there is no word fragment before the cursor, do nothing. */
+//   if (!shard) {
+//     /* TRANSLATORS: Shown when no text is directly left of the cursor. */
+//     statusline(AHEM, _("No word fragment"));
+//     pletion_line = NULL;
+//     return;
+//   }
+//   /* Run through all of the lines in the buffer, looking for shard. */
+//   while (pletion_line) {
+//     /* The point where we can stop searching for shard. */
+//     completionstruct *some_word;
+//     long  threshold = (strlen(pletion_line->data) - shard_length - 1);
+//     char *completion;
+//     Ulong i, j;
+//     /* Traverse the whole line, looking for shard. */
+//     for (i = pletion_x; (long)i < threshold; ++i) {
+//       /* If the first byte doesn't match, run on. */
+//       if (pletion_line->data[i] != shard[0]) {
+//         continue;
+//       }
+//       /* Compare the rest of the bytes in shard. */
+//       for (j = 1; j < shard_length; ++j) {
+//         if (pletion_line->data[i + j] != shard[j]) {
+//           break;
+//         }
+//       }
+//       /* If not all of the bytes matched, continue searching. */
+//       if (j < shard_length) {
+//         continue;
+//       }
+//       /* If the found match is not /longer/ than shard, skip it. */
+//       if (!is_word_char(&pletion_line->data[i + j], FALSE)) {
+//         continue;
+//       }
+//       /* If the match is not a separate word, skip it. */
+//       if (i > 0 && is_word_char(&pletion_line->data[step_left(pletion_line->data, i)], FALSE)) {
+//         continue;
+//       }
+//       /* If this match is the shard itself, ignore it. */
+//       if (pletion_line == openfile->current && i == (openfile->current_x - shard_length)) {
+//         continue;
+//       }
+//       completion = copy_completion(pletion_line->data + i);
+//       /* Look among earlier attempted completions for a duplicate. */
+//       some_word = list_of_completions;
+//       while (some_word && strcmp(some_word->word, completion) != 0) {
+//         some_word = some_word->next;
+//       }
+//       /* If we've already tried this word, skip it. */
+//       if (some_word) {
+//         free(completion);
+//         continue;
+//       }
+//       /* Add the found word to the list of completions. */
+//       some_word = (completionstruct *)nmalloc(sizeof(*some_word));
+//       some_word->word = completion;
+//       some_word->next = list_of_completions;
+//       list_of_completions = some_word;
+//       /* Temporarily disable wrapping so only one undo item is added. */
+//       UNSET(BREAK_LONG_LINES);
+//       /* Inject the completion into the buffer. */
+//       inject(&completion[shard_length], (strlen(completion) - shard_length));
+//       /* If needed, reenable wrapping and wrap the current line. */
+//       if (was_set_wrapping) {
+//         SET(BREAK_LONG_LINES);
+//         do_wrap();
+//       }
+//       /* Set the position for a possible next search attempt. */
+//       pletion_x = ++i;
+//       free(shard);
+//       return;
+//     }
+//     pletion_line = pletion_line->next;
+//     pletion_x    = 0;
+//     /* When at end of buffer and there is another, search that one. */
+//     if (!pletion_line && scouring->next != openfile) {
+//       scouring     = scouring->next;
+//       pletion_line = scouring->filetop;
+//     }
+//   }
+//   /* The search has gone through all buffers. */
+//   if (list_of_completions) {
+//     edit_refresh();
+//     statusline(AHEM, _("No further matches"));
+//   }
+//   else {
+//     /* TRANSLATORS: Shown when there are zero possible completions. */
+//     statusline(AHEM, _("No matches"));
+//   }
+//   free(shard);
+// }
 
 /* Return`s a all lower case str of 'str'. */
 char *lower_case_word(const char *str) {

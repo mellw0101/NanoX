@@ -25,6 +25,8 @@
 
 #define COLORCOUNT  34
 
+#define VITALS  (4)
+
 
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
 
@@ -40,7 +42,7 @@
 static linestruct *errors_head = NULL;
 static linestruct *errors_tail = NULL;
 
-static const rcoption rcopts[] = {
+static const struct{ const char *const restrict name; int flag;} rcopts[] = {
   {             "boldtext",        BOLD_TEXT},
   {             "brackets",                0},
   {       "breaklonglines", BREAK_LONG_LINES},
@@ -54,7 +56,7 @@ static const rcoption rcopts[] = {
   {          "multibuffer",      MULTIBUFFER},
   {               "nohelp",          NO_HELP},
   {           "nonewlines",      NO_NEWLINES},
-  {               "nowrap",          NO_WRAP}, /* Deprecated; remove in 2027. */
+  {               "nowrap",          NO_WRAP}, /* Deprecated; remove in 2027.  I think not, rather non of this will remain as is. */
   {         "operatingdir",                0},
   {          "positionlog",      POSITIONLOG},
   {             "preserve",         PRESERVE},
@@ -111,9 +113,160 @@ static const rcoption rcopts[] = {
   {                   NULL,                0}
 };
 
+/* TODO: Add the one missing functions once they are defined in C. */
+static const struct{ const char *const restrict str; VoidFuncPtr func;} scmap[] = {
+  {"cancel",        do_cancel},
+  {"help",          do_help},
+  {"exit",          do_exit},
+  {"discardbuffer", discard_buffer},
+  {"writeout",      do_writeout},
+  {"savefile",      do_savefile},
+  {"insert",        do_insertfile},
+  {"whereis",       do_search_forward},
+  {"wherewas",      do_search_backward},
+  {"findprevious",  do_findprevious},
+  {"findnext",      do_findnext},
+  {"replace",       do_replace},
+  {"cut",           cut_text},
+  {"copy",          copy_text},
+  {"paste",         paste_text},
+  {"execute",       do_execute},
+  {"cutrestoffile", cut_till_eof},
+  {"zap",           zap_text},
+  {"mark",          do_mark},
+  {"tospell",       do_spell},
+  {"speller",       do_spell},
+  {"linter",        do_linter},
+  {"formatter",     do_formatter},
+  {"location",      report_cursor_position},
+  {"gotoline",      do_gotolinecolumn},
+  {"justify",       do_justify},
+  {"fulljustify",   do_full_justify},
+  {"beginpara",     to_para_begin},
+  {"endpara",       to_para_end},
+  {"comment",       do_comment},
+  {"complete",      complete_a_word},
+  {"indent",        do_indent},
+  {"unindent",      do_unindent},
+  {"chopwordleft",  chop_previous_word},
+  {"chopwordright", chop_next_word},
+  // {"findbracket",   do_find_bracket},
+  {"wordcount",     count_lines_words_and_characters},
+  {"recordmacro",   record_macro},
+  {"runmacro",      run_macro},
+  {"anchor",        put_or_lift_anchor},
+  {"prevanchor",    to_prev_anchor},
+  {"nextanchor",    to_next_anchor},
+  {"undo",          do_undo},
+  {"redo",          do_redo},
+  {"suspend",       do_suspend},
+  {"left",          do_left},
+  {"back",          do_left},
+  {"right",         do_right},
+  {"forward",       do_right},
+  {"up",            do_up},
+  {"prevline",      do_up},
+  {"down",          do_down},
+  {"nextline",      do_down},
+  {"scrollup",      do_scroll_up},
+  {"scrolldown",    do_scroll_down},
+  {"prevword",      to_prev_word},
+  {"nextword",      to_next_word},
+  {"home",          do_home},
+  {"end",           do_end},
+  {"prevblock",     to_prev_block},
+  {"nextblock",     to_next_block},
+  {"pageup",        do_page_up},
+  {"prevpage",      do_page_up},
+  {"pagedown",      do_page_down},
+  {"nextpage",      do_page_down},
+  {"firstline",     to_first_line},
+  {"lastline",      to_last_line},
+  {"toprow",        to_top_row},
+  {"bottomrow",     to_bottom_row},
+  {"center",        do_center},
+  {"cycle",         do_cycle},
+  {"dosformat",     dos_format},
+  {"macformat",     mac_format},
+  {"append",        append_it},
+  {"prepend",       prepend_it},
+  {"backup",        back_it_up},
+  {"flipexecute",   flip_execute},
+  {"flippipe",      flip_pipe},
+  {"flipconvert",   flip_convert},
+  {"flipnewbuffer", flip_newbuffer},
+  {"flipgoto",      flip_goto},
+  {"flipreplace",   flip_replace},
+  {"flippipe",      flip_pipe},
+  {"flipconvert",   flip_convert},
+  {"flipnewbuffer", flip_newbuffer},
+  {"verbatim",      do_verbatim_input},
+  {"tab",           do_tab},
+  {"enter",         do_enter},
+  {"delete",        do_delete},
+  {"backspace",     do_backspace},
+  {"refresh",       full_refresh},
+  {"casesens",      case_sens_void},
+  {"regexp",        regexp_void},
+  {"backwards",     backwards_void},
+  {"flipreplace",   flip_replace},
+  {"flipgoto",      flip_goto},
+  {"flippipe",      flip_pipe},
+  {"flipconvert",   flip_convert},
+  {"flipnewbuffer", flip_newbuffer},
+  {"tofiles",       to_files},
+  {"browser",       to_files},
+  {"gotodir",       goto_dir},
+  {"firstfile",     to_first_file},
+  {"lastfile",      to_last_file}
+};
+
+static const struct{ const char *const restrict str; int flag;} togglemap[] = {
+  {            "nohelp",            NO_HELP },
+  {              "zero",               ZERO },
+  {      "constantshow",      CONSTANT_SHOW },
+  {       "replacewith",       MREPLACEWITH },
+  {          "softwrap",           SOFTWRAP },
+  {       "linenumbers",       LINE_NUMBERS },
+  { "whitespacedisplay", WHITESPACE_DISPLAY },
+  {          "nosyntax",          NO_SYNTAX },
+  {         "smarthome",         SMART_HOME },
+  {        "autoindent",         AUTOINDENT },
+  {     "cutfromcursor",    CUT_FROM_CURSOR },
+  {    "breaklonglines",   BREAK_LONG_LINES },
+  {      "tabstospaces",     TABS_TO_SPACES },
+  {             "mouse",          USE_MOUSE }
+};
+
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
+
+/* ----------------------------- Sc from str ----------------------------- */
+
+_NODISCARD _NONNULL(1)
+static inline VoidFuncPtr sc_from_str(const char *const restrict str) {
+  for (Ulong i=0; i<ARRAY_SIZE(scmap); ++i) {
+    if (strcmp(str, scmap[i].str) == 0) {
+      return scmap[i].func;
+    }
+  }
+  return NULL;
+}
+
+/* ----------------------------- Toggle opt from str ----------------------------- */
+
+_NODISCARD _NONNULL(1)
+static inline int toggle_opt_from_str(const char *const restrict str) {
+  for (Ulong i=0; i<ARRAY_SIZE(togglemap); ++i) {
+    if (strcmp(str, togglemap[i].str) == 0) {
+      return togglemap[i].flag;
+    }
+  }
+  return 0;
+}
+
+/* ----------------------------- Parse next regex ----------------------------- */
 
 /* Advance over one regular expression in the line starting at ptr, null-terminate it, and return a pointer to the succeeding text. */
 static char *parse_next_regex(char *ptr) {
@@ -148,6 +301,8 @@ static char *parse_next_regex(char *ptr) {
   return ptr;
 }
 
+/* ----------------------------- Pick up name ----------------------------- */
+
 /* Gather and store the string after a comment/linter command. */
 static void pick_up_name(const char *const restrict kind, char *ptr, char **const storage) {
   char *look;
@@ -169,6 +324,8 @@ static void pick_up_name(const char *const restrict kind, char *ptr, char **cons
   }
   *storage = realloc_strcpy(*storage, ptr);
 }
+
+/* ----------------------------- Hue from string ----------------------------- */
 
 /* Returns the value connected to `key` and assign the index of that value to `*out_index`, or if none return `-1`. */
 static int hue_from_string(const char *const restrict key, Ulong *out_index) {
@@ -228,6 +385,8 @@ static int hue_from_string(const char *const restrict key, Ulong *out_index) {
   return -1;
 }
 
+/* ----------------------------- Color opt from string ----------------------------- */
+
 /* Returns the value connected to `key`, or `-1` if none. */
 static int color_opt_from_string(const char *const restrict key) {
   ASSERT(key);
@@ -259,6 +418,8 @@ static int color_opt_from_string(const char *const restrict key) {
   }
   return -1;
 }
+
+/* ----------------------------- Config opt from string ----------------------------- */
 
 /* Returns the value connected to `key`, or `0` if none. */
 static Uint config_opt_from_string(const char *const restrict key) {
@@ -292,31 +453,30 @@ static Uint config_opt_from_string(const char *const restrict key) {
   return 0;
 }
 
+/* ----------------------------- Syntax opt type from str ----------------------------- */
+
 /* Returns the value connected to `key`, or `0` if none. */
-static Uint syntax_opt_type_from_str(const char *const restrict key) {
-  ASSERT(key);
-  /* The structure of a map entry. */
-  typedef struct {
-    const char *const key;
-    Uint value;
-  } MapEntry;
+static Uint syntax_opt_type_from_str(const char *const restrict str) {
+  ASSERT(str);
   /* The static map that hold the data in pairs. */
-  static const MapEntry map[] = {
-    { "color",     SYNTAX_OPT_COLOR     },
-    { "icolor",    SYNTAX_OPT_ICOLOR    },
-    { "comment",   SYNTAX_OPT_COMMENT   },
-    { "tabgives",  SYNTAX_OPT_TABGIVES  },
-    { "linter",    SYNTAX_OPT_LINTER    },
+  static const struct{ const char *const restrict name; Uint opt; } map[] = {
+    {    "color",      SYNTAX_OPT_COLOR },
+    {   "icolor",     SYNTAX_OPT_ICOLOR },
+    {  "comment",    SYNTAX_OPT_COMMENT },
+    { "tabgives",   SYNTAX_OPT_TABGIVES },
+    {   "linter",     SYNTAX_OPT_LINTER },
     { "formatter", SYNTAX_OPT_FORMATTER }
   };
   /* Now fetch the corrent value based on `key`. */
   for (Ulong i=0; i<ARRAY_SIZE(map); ++i) {
-    if (strcmp(key, map[i].key) == 0) {
-      return map[i].value;
+    if (strcmp(str, map[i].name) == 0) {
+      return map[i].opt;
     }
   }
   return 0;
 }
+
+/* ----------------------------- Parse one nanorc ----------------------------- */
 
 /* Read and interpret one of the two nanorc files. */
 static void parse_one_nanorc(void) {
@@ -330,6 +490,8 @@ static void parse_one_nanorc(void) {
   }
 }
 
+/* ----------------------------- Have nanorc ----------------------------- */
+
 /* Returns `TRUR` if we there exists a rc file at `path/name`. */
 static bool have_nanorc(const char *path, const char *name) {
   if (!path) {
@@ -339,6 +501,8 @@ static bool have_nanorc(const char *path, const char *name) {
   nanox_rc_path = concatenate(path, name);
   return is_good_file(nanox_rc_path);
 }
+
+/* ----------------------------- Parse includes ----------------------------- */
 
 /* Expand globs in the passed name, and parse the resultant files. */
 static void parse_includes(char *ptr) {
@@ -372,9 +536,21 @@ static void parse_includes(char *ptr) {
   free(expanded);
 }
 
+/* ----------------------------- Is universal ----------------------------- */
+
+/* Return TRUE when the given function is present in almost all menus. */
+/* static */ bool is_universal(void (*f)(void)) {
+  return (
+    f == do_left      || f == do_right || f == do_home    || f == do_end || f == to_prev_word || f == to_next_word      || f == do_delete ||
+    f == do_backspace || f == cut_text || f == paste_text || f == do_tab || f == do_enter     || f == do_verbatim_input
+  );
+}
+
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
+
+/* ----------------------------- Display rcfile errors ----------------------------- */
 
 /* Send the gathered error messages (if any) to the terminal. */
 void display_rcfile_errors(void) {
@@ -382,6 +558,8 @@ void display_rcfile_errors(void) {
     writeferr("%s\n", error->data);
   }
 }
+
+/* ----------------------------- Jot error ----------------------------- */
 
 /* Store the given error message in a linked list, to be printed upon exit. */
 void jot_error(const char *const restrict format, ...) {
@@ -409,6 +587,8 @@ void jot_error(const char *const restrict format, ...) {
   error->data = measured_copy(textbuf, length);
 }
 
+/* ----------------------------- Check for nonempty syntax ----------------------------- */
+
 /* Verify that a syntax definition contains at least one color command. */
 void check_for_nonempty_syntax(void) {
   if (nanox_rc_opensyntax && !nanox_rc_seen_color_command) {
@@ -419,6 +599,8 @@ void check_for_nonempty_syntax(void) {
   }
   nanox_rc_opensyntax = FALSE;
 }
+
+/* ----------------------------- Set interface color ----------------------------- */
 
 /* Set the colors for the given interface element to the given combination. */
 void set_interface_color(int element, char *combotext) {
@@ -436,6 +618,8 @@ void set_interface_color(int element, char *combotext) {
     free(trio);
   }
 }
+
+/* ----------------------------- Parse argument ----------------------------- */
 
 /* Parse an argument, with optional quotes, after a keyword that takes one.  If the
  * next word starts with a ", we say that it ends with the last " of the line.
@@ -467,6 +651,8 @@ char *parse_argument(char *ptr) {
   return ptr;
 }
 
+/* ----------------------------- Parse next word ----------------------------- */
+
 /* Parse the next word from the string, null-terminate it, and return a pointer to the first character
  * after the null terminator.  The returned pointer will point to '\0' if we hit the end of the line. */
 char *parse_next_word(char *ptr) {
@@ -490,6 +676,8 @@ char *parse_next_word(char *ptr) {
   return ptr;
 }
 
+/* ----------------------------- Compile ----------------------------- */
+
 /* Compile the given regular expression and store the result in packed
  * (when this pointer is not NULL).  Return TRUE when the expression is valid. */
 bool compile(const char *const restrict expression, int rex_flags, regex_t **const packed) {
@@ -511,6 +699,8 @@ bool compile(const char *const restrict expression, int rex_flags, regex_t **con
   }
   return (outcome == 0);
 }
+
+/* ----------------------------- Begin new syntax ----------------------------- */
 
 /* Parse the next syntax name and its possible extension regexes from the
  * line at ptr, and add it to the global linked list of color syntaxes. */
@@ -568,6 +758,8 @@ void begin_new_syntax(char *ptr) {
   }
 }
 
+/* ----------------------------- Closest index color ----------------------------- */
+
 /* Return the index of the color that is closest to the given RGB levels, assuming that the terminal uses the
  * 6x6x6 color cube of xterm-256color. When red == green == blue, return an index in the xterm gray scale. */
 short closest_index_color(short red, short green, short blue) {
@@ -585,6 +777,8 @@ short closest_index_color(short red, short green, short blue) {
     return (36 * level[red] + 6 * level[green] + level[blue] + 16);
   }
 }
+
+/* ----------------------------- Color to short ----------------------------- */
 
 /* Return the short value corresponding to the given color name, and set
  * vivid to TRUE for a lighter color, and thick for a heavier typeface. */
@@ -633,6 +827,8 @@ short color_to_short(const char *colorname, bool *vivid, bool *thick) {
     }
   }
 }
+
+/* ----------------------------- Parse combination ----------------------------- */
 
 /* Parse the color name (or pair of color names) in the given string.
  * Return 'FALSE' when any color name is invalid; otherwise return 'TRUE'. */
@@ -691,6 +887,8 @@ bool parse_combination(char *combotext, short *fg, short *bg, int *attributes) {
   return TRUE;
 }
 
+/* ----------------------------- Grab and store ----------------------------- */
+
 /* Read regex strings enclosed in double quotes from the line pointed
  * at by ptr, and store them quoteless in the passed storage place. */
 void grab_and_store(const char *const restrict kind, char *ptr, regexlisttype **const storage) {
@@ -735,6 +933,8 @@ void grab_and_store(const char *const restrict kind, char *ptr, regexlisttype **
   }
 }
 
+/* ----------------------------- Parse syntax commands ----------------------------- */
+
 /* Parse the syntax command in the given string, and set the syntax options accordingly. */
 bool parse_syntax_commands(const char *keyword, char *ptr) {
   Uint syntax_opt = syntax_opt_type_from_str(keyword);
@@ -763,6 +963,8 @@ bool parse_syntax_commands(const char *keyword, char *ptr) {
   }
   return TRUE;
 }
+
+/* ----------------------------- Parse rule ----------------------------- */
 
 /* Parse the color specification that starts at ptr, and then the one or more regexes that
  * follow it.  For each valid regex (or start=/end= regex pair), add a rule to the current syntax. */
@@ -842,6 +1044,8 @@ void parse_rule(char *ptr, int rex_flags) {
   }
 }
 
+/* ----------------------------- Is good file ----------------------------- */
+
 /* Verify that the given file exists, is not a folder nor a device. */
 bool is_good_file(const char *const restrict file) {
   struct stat rcinfo;
@@ -856,6 +1060,8 @@ bool is_good_file(const char *const restrict file) {
   }
   return TRUE;
 }
+
+/* ----------------------------- Parse one include ----------------------------- */
 
 /* Partially parse the syntaxes in the given file, or (when syntax is not NULL) fully parse one specific syntax from the file. */
 void parse_one_include(char *file, syntaxtype *syntax) {
@@ -903,6 +1109,196 @@ void parse_one_include(char *file, syntaxtype *syntax) {
   nanox_rc_path    = was_nanorc;
   nanox_rc_lineno  = was_lineno;
 }
+
+/* ----------------------------- Parse binding ----------------------------- */
+
+/* Bind or unbind a key combo, to or from a function. */
+void parse_binding(char *ptr, bool dobind) {
+  char *keyptr = NULL;
+  char *keycopy = NULL;
+  char *funcptr = NULL;
+  char *menuptr = NULL;
+  int keycode;
+  int menu;
+  int mask = 0;
+  keystruct *newsc = NULL;
+  check_for_nonempty_syntax();
+  if (!*ptr) {
+    jot_error(N_("Missing key name"));
+    return;
+  }
+  keyptr  = ptr;
+  ptr     = parse_next_word(ptr);
+  keycopy = copy_of(keyptr);
+  /* Undercase either the second or the first character of the key name. */
+  if (*keycopy == '^') {
+    keycopy[1] = toupper((Uchar)*(keycopy + 1));
+  }
+  else {
+    *keycopy = toupper((Uchar)*keycopy);
+  }
+  /* Verify that the key name is not too short, to allow the next call. */
+  if (!keycopy[1] || (*keycopy == 'M' && !keycopy[2])) {
+    jot_error(N_("Key name %s is invalid"), keycopy);
+    goto free_things;
+  }
+  keycode = keycode_from_string(keycopy);
+  if (keycode < 0) {
+    jot_error(N_("Key name %s is invalid"), keycopy);
+    goto free_things;
+  }
+  if (dobind) {
+    funcptr = ptr;
+    ptr = parse_argument(ptr);
+    if (!*funcptr) {
+      jot_error(N_("Must specify a function to bind the key to"));
+      goto free_things;
+    }
+    else if (!ptr) {
+      goto free_things;
+    }
+  }
+  menuptr = ptr;
+  ptr = parse_next_word(ptr);
+  if (!*menuptr) {
+    /* TRANSLATORS: Do not translate the word all. */
+    jot_error(N_("Must specify a menu (or \"all\") in which to bind/unbind the key"));
+    goto free_things;
+  }
+  menu = name_to_menu(menuptr);
+  if (!menu) {
+    jot_error(N_("Unknown menu: %s"), menuptr);
+    goto free_things;
+  }
+  if (dobind) {
+    /* If the thing to bind starts with a double quote, it is a string, otherwise it is the name of a function. */
+    if (*funcptr == '"') {
+      newsc            = xmalloc(sizeof(*newsc));
+      newsc->func      = (VoidFuncPtr)implant;
+      newsc->expansion = copy_of(funcptr + 1);
+      newsc->toggle    = 0;
+    }
+    else {
+      newsc = strtosc(funcptr);
+    }
+    if (!newsc) {
+      jot_error(N_("Unknown function: %s"), funcptr);
+      goto free_things;
+    }
+  }
+  /* Wipe the given shortcut from the given menu. */
+  DLIST_FOR_NEXT(sclist, s) {
+    if ((s->menus & menu) && s->keycode == keycode) {
+      s->menus &= ~menu;
+    }
+  }
+  /* When unbinding, we are done now. */
+  if (!dobind) {
+    goto free_things;
+  }
+  /* Limit the given menu to those where the function exists -- first handle five special cases, then the general case. */
+  if (is_universal(newsc->func)) {
+    menu &= (MMOST | MBROWSER);
+  }
+  else if (newsc->func == do_toggle) {
+    if (newsc->toggle == NO_HELP) {
+      menu &= ((MMOST | MBROWSER | MYESNO) & ~MFINDINHELP);
+    }
+    else {
+      menu &= MMAIN;
+    }
+  }
+  else if (newsc->func == full_refresh) {
+    menu &= (MMOST | MBROWSER | MHELP | MYESNO);
+  }
+  else if (newsc->func == (VoidFuncPtr)implant) {
+    menu &= (MMOST | MBROWSER | MHELP);
+  }
+  else {
+    /* Tally up the menus where the function exists. */
+    DLIST_FOR_NEXT(allfuncs, f) {
+      if (f->func == newsc->func) {
+        mask |= f->menus;
+      }
+    }
+    menu &= mask;
+  }
+  if (!menu) {
+    if (!ISSET(RESTRICTED) && !ISSET(VIEW_MODE)) {
+      jot_error(N_("Function '%s' does not exist in menu %s"), funcptr, menuptr);
+    }
+    goto free_things;
+  }
+  newsc->menus   = menu;
+  newsc->keystr  = keycopy;
+  newsc->keycode = keycode;
+  /* Disallow rebinding <Esc> (^[). */
+  if (newsc->keycode == ESC_CODE) {
+    jot_error(N_("Keystroke %s mey not be rebound"), keycopy);
+    free_things: {
+      free(keycopy);
+      free(newsc);
+      return;
+    }
+  }
+  if (newsc->func == do_toggle) {
+    DLIST_FOR_NEXT(sclist, s) {
+      if (s->func == do_toggle && s->toggle == newsc->toggle) {
+        newsc->ordinal = s->ordinal;
+      }
+    }
+  }
+  else {
+    newsc->ordinal = 0;
+  }
+  /* Add the new shortcut at the start of the list. */
+  newsc->next = sclist;
+  sclist      = newsc;
+}
+
+/* ----------------------------- Check vitals mapped ----------------------------- */
+
+/* Verify that the user has not unmapped every shortcut function we consider `vital` (sush as `do_exit`). */
+void check_vitals_mapped(void) {
+  void (*vitals[VITALS])(void) = { do_exit, do_exit,  do_exit, do_cancel };
+  int inmenus[VITALS]          = { MMAIN,   MBROWSER, MHELP,   MYESNO    };
+  for (Uint i=0; i<VITALS; ++i) {
+    DLIST_FOR_NEXT(allfuncs, f) {
+      if (f->func == vitals[i] && (f->menus & inmenus[i])) {
+        if (!first_sc_for(inmenus[i], f->func)) {
+          jot_error(N_("No key is bound to function '%s' in menu '%s'"), f->tag, menu_to_name(inmenus[i]));
+          log_ERR_FA(_("If needed, use nano with the -I option to adjust your nanoxrc settings."));
+        }
+        else {
+          break;
+        }
+      }
+    }
+  }
+}
+
+/* ----------------------------- Strtosc ----------------------------- */
+
+/* Interpret a function string given in the rc file, and return a shortcut record with the corresponding function filled in. */
+keystruct *strtosc(const char *const restrict input) {
+  keystruct *ret = xmalloc(sizeof(*ret));
+  int toggle = 0;
+  VoidFuncPtr func = sc_from_str(input);
+  if (func) {
+    ret->func = func;
+  }
+  else {
+    ret->func = do_toggle;
+    if (!(toggle = toggle_opt_from_str(input))) {
+      free(ret);
+      return NULL;
+    }
+  }
+  ret->toggle = toggle;
+  return ret;
+}
+
+/* ----------------------------- Parse rcfile ----------------------------- */
 
 /* Parse the rcfile, once it has been opened successfully at rcstream, and close it afterwards.
  * If just_syntax is TRUE, allow the file to to contain only color syntax commands. */
@@ -1064,7 +1460,7 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
     option = ptr;
     ptr    = parse_next_word(ptr);
     /* Find the just parsed option name among the existing names. */
-    for (i = 0; rcopts[i].name; i++) {
+    for (i=0; rcopts[i].name; i++) {
       if (strcmp(option, rcopts[i].name) == 0) {
         break;
       }
@@ -1188,6 +1584,8 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
   free(buffer);
   nanox_rc_lineno = 0;
 }
+
+/* ----------------------------- Do rcfile ----------------------------- */
 
 /* Process the nanorc file that was specified on the command line (if any),
  * and otherwise the system-wide rcfile followed by the user's rcfile. */

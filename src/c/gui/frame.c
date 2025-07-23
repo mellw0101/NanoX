@@ -178,11 +178,6 @@ bool frame_should_poll(void) {
     }
     else {
       frame_stop_poll();
-      // should_poll = FALSE;
-      // last_poll   = elapsed_frames;
-      // frame_set_rate(monitor_closest_refresh_rate(FRAME_SWAP_RATE_TIME_NS_INT((frame_sample_0 + frame_sample_1) / 2.0)));
-      // log_INFO_1("Re-polling ended: Fps: %d", FRAME_SWAP_RATE_TIME_NS_INT(expected_frametime));
-      // glfwSwapInterval(0);
       return FALSE;
     }
     return TRUE;

@@ -1,6 +1,8 @@
 /** @file files.cpp */
 #include "../include/prototypes.h"
 
+/* TODO: Finish this shit tomorrow: TODAY:21/07/2025 */
+
 #define RW_FOR_ALL (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
 
 /* Add an item to the circular list of openfile structs. */
@@ -382,35 +384,35 @@
 // }
 
 /* Open a file using the browser. */
-void open_buffer_browser(void) {
-  char *path = copy_of(openfile->filename[0] ? openfile->filename : "./");
-  char *file_to_open = browse_in(path);
-  free(path);
-  /* If the user picked a file, open it. */
-  if (file_to_open) {
-    /* Save the current open file. */
-    openfilestruct *was_openfile = openfile;
-    open_buffer(file_to_open, TRUE);
-    free(file_to_open);
-    /* If the saved open file was empty and nameless, then close it. */
-    if (!was_openfile->filename[0] && !was_openfile->totsize) {
-      /* Before closing the buffer save the newly opened buffer. */
-      openfilestruct *new_openfile = openfile;
-      openfile = was_openfile;
-      close_buffer();
-      /* Make sure the newly opened buffer is the active buffer. */
-      openfile = new_openfile;
-    }
-    edit_refresh();
-  }
-  refresh_needed = TRUE;
-}
+// void open_buffer_browser(void) {
+//   char *path = copy_of(openfile->filename[0] ? openfile->filename : "./");
+//   char *file_to_open = browse_in(path);
+//   free(path);
+//   /* If the user picked a file, open it. */
+//   if (file_to_open) {
+//     /* Save the current open file. */
+//     openfilestruct *was_openfile = openfile;
+//     open_buffer(file_to_open, TRUE);
+//     free(file_to_open);
+//     /* If the saved open file was empty and nameless, then close it. */
+//     if (!was_openfile->filename[0] && !was_openfile->totsize) {
+//       /* Before closing the buffer save the newly opened buffer. */
+//       openfilestruct *new_openfile = openfile;
+//       openfile = was_openfile;
+//       close_buffer();
+//       /* Make sure the newly opened buffer is the active buffer. */
+//       openfile = new_openfile;
+//     }
+//     edit_refresh();
+//   }
+//   refresh_needed = TRUE;
+// }
 
 /* Open a new and empty buffer. */
-void open_new_empty_buffer(void) {
-  make_new_buffer();
-  edit_refresh();
-}
+// void open_new_empty_buffer(void) {
+//   make_new_buffer();
+//   edit_refresh();
+// }
 
 /* Mark the current buffer as modified if it isn't already, and then update the title bar to display the buffer's new status. */
 // void set_modified(void) _NOTHROW {
