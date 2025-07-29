@@ -262,8 +262,8 @@ static void gui_suggestmenu_pos_routine(void *arg, float width, float height, fl
   ASSERT(y);
   SuggestMenu *sm = (__TYPE(sm))arg;
   /* Calculate the correct position for the suggestmenu window. */
-  (*x) = (openeditor->text->x + font_wideness(menu_get_font(sm->menu), openeditor->openfile->current->data, openeditor->openfile->current_x));
-  (*y) = (openeditor->text->y + font_row_bottom_pix(menu_get_font(sm->menu), (openeditor->openfile->current->lineno - openeditor->openfile->edittop->lineno)));
+  (*x) = (openeditor->text->x + font_wideness(menu_get_font(sm->menu), GUI_OF->current->data, GUI_OF->current_x));
+  (*y) = (openeditor->text->y + font_row_bottom_pix(menu_get_font(sm->menu), (GUI_OF->current->lineno - GUI_OF->edittop->lineno)));
 }
 
 static void gui_suggestmenu_accept_routine(void *arg, const char *const restrict lable, int index) {
@@ -271,7 +271,7 @@ static void gui_suggestmenu_accept_routine(void *arg, const char *const restrict
   ASSERT(lable);
   SuggestMenu *sm = (__TYPE(sm))arg;
   char *str = copy_of(lable);
-  openfile->last_action = OTHER;
+  GUI_OF->last_action = OTHER;
   inject((str + sm->len), (strlen(str) - sm->len));
   free(str);
   gui_suggestmenu_clear();

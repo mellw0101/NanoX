@@ -59,6 +59,7 @@
 /* gl */
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <SDL3/SDL.h>
 
 /* ncurses */
 #include <ncursesw/ncurses.h>
@@ -468,7 +469,7 @@
     }                                                                      \
   )
 
-/* ----------------------------- element.c ----------------------------- */
+/* ----------------------------- gui/element.c ----------------------------- */
 
 #define dp_raw /* Shorthand to access the `void *` inside an `Element` structure. */ data_ptr.raw
 #define dp_sb /* Shorthand to access the `Scrollbar *` inside an `Element` structure. */ data_ptr.sb
@@ -487,6 +488,10 @@
 
 #define ELEMENT_CORNER_BRX(element)  ((element)->x + (element)->width)
 #define ELEMENT_CORNER_BRY(element)  ((element)->y + (element)->height)
+
+/* ----------------------------- gui/keyboard.c ----------------------------- */
+
+#define EXCLUSIVE_KMOD(x, mod)  (((x)&(mod)) && !((x)&~(mod)))
 
 /* ----------------------------- color.c ----------------------------- */
 
@@ -1747,7 +1752,7 @@ struct Element {
   int cursor;
 
   /* Flags for this element, and how it should behave and/or look. */
-  int xflags;
+  Uint xflags;
 
   /* Options for this element, for instance this has 4 bytes of space, where we can hold 4
    * -100 to 100 values reprecenting 4 precentage values or any values in the range 0-255 -127-127.

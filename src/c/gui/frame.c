@@ -10,7 +10,7 @@
 /* ---------------------------------------------------------- Define's ---------------------------------------------------------- */
 
 
-#define FRAME_POLL_INTERVAL_SECONDS    (10)
+#define FRAME_POLL_INTERVAL_SECONDS    (10000)
 #define FRAME_POLL_INTERVAL_FRAMES(x)  ((x) * FRAME_POLL_INTERVAL_SECONDS)
 
 #define FRAME_SAMPLE_TOLERANCE  (200000)
@@ -95,7 +95,8 @@ static inline void frame_stop_poll(void) {
   last_poll   = elapsed_frames;
   frame_set_rate(monitor_closest_refresh_rate(FRAME_SWAP_RATE_TIME_NS_INT((frame_sample_0 + frame_sample_1) / 2.0)));
   frame_log_poll(TRUE);
-  glfwSwapInterval(0);
+  // glfwSwapInterval(0);
+  SDL_GL_SetSwapInterval(0);
 }
 
 
@@ -207,7 +208,8 @@ void frame_set_poll(void) {
     frame_sample_1 = -1;
     /* Set the frame rate to 4 times the fastest monitor, so we know for a fact vsync will kick in. */
     frame_set_rate(monitor_fastest_refresh_rate() * 4);
-    glfwSwapInterval(1);
+    // glfwSwapInterval(1);
+    SDL_GL_SetSwapInterval(1);
   }
 }
 
@@ -229,3 +231,5 @@ void frame_should_report(bool print_times) {
 Llong frame_elapsed_time(void) {
   return ATOMIC_FETCH(elapsed_time);
 }
+
+/* -----------------------------  ----------------------------- */

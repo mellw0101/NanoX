@@ -11,7 +11,7 @@
 
 
 static Element *element_create_internal(void) {
-  Element *e = xmalloc(sizeof(*e));
+  Element *e = xmalloc(sizeof *e);
   /* State flags. */
   e->xflags = ELEMENT_XFLAGS_DEFAULT;
   e->xrectopts = 0U;
@@ -37,7 +37,8 @@ static Element *element_create_internal(void) {
   e->parent   = NULL;
   e->children = cvec_create();
   /* Cursor. */
-  e->cursor = GLFW_ARROW_CURSOR;
+  // e->cursor = GLFW_ARROW_CURSOR;
+  e->cursor = SDL_SYSTEM_CURSOR_DEFAULT;
   /* Rect buffer. */
   e->rect_buffer = vertex_buffer_new(RECT_VERTBUF);
   /* Layer. */
@@ -170,38 +171,20 @@ static void element_insert_bazier_arc_corner(Element *const e, RectVertex *vert,
 
 static void element_rounded_rect(Element *const e) {
   ASSERT(e);
-  Ulong point_num = 19;
-  // float fraction = UCHAR_TO_FLOAT(UNPACK_INT_DATA(e->xrectopts, 0, Uchar));
-  RectVertex *vert = bazier_vertex_create(point_num);
+  Ulong n = 19;
+  RectVertex *vert = bazier_vertex_create(n);
   Ulong indi_len;
-  Uint *indi = bazier_indices_create(point_num, &indi_len);
-  // float arcx[point_num];
-  // float arcy[point_num];
+  Uint *indi = bazier_indices_create(n, &indi_len);
   float offset = (FMINF(e->width, e->height) / 2);
   element_add_rounded_center_rect(e, offset);
   /* First do the top left arc. */
-  element_insert_bazier_arc_corner(e, vert, indi, indi_len, point_num, e->x, e->y, (e->x + offset), (e->y + offset));
+  element_insert_bazier_arc_corner(e, vert, indi, indi_len, n, e->x, e->y, (e->x + offset), (e->y + offset));
   /* Top-Right */
-  element_insert_bazier_arc_corner(e, vert, indi, indi_len, point_num, (e->x + e->width), e->y, ((e->x + e->width - offset)), (e->y + offset));
+  element_insert_bazier_arc_corner(e, vert, indi, indi_len, n, (e->x + e->width), e->y, ((e->x + e->width - offset)), (e->y + offset));
   /* Bottom-Left */
-  element_insert_bazier_arc_corner(e, vert, indi, indi_len, point_num, e->x, (e->y + e->height), (e->x + offset), ((e->y + e->height) - offset));
+  element_insert_bazier_arc_corner(e, vert, indi, indi_len, n, e->x, (e->y + e->height), (e->x + offset), ((e->y + e->height) - offset));
   /* Bottom-Right */
-  element_insert_bazier_arc_corner(e, vert, indi, indi_len, point_num, (e->x + e->width), (e->y + e->height), ((e->x + e->width) - offset), ((e->y + e->height) - offset));
-  // bazier_corner_arc(e->x, e->y, (e->x + offset), (e->y + offset), fraction, arcx, arcy, point_num);
-  // bazier_vertex_insert(vert, point_num, (e->x + offset), (e->y + offset), arcx, arcy, e->color);
-  // vertex_buffer_push_back(e->rect_buffer, vert, (point_num + 1), indi, indi_len);
-  /* Then do the top right arc. */
-  // bazier_corner_arc((e->x + e->width), e->y, ((e->x + e->width) - offset), (e->y + offset), fraction, arcx, arcy, point_num);
-  // bazier_vertex_insert(vert, point_num, ((e->x + e->width) - offset), (e->y + offset), arcx, arcy, e->color);
-  // vertex_buffer_push_back(e->rect_buffer, vert, (point_num + 1), indi, indi_len);
-  /* Then do the bottom left arc. */
-  // bazier_corner_arc(e->x, (e->y + e->height), (e->x + offset), ((e->y + e->height) - offset), fraction, arcx, arcy, point_num);
-  // bazier_vertex_insert(vert, point_num, (e->x + offset), ((e->y + e->height) - offset), arcx, arcy, e->color);
-  // vertex_buffer_push_back(e->rect_buffer, vert, (point_num + 1), indi, indi_len);
-  /* Then do the bottom right arc. */
-  // bazier_corner_arc((e->x + e->width), (e->y + e->height), ((e->x + e->width) - offset), ((e->y + e->height) - offset), fraction, arcx, arcy, point_num);
-  // bazier_vertex_insert(vert, point_num, ((e->x + e->width) - offset), ((e->y + e->height) - offset), arcx, arcy, e->color);
-  // vertex_buffer_push_back(e->rect_buffer, vert, (point_num + 1), indi, indi_len);
+  element_insert_bazier_arc_corner(e, vert, indi, indi_len, n, (e->x + e->width), (e->y + e->height), ((e->x + e->width) - offset), ((e->y + e->height) - offset));
   free(indi);
   free(vert);
 }

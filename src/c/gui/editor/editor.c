@@ -124,10 +124,11 @@ void editor_create(bool new_buffer) {
   element_set_parent(openeditor->text, openeditor->main);
   element_set_editor_data(openeditor->text, openeditor);
   openeditor->text->color = PACKED_UINT_EDIT_BACKGROUND;
-  openeditor->text->xflags |= (ELEMENT_REL_POS | ELEMENT_REL_SIZE | ELEMENT_ROUNDED_RECT);
+  openeditor->text->xflags |= (ELEMENT_REL_POS | ELEMENT_REL_SIZE /* | ELEMENT_ROUNDED_RECT */);
   openeditor->text->rel_x = openeditor->gutter->width;
   openeditor->text->rel_y = font_height(uifont);
-  openeditor->text->cursor     = GLFW_IBEAM_CURSOR;
+  // openeditor->text->cursor     = GLFW_IBEAM_CURSOR;
+  openeditor->text->cursor = SDL_SYSTEM_CURSOR_TEXT;
   /* Create the text scrollbar. */
   editor_scrollbar_create(openeditor);
   /* Create the editor topbar. */

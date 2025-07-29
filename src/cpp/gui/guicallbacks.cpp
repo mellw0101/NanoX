@@ -219,7 +219,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             GUI_OF->current   = GUI_OF->filebot;
             GUI_OF->current_x = strlen(GUI_OF->filebot->data);
             GUI_OF->softmark  = TRUE;
-            refresh_needed      = TRUE;
+            refresh_needed    = TRUE;
           }
           break;
         }
@@ -1268,21 +1268,21 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
 
 /* Window entering and leaving callback. */
 void window_enter_callback(GLFWwindow *window, int entered) {
-  double x;
-  double y;
+  float x;
+  float y;
   if (!entered) {
     x = mouse_gui_get_x();
     y = mouse_gui_get_y();
-    if (x <= ((double)gl_window_width() / 2)) {
+    if (x <= (gl_window_width() / 2.F)) {
       x = -30;
     }
-    else if (x >= ((double)gl_window_width() / 2)) {
+    else if (x >= (gl_window_width() / 2.F)) {
       x = (gl_window_width() + 30);
     }
-    if (y <= ((double)gl_window_height() / 2)) {
+    if (y <= (gl_window_height() / 2.F)) {
       y = -30;
     }
-    else if (y >= ((double)gl_window_height() / 2)) {
+    else if (y >= (gl_window_height() / 2.F)) {
       y = (gl_window_height() + 30);
     }
     mouse_gui_update_pos(x, y);

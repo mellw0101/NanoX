@@ -155,7 +155,7 @@ extern char *statedir;
 // extern Ulong light_to_col;
 
 // extern bool last_key_was_bracket;
-extern char last_bracket_char;
+// extern char last_bracket_char;
 
 // extern colortype *color_combo[NUMBER_OF_ELEMENTS];
 // extern keystruct *planted_shortcut;

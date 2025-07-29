@@ -28,7 +28,7 @@ EOF
 fi
 
 AmakeCpp --test
-sudo AmakeCpp --link --bin -lGLEW -lGL -lglfw -lfreetype -lunibilium\
+sudo AmakeCpp --link --bin -lGLEW -lGL -lglfw -lSDL3 -lfreetype -lunibilium\
  /usr/lib/Mlib.a /usr/lib/libftgl.a /usr/lib/libfcio.a /usr/lib/libz.a
 if [ -f build/bin/NanoX ]; then
   # # Create the shorthand nanox.

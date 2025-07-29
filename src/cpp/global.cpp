@@ -200,7 +200,7 @@ nwindow *tui_footwin = NULL;
 #define TOGETHER   FALSE
 /* If closing bracket char was printed then this is TRUE until another key input has been prossesed. */
 // bool        last_key_was_bracket = FALSE;
-char        last_bracket_char    = '\0';
+// char        last_bracket_char    = '\0';
 colortype  *last_c_color         = NULL;
 syntaxtype *c_syntaxtype         = NULL;
 

@@ -77,6 +77,10 @@ bool ignore_rcfiles = FALSE;
 /* Was the fill option used on the command line? */
 bool fill_used = FALSE;
 
+/* ----------------------------- char ----------------------------- */
+
+char last_bracket_char = NUL;
+
 /* ----------------------------- char * ----------------------------- */
 
 /* Nonalphanumeric characters that also form words. */

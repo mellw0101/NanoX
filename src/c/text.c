@@ -4198,7 +4198,7 @@ void complete_a_word_for(CTX_ARGS_REF_OF) {
     do_undo_for(STACK_CTX_DF);
   }
   /* Find the start of the fragment that the user typed. */
-  shard = prev_word_get((*file)->current->data, (*file)->current_x, &shard_length);
+  shard = prev_word_get((*file)->current->data, (*file)->current_x, &shard_length, TRUE);
   if (!shard) {
     /* TRANSLATORS: Shown when no text is directly to the left of the cursor. */
     statusline(AHEM, _("No word fragment"));
@@ -4593,7 +4593,7 @@ bool tab_helper(openfilestruct *const file) {
 /* Returns an allocated string containing only lower case chars.
  * TODO: Remake this as what i wanted this to be...  A convert where
  * when all characters are uppercase, then return the lower case word. */
-char *lower_case_word(const char *const restrict word) {
+char *lower_case_word(const char *const restrict word) {/*  */
   Ulong len = strlen(word);
   char *ret = xmalloc(len + 1);
   for (Ulong i=0; i<len; ++i) {
@@ -4601,4 +4601,21 @@ char *lower_case_word(const char *const restrict word) {
   }
   ret[len] = NUL;
   return ret; 
+}
+
+/* ----------------------------- Mark whole file ----------------------------- */
+
+/* Set the `mark` at the very start of `file` and `current` at the very end. */
+void mark_whole_file_for(openfilestruct *const file) {
+  ASSERT(file);
+  file->mark      = file->filetop;
+  file->mark_x    = 0;
+  file->current   = file->filebot;
+  file->current_x = strlen(file->filebot->data);
+  file->softmark  = TRUE;
+  refresh_needed  = TRUE;
+}
+
+void mark_whole_file(void) {
+  mark_whole_file_for(CTX_OF);
 }

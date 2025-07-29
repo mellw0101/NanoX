@@ -128,7 +128,8 @@ static void etb_create_button(EditorTb *const etb, openfilestruct *const f, floa
   button = element_create((*pos_x), (*pos_y), (font_breadth(uifont, lable) + font_breadth(uifont, "  ")), font_height(uifont), TRUE);
   element_set_parent(button, etb->element);
   button->xflags |= ELEMENT_REL_POS;
-  button->cursor  = GLFW_HAND_CURSOR;
+  button->cursor  = SDL_SYSTEM_CURSOR_POINTER;
+  // button->cursor  = GLFW_HAND_CURSOR;
   element_set_lable(button, lable, strlen(lable));
   element_set_file_data(button, f);
   /* Set the correct color for the button based on if it's the currently open file in the editor. */
@@ -269,7 +270,7 @@ EditorTb *etb_create(Editor *const editor) {
   ASSERT(uifont);
   ASSERT(editor);
   ASSERT(editor->main);
-  EditorTb *etb = xmalloc(sizeof*etb);
+  EditorTb *etb = xmalloc(sizeof *etb);
   /* State flags. */
   etb->xflags  = ETB_XFLAGS_DEFAULT;
   etb->buffer  = vertex_buffer_new(FONT_VERTBUF);

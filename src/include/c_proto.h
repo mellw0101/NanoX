@@ -50,6 +50,8 @@ extern bool last_key_was_bracket;
 extern bool ignore_rcfiles;
 extern bool fill_used;
 
+extern char last_bracket_char;
+
 extern char *word_chars;
 extern char *whitespace;
 extern char *operating_dir;
@@ -575,6 +577,9 @@ char *get_previous_char_match(linestruct *line, Ulong xpos, const char *const re
 bool tab_helper(openfilestruct *const file);
 /* ----------------------------- Lower case word ----------------------------- */
 char *lower_case_word(const char *const restrict word);
+/* ----------------------------- Mark whole file ----------------------------- */
+void mark_whole_file_for(openfilestruct *const file);
+void mark_whole_file(void);
 
 
 /* ---------------------------------------------------------- arg.c ---------------------------------------------------------- */
@@ -593,6 +598,22 @@ void clear_suggestion(void);
 void add_char_to_suggest_buf(void);
 void draw_suggest_win(void);
 void accept_suggestion(void);
+/* ----------------------------- Suggestmenu create ----------------------------- */
+void suggestmenu_create(void);
+/* ----------------------------- Suggestmenu free ----------------------------- */
+void suggestmenu_free(void);
+/* ----------------------------- Suggestmenu clear ----------------------------- */
+void suggestmenu_clear(void);
+/* ----------------------------- Suggestmenu load str ----------------------------- */
+void suggestmenu_load_str(void);
+/* ----------------------------- Suggestmenu find ----------------------------- */
+void suggestmenu_find(void);
+/* ----------------------------- Suggestmenu run ----------------------------- */
+void suggestmenu_run(void);
+/* ----------------------------- Suggestmenu draw ----------------------------- */
+void suggestmenu_draw(void);
+/* ----------------------------- Suggestmenu ----------------------------- */
+Menu *suggestmenu(void);
 
 
 /* ----------------------------------------------- csyntax.c ----------------------------------------------- */
@@ -615,7 +636,7 @@ Ulong wordstartindex(const char *const restrict string, Ulong pos, bool allowund
 Ulong wordendindex(const char *const restrict string, Ulong pos, bool allowunderscore) __THROW _NODISCARD _NONNULL(1);
 bool more_than_a_blank_away(const char *const restrict string, Ulong index, bool forward, Ulong *const restrict nsteps);
 /* ----------------------------- Prev word get ----------------------------- */
-char *prev_word_get(const char *const restrict data, Ulong index, Ulong *const outlen);
+char *prev_word_get(const char *const restrict data, Ulong index, Ulong *const outlen, bool allow_underscore);
 
 
 /* ----------------------------------------------- bracket.c ----------------------------------------------- */
@@ -807,9 +828,9 @@ Llong frame_elapsed_time(void);
 int monitor_count(void);
 int monitor_return_first_monitor_rate(void);
 /* ----------------------------- Monitor get array ----------------------------- */
-GLFWmonitor **monitor_get_all(int *const count);
+SDL_DisplayID *monitor_get_all(int *const count);
 /* ----------------------------- Monitor get mode ----------------------------- */
-const GLFWvidmode *monitor_get_mode(GLFWmonitor *const monitor);
+const SDL_DisplayMode *monitor_get_mode(SDL_DisplayID monitor);
 /* ----------------------------- Monitor refresh rate array ----------------------------- */
 int *monitor_refresh_rate_array(int *const count);
 /* ----------------------------- Monitor closest refresh rate ----------------------------- */
@@ -819,9 +840,9 @@ int monitor_fastest_refresh_rate(void);
 /* ----------------------------- Monitor fastest refresh rate from array ----------------------------- */
 int monitor_fastest_refresh_rate_from_array(int *const rates, int count);
 /* ----------------------------- Monitor current ----------------------------- */
-GLFWmonitor *monitor_current(void);
+// GLFWmonitor *monitor_current(void);
 /* ----------------------------- Monitor mode ----------------------------- */
-const GLFWvidmode *monitor_mode(void);
+// const SDL_DisplayMode *monitor_mode(void);
 /* ----------------------------- Monitor refresh rate ----------------------------- */
 int monitor_refresh_rate(void);
 
@@ -1567,20 +1588,30 @@ void mouse_gui_init(void);
 /* ----------------------------- Mouse gui free ----------------------------- */
 void mouse_gui_free(void);
 /* ----------------------------- Update mouse state ----------------------------- */
-void mouse_gui_update_state(int action, int button);
+void mouse_gui_update_state(bool press, int button);
 /* ----------------------------- Update mouse pos ----------------------------- */
-void mouse_gui_update_pos(double x, double y);
+void mouse_gui_update_pos(float x, float y);
 /* ----------------------------- Mouse gui get x ----------------------------- */
-double mouse_gui_get_x(void);
+float mouse_gui_get_x(void);
 /* ----------------------------- Mouse gui get y ----------------------------- */
-double mouse_gui_get_y(void);
+float mouse_gui_get_y(void);
 /* ----------------------------- Mouse gui get pos ----------------------------- */
-void mouse_gui_get_pos(double *const x, double *const y);
-double mouse_gui_get_last_x(void);
-double mouse_gui_get_last_y(void);
+void mouse_gui_get_pos(float *const x, float *const y);
+float mouse_gui_get_last_x(void);
+float mouse_gui_get_last_y(void);
 /* ----------------------------- Is mouse flag set ----------------------------- */
 bool mouse_gui_is_flag_set(Uint flag);
 void mouse_gui_clear_flags(void);
+/* ----------------------------- Mouse gui button down ----------------------------- */
+void mouse_gui_button_down(Uchar button, Ushort mod, float x, float y);
+/* ----------------------------- Mouse gui button up ----------------------------- */
+void mouse_gui_button_up(Uchar button, Ushort _UNUSED mod, float x, float y);
+/* ----------------------------- Mouse gui position ----------------------------- */
+void mouse_gui_position(float x, float y);
+/* ----------------------------- Mouse gui left ----------------------------- */
+void mouse_gui_left(void);
+/* ----------------------------- Mouse gui scroll ----------------------------- */
+void mouse_gui_scroll(float mx, float my, int _UNUSED ix, int iy, SDL_MouseWheelDirection type);
 
 
 /* ---------------------------------------------------------- gui/shader.c ---------------------------------------------------------- */
@@ -1626,6 +1657,19 @@ int gl_window_height(void);
 /* ----------------------------- Gl window add root child ----------------------------- */
 void gl_window_add_root_child(Element *const e);
 void gl_window_borderless_fullscreen(void);
+void gl_window_poll_events(void);
+void gl_window_swap(void);
+bool gl_window_running(void);
+bool gl_window_quit(void);
+
+
+/* ---------------------------------------------------------- gui/keyboard.c ---------------------------------------------------------- */
+
+
+/* ----------------------------- Kb key pressed ----------------------------- */
+void kb_key_pressed(Uint key, Uint scan, Ushort mod, bool repeat);
+/* ----------------------------- Kb char input ----------------------------- */
+void kb_char_input(const char *const restrict data, Ushort mod);
 
 
 /* ---------------------------------------------------------- nanox.c ---------------------------------------------------------- */

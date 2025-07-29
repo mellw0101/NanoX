@@ -71,7 +71,7 @@ static void init_guistruct(void) {
 static void delete_guistruct(void) {
   /* Destroy glfw window, then terminate glfw. */
   gl_window_free();
-  glfwTerminate();
+  // glfwTerminate();
   /* Destroy the shaders, and the allocated text and ui font. */
   shader_free();
   /* Delete all the vertex buffers. */
@@ -88,6 +88,7 @@ static void delete_guistruct(void) {
   gui_promptmenu_free();
   /* Free the gui suggestmenu substructure. */
   gui_suggestmenu_free();
+  suggestmenu_free();
   context_menu_free(gui->context_menu);
   free(gui);
   gui = NULL;
@@ -114,9 +115,9 @@ static void init_glew(void) {
   if ((err = glewInit()) != 0) {
     gl_window_free();
     glfwTerminate();
-    die("GLEW: ERROR: %s\n", glewGetErrorString(err));
+    log_ERR_FA("GLEW: ERROR: %s\n", glewGetErrorString(err));
   }
-  writef("Using GLEW %s\n", glewGetString(GLEW_VERSION));
+  log_INFO_1("Using GLEW %s\n", glewGetString(GLEW_VERSION));
 }
 
 static inline bool should_swap_buffer(void) {
@@ -150,6 +151,7 @@ void init_gui(void) {
   gui->context_menu = context_menu_create();
   /* Init the gui suggestmenu substructure. */
   gui_suggestmenu_create();
+  suggestmenu_create();
   /* Init the top bar. */
   gui_promptmenu_create();
   /* Init the bottom bar. */
@@ -160,13 +162,15 @@ void init_gui(void) {
   statusbar_init();
   /* Init the edit element. */
   setup_edit_element();
+  
   /* Set some callbacks. */
-  glfwSetKeyCallback(gl_window(), key_callback);
-  glfwSetCharCallback(gl_window(), char_callback);
-  glfwSetMouseButtonCallback(gl_window(), mouse_button_callback);
-  glfwSetCursorPosCallback(gl_window(), mouse_pos_callback);
-  glfwSetCursorEnterCallback(gl_window(), window_enter_callback);
-  glfwSetScrollCallback(gl_window(), scroll_callback);
+  // glfwSetKeyCallback(gl_window(), key_callback);
+  // glfwSetCharCallback(gl_window(), char_callback);
+  // glfwSetMouseButtonCallback(gl_window(), mouse_button_callback);
+  // glfwSetCursorPosCallback(gl_window(), mouse_pos_callback);
+  // glfwSetCursorEnterCallback(gl_window(), window_enter_callback);
+  // glfwSetScrollCallback(gl_window(), scroll_callback);
+
   /* Ensure we poll for the correct frame rate at the start. */
   frame_set_poll();
   frame_should_report(TRUE);
@@ -182,7 +186,8 @@ void init_gui(void) {
 
 /* Main gui loop. */
 void glfw_loop(void) {
-  while (!glfwWindowShouldClose(gl_window())) {
+  // while (!glfwWindowShouldClose(gl_window())) {
+  while (gl_window_running()) {
     frame_start();
     statusbar_count_frame();
     if (should_swap_buffer()) {
@@ -205,11 +210,14 @@ void glfw_loop(void) {
       context_menu_draw(gui->context_menu);
       /* Draw the suggestmenu. */
       draw_suggestmenu();
+      suggestmenu_draw();
       /* If refresh was needed it has been done so set it to FALSE. */
-      glfwSwapBuffers(gl_window());
+      // glfwSwapBuffers(gl_window());
+      gl_window_swap();
       refresh_needed = FALSE;
     }
-    glfwPollEvents();
+    // glfwPollEvents();
+    gl_window_poll_events();
     frame_end();
   }
   log_INFO_1("Total time elapsed: %.2f seconds", (NANO_TO_MILLI(frame_elapsed_time()) / 1e3));
