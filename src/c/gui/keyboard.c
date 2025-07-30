@@ -299,6 +299,18 @@ void kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
           editor_resize(openeditor);
           break;
         }
+        case KC(P): {
+          promptmenu_open();
+          prompt = free_and_assign(prompt, COPY_OF("hello: "));
+          if (answer) {
+            *answer = NUL;
+          }
+          else {
+            answer = COPY_OF("");
+          }
+          typing_x = 0;
+          break;
+        }
         case KC(RIGHT): {
           shift_held = TRUE;
           func = to_next_word;

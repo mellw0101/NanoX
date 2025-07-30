@@ -483,3 +483,23 @@ void font_upload_texture_atlas(Font *const f) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, f->atlas->width, f->atlas->height, 0, GL_RED, GL_UNSIGNED_BYTE, f->atlas->data);
 }
+
+/* ----------------------------- Font add cursor ----------------------------- */
+
+void font_add_cursor(Font *const f, vertex_buffer_t *const buf, long row, Uint color, float x, float rowzero_y) {
+  ASSERT_FONT;
+  float x0 = ROUNDF(x);
+  float y0 = ROUNDF(GF_ROW_TOP(row) + rowzero_y);
+  float x1 = (x0 + 1);
+  float y1 = ROUNDF(GF_ROW_BOT(row) + rowzero_y);
+  /* We use the NULL texture of font to make the cursor. */
+  texture_glyph_t *glyph = texture_font_get_glyph(f->font, NULL);
+  UNPACK_FUINT_VARS(color, r,g,b,a);
+  vertex_t vert[] = {
+    { x0,y0, glyph->s0,glyph->t0, r,g,b,a },
+    { x0,y1, glyph->s0,glyph->t1, r,g,b,a },
+    { x1,y1, glyph->s1,glyph->t1, r,g,b,a },
+    { x1,y0, glyph->s1,glyph->t0, r,g,b,a },
+  };
+  vertex_buffer_push_back(buf, ARRAY__LEN(vert), ARRAY__LEN(FONT_INDICES));
+}

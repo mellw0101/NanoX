@@ -694,6 +694,7 @@ float font_wideness(Font *const f, const char *const restrict string, Ulong to_i
 void font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const restrict current, const char *const restrict prev, Uint color, float *const pen_x, float *const pen_y);
 void font_vertbuf_add_mbstr(Font *const f, vertex_buffer_t *buf, const char *string, Ulong len, const char *previous, Uint color, float *const pen_x, float *const pen_y);
 void font_upload_texture_atlas(Font *const f);
+void font_add_cursor(Font *const f, vertex_buffer_t *const buf, long row, Uint color, float x, float rowzero_y);
 
 
 /* ---------------------------------------------------------- gui/element_grid.c ---------------------------------------------------------- */
@@ -763,36 +764,36 @@ vertex_buffer_t *vertbuf_create(void);
 
 Menu *menu_create(Element *const parent, Font *const font, void *data, MenuPositionFunc position_routine, MenuAcceptFunc accept_routine);
 Menu *menu_create_submenu(Menu *const parent, const char *const restrict lable, void *data, MenuAcceptFunc accept_routine);
-void   menu_free(Menu *const menu);
+void  menu_free(Menu *const menu);
 Menu *menu_get_active(void);
-void   menu_draw(Menu *const menu);
-void   menu_push_back(Menu *const menu, const char *const restrict string);
-void   menu_pos_refresh_needed(Menu *const menu);
-void   menu_text_refresh_needed(Menu *const menu);
-void   menu_scrollbar_refresh_needed(Menu *const menu);
-void   menu_show(Menu *const menu, bool show);
-void   menu_selected_up(Menu *const menu);
-void   menu_selected_down(Menu *const menu);
-void   menu_exit_submenu(Menu *const menu);
-void   menu_enter_submenu(Menu *const menu);
-void   menu_accept_action(Menu *const menu);
-void   menu_hover_action(Menu *const menu, float x_pos, float y_pos);
-void   menu_scroll_action(Menu *const menu, bool direction, float x_pos, float y_pos);
-void   menu_click_action(Menu *const menu, float x_pos, float y_pos);
-void   menu_clear_entries(Menu *const menu);
-void   menu_set_static_width(Menu *const menu, float width);
-void   menu_set_tab_accept_behavior(Menu *const menu, bool accept_on_tab);
-void   menu_set_arrow_depth_navigation(Menu *const menu, bool enable_arrow_depth_navigation);
-bool   menu_owns_element(Menu *const menu, Element *const e);
-bool   menu_element_is_main(Menu *const menu, Element *const e);
-bool   menu_should_accept_on_tab(Menu *const menu);
-bool   menu_allows_arrow_navigation(Menu *const menu);
-bool   menu_is_ancestor(Menu *const menu, Menu *const ancestor);
-bool   menu_is_shown(Menu *const menu);
-Font  *menu_get_font(Menu *const menu);
-int    menu_len(Menu *const menu);
-int    menu_entry_qsort_strlen_cb(const void *a, const void *b);
-void   menu_qsort(Menu *const menu, CmpFuncPtr cmp_func);
+void  menu_draw(Menu *const menu);
+void  menu_push_back(Menu *const menu, const char *const restrict string);
+void  menu_pos_refresh_needed(Menu *const menu);
+void  menu_text_refresh_needed(Menu *const menu);
+void  menu_scrollbar_refresh_needed(Menu *const menu);
+void  menu_show(Menu *const menu, bool show);
+void  menu_selected_up(Menu *const menu);
+void  menu_selected_down(Menu *const menu);
+void  menu_exit_submenu(Menu *const menu);
+void  menu_enter_submenu(Menu *const menu);
+void  menu_accept_action(Menu *const menu);
+void  menu_hover_action(Menu *const menu, float x_pos, float y_pos);
+void  menu_scroll_action(Menu *const menu, bool direction, float x_pos, float y_pos);
+void  menu_click_action(Menu *const menu, float x_pos, float y_pos);
+void  menu_clear_entries(Menu *const menu);
+void  menu_set_static_width(Menu *const menu, float width);
+void  menu_set_tab_accept_behavior(Menu *const menu, bool accept_on_tab);
+void  menu_set_arrow_depth_navigation(Menu *const menu, bool enable_arrow_depth_navigation);
+bool  menu_owns_element(Menu *const menu, Element *const e);
+bool  menu_element_is_main(Menu *const menu, Element *const e);
+bool  menu_should_accept_on_tab(Menu *const menu);
+bool  menu_allows_arrow_navigation(Menu *const menu);
+bool  menu_is_ancestor(Menu *const menu, Menu *const ancestor);
+bool  menu_is_shown(Menu *const menu);
+Font *menu_get_font(Menu *const menu);
+int   menu_len(Menu *const menu);
+int   menu_entry_qsort_strlen_cb(const void *a, const void *b);
+void  menu_qsort(Menu *const menu, CmpFuncPtr cmp_func);
 
 
 /* ---------------------------------------------------------- gui/frame.c ---------------------------------------------------------- */
@@ -845,6 +846,17 @@ int monitor_fastest_refresh_rate_from_array(int *const rates, int count);
 // const SDL_DisplayMode *monitor_mode(void);
 /* ----------------------------- Monitor refresh rate ----------------------------- */
 int monitor_refresh_rate(void);
+
+
+/* ---------------------------------------------------------- gui/promptmenu.c ---------------------------------------------------------- */
+
+
+void promptmenu_create(void);
+void promptmenu_free(void);
+void promptmenu_draw(void);
+void promptmenu_open(void);
+void promptmenu_close(void);
+bool promptmenu_active(void);
 
 
 /* ---------------------------------------------------------- files.c ---------------------------------------------------------- */

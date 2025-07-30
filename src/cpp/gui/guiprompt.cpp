@@ -43,8 +43,6 @@ void gui_promptmode_enter(void) {
   ASSERT(gui->promptmenu->element);
   statusbar_discard_all_undo_redo();
   gui->flag.set<GUI_PROMPT>();
-  // gui->promptmenu->element->flag.unset<GUIELEMENT_HIDDEN>();
-  // gui->promptmenu->element->hidden     = FALSE;
   gui->promptmenu->element->xflags &= ~ELEMENT_HIDDEN;
   gui->promptmenu->text_refresh_needed = TRUE;
   gui->promptmenu->size_refresh_needed = TRUE;
@@ -59,8 +57,6 @@ void gui_promptmode_leave(void) {
   ASSERT(gui->promptmenu->completions);
   statusbar_discard_all_undo_redo();
   gui->flag.unset<GUI_PROMPT>();
-  // gui->promptmenu->element->flag.set<GUIELEMENT_HIDDEN>();
-  // gui->promptmenu->element->hidden = TRUE;
   gui->promptmenu->element->xflags |= ELEMENT_HIDDEN;
   cvec_clear(gui->promptmenu->completions);
   cvec_clear(gui->promptmenu->search_vec);
@@ -93,7 +89,7 @@ long prompt_index_from_mouse(bool allow_outside) {
   long ret = 0;
   /* When we dont allow a valid return value when outside the confinement of top-bar, just return -1. 
    * This is usefull for when we are tracking a hold after the user has pressed inside the top-bar, then drags outside it. */
-  if (!allow_outside && (mouse_gui_get_y() < (double)gui->promptmenu->element->y || mouse_gui_get_y() > (double)(gui->promptmenu->element->y + gui->promptmenu->element->height))) {
+  if (!allow_outside && (mouse_gui_get_y() < gui->promptmenu->element->y || mouse_gui_get_y() > (gui->promptmenu->element->y + gui->promptmenu->element->height))) {
     return -1;
   }
   if (no_linenums) {

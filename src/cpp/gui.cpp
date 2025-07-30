@@ -86,6 +86,7 @@ static void delete_guistruct(void) {
   nevhandler_free(gui->handler);
   /* Delete the prompt-menu struct. */
   gui_promptmenu_free();
+  promptmenu_free();
   /* Free the gui suggestmenu substructure. */
   gui_suggestmenu_free();
   suggestmenu_free();
@@ -154,6 +155,7 @@ void init_gui(void) {
   suggestmenu_create();
   /* Init the top bar. */
   gui_promptmenu_create();
+  promptmenu_create();
   /* Init the bottom bar. */
   setup_botbar();
   /* Init the bottom bar, that will be used for status updates, among other thing. */
@@ -203,6 +205,7 @@ void glfw_loop(void) {
       );
       /* Draw the top menu bar. */
       draw_topbar();
+      promptmenu_draw();
       /* Draw the bottom bar. */
       draw_botbar();
       /* Draw the status bar, if there is any status messages. */
