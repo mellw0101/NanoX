@@ -282,7 +282,13 @@ static float menu_calculate_width(Menu *const menu) {
   int longest_index;
   Ulong longest_string;
   Ulong value;
-  if (len && !(menu->xflags & MENU_WIDTH_IS_STATIC) && (menu->xflags & MENU_REFRESH_WIDTH)) {
+  if (menu->xflags & MENU_WIDTH_IS_STATIC) {
+    /* TODO: Bandaid for today: 30-07-25.  FIX THIS PROPERLY. */
+    if (cvec_len(menu->entries) > menu->maxrows) {
+      return (menu->width - scrollbar_width(menu->sb));
+    }
+  }
+  else if (len && (menu->xflags & MENU_REFRESH_WIDTH)) {
     longest_index = 0;
     longest_string = strlen(menu_get_entry_lable(menu, 0));
     for (int i=1; i<len; ++i) {
@@ -511,6 +517,8 @@ static void menu_exit_submenu_internal(Menu *const menu) {
 
 /* ---------------------------------------------------------- Menu global function's ---------------------------------------------------------- */
 
+
+/* ----------------------------- Menu create ----------------------------- */
 
 /* Create a allocated `Menu`. */
 Menu *menu_create(Element *const parent, Font *const font, void *data, MenuPositionFunc position_routine, MenuAcceptFunc accept_routine) {

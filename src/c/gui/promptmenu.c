@@ -74,7 +74,6 @@ static void promptmenu_accept(void *arg, const char *const restrict lable, int _
 
 /* ----------------------------- Promptmenu add prompt text ----------------------------- */
 
-_UNUSED
 static inline void promptmenu_add_prompt_text(void) {
   float x = (pm->element->x + font_breadth(uifont, " "));
   float y = (pm->element->y + font_row_baseline(uifont, 0));
@@ -84,7 +83,6 @@ static inline void promptmenu_add_prompt_text(void) {
 
 /* ----------------------------- Promptmenu add cursor ----------------------------- */
 
-_UNUSED
 static inline void promptmenu_add_cursor(void) {
   font_add_cursor(
     uifont,
@@ -94,6 +92,76 @@ static inline void promptmenu_add_cursor(void) {
     (pm->element->x + font_breadth(uifont, " ") + font_breadth(uifont, prompt) + font_wideness(uifont, answer, typing_x)),
     pm->element->y
   );
+}
+
+
+/* ----------------------------- Promptmenu find completions ----------------------------- */
+
+_UNUSED
+static void promptmenu_find_completions(void) {
+  ASSERT_PM;
+  HashMap *map;
+  char *entry;
+  Ulong j;
+  Ulong len;
+  menu_clear_entries(pm->menu);
+  if (cvec_len(pm->completions)) {
+    map = hashmap_create();
+    len = strlen(answer);
+    for (int i=0; i<cvec_len(pm->completions); ++i) {
+      entry = cvec_get(pm->completions, i);
+      /* When the first byte does not match, just continue. */
+      if (*entry != *answer) {
+        continue;
+      }
+      /* Otherwise, check the rest. */
+      for (j=1; j<len && (entry[j] == answer[j]); ++j);
+      /* All bytes did not match.  Or, the entry is already in the map. */
+      if (j < len || hashmap_get(map, entry)) {
+        continue;
+      }
+      hashmap_insert(map, entry, entry);
+      menu_push_back(pm->menu, entry);
+    }
+    hashmap_free(map);
+    menu_qsort(pm->menu, menu_entry_qsort_strlen_cb);
+    menu_text_refresh_needed(pm->menu);
+  }
+}
+
+/* ----------------------------- Promptmenu open file search ----------------------------- */
+
+_UNUSED
+static void promptmenu_open_file_search(void) {
+  ASSERT_PM;
+  directory_t dir;
+  char *last_slash;
+  char *dirpath;
+  cvec_clear(pm->completions);
+  if (*answer) {
+    directory_data_init(&dir);
+    /* If the current answer is a dir itself. */
+    if (dir_exists(answer)) {
+      directory_get(answer, &dir);
+    }
+    else {
+      last_slash = STRRCHR(answer, '/');
+      if (last_slash && last_slash != answer) {
+        dirpath = measured_copy(answer, (last_slash - answer));
+        directory_get(dirpath, &dir);
+        free(dirpath);
+      }
+    }
+    if (dir.len) {
+      DIRECTORY_ITER(dir, i, entry,
+        cvec_push(pm->completions, copy_of(entry->path));
+      );
+      promptmenu_find_completions();
+    }
+    directory_data_free(&dir);
+  }
+  menu_pos_refresh_needed(pm->menu);
+  menu_text_refresh_needed(pm->menu);
 }
 
 
@@ -129,9 +197,9 @@ void promptmenu_free(void) {
 void promptmenu_draw(void) {
   ASSERT_PM;
   if (pm->xflags & PROMPTMENU_ACTIVE) {
+    menu_set_static_width(pm->menu, pm->element->width);
     /* Resize/Reposition */
     element_draw(pm->element);
-    menu_draw(pm->menu);
     if (pm->xflags & PROMPTMENU_REFRESH_TEXT) {
       vertex_buffer_clear(pm->buf);
       promptmenu_add_prompt_text();
@@ -139,6 +207,7 @@ void promptmenu_draw(void) {
       pm->xflags &= ~PROMPTMENU_REFRESH_TEXT;
     }
     render_vertbuf(uifont, pm->buf);
+    menu_draw(pm->menu);
   }
 }
 
@@ -170,4 +239,18 @@ void promptmenu_close(void) {
 bool promptmenu_active(void) {
   ASSERT_PM;
   return !!(pm->xflags & PROMPTMENU_ACTIVE);
+}
+
+/* ----------------------------- Promptmenu refresh text ----------------------------- */
+
+void promptmenu_refresh_text(void) {
+  ASSERT_PM;
+  pm->xflags |= PROMPTMENU_REFRESH_TEXT;
+  refresh_needed = TRUE;
+}
+
+/* ----------------------------- Promptmenu completions search ----------------------------- */
+
+void promptmenu_completions_search(void) {
+  promptmenu_open_file_search();
 }

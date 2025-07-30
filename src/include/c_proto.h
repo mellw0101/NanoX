@@ -851,12 +851,22 @@ int monitor_refresh_rate(void);
 /* ---------------------------------------------------------- gui/promptmenu.c ---------------------------------------------------------- */
 
 
+/* ----------------------------- Promptmenu create ----------------------------- */
 void promptmenu_create(void);
+/* ----------------------------- Promptmenu free ----------------------------- */
 void promptmenu_free(void);
+/* ----------------------------- Promptmenu draw ----------------------------- */
 void promptmenu_draw(void);
+/* ----------------------------- Promptmenu open ----------------------------- */
 void promptmenu_open(void);
+/* ----------------------------- Promptmenu close ----------------------------- */
 void promptmenu_close(void);
+/* ----------------------------- Promptmenu active ----------------------------- */
 bool promptmenu_active(void);
+/* ----------------------------- Promptmenu refresh text ----------------------------- */
+void promptmenu_refresh_text(void);
+/* ----------------------------- Promptmenu completions search ----------------------------- */
+void promptmenu_completions_search(void);
 
 
 /* ---------------------------------------------------------- files.c ---------------------------------------------------------- */
@@ -1682,6 +1692,10 @@ bool gl_window_quit(void);
 void kb_key_pressed(Uint key, Uint scan, Ushort mod, bool repeat);
 /* ----------------------------- Kb char input ----------------------------- */
 void kb_char_input(const char *const restrict data, Ushort mod);
+/* ----------------------------- Kb prompt key pressed ----------------------------- */
+void kb_prompt_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED repeat);
+/* ----------------------------- Kb prompt char input ----------------------------- */
+void kb_prompt_char_input(const char *const restrict data, Ushort mod);
 
 
 /* ---------------------------------------------------------- nanox.c ---------------------------------------------------------- */

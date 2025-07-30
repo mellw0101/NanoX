@@ -261,11 +261,21 @@ void gl_window_poll_events(void) {
         break;
       }
       case SDL_EVENT_TEXT_INPUT: {
-        kb_char_input(ev.text.text, SDL_GetModState());
+        if (promptmenu_active()) {
+          kb_prompt_char_input(ev.text.text, SDL_GetModState());
+        }
+        else {
+          kb_char_input(ev.text.text, SDL_GetModState());
+        }
         break;
       }
       case SDL_EVENT_KEY_DOWN: {
-        kb_key_pressed(ev.key.key, ev.key.scancode, ev.key.mod, ev.key.repeat);
+        if (promptmenu_active()) {
+          kb_prompt_key_pressed(ev.key.key, ev.key.scancode, ev.key.mod, ev.key.repeat);
+        }
+        else {
+          kb_key_pressed(ev.key.key, ev.key.scancode, ev.key.mod, ev.key.repeat);
+        }
         break;
       }
       case SDL_EVENT_WINDOW_RESIZED: {
