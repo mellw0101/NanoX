@@ -300,15 +300,7 @@ void kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
           break;
         }
         case KC(P): {
-          promptmenu_open();
-          prompt = free_and_assign(prompt, COPY_OF("hello: "));
-          if (answer) {
-            *answer = NUL;
-          }
-          else {
-            answer = COPY_OF("");
-          }
-          typing_x = 0;
+          promptmenu_ask(">", PROMPTMENU_TYPE_NONE);
           break;
         }
         case KC(RIGHT): {
@@ -609,7 +601,7 @@ void kb_char_input(const char *const restrict data, Ushort mod) {
   const char *s1;
   const char *s2;
   /* Only accept char input when no mods are set, ignoring CAPS, SCROLL and NUM. */
-  if (MOD_NONE_IG_DEF(mod) && (len = strlen(data))) {
+  if (MOD_NONE_IG(mod, CAPS, NUM, SCROLL, SHIFT) && (len = STRLEN(data))) {
     burst = measured_copy(data, len);
     /* Non ASCII */
     if (len != 1) {
@@ -723,7 +715,7 @@ void kb_prompt_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED
     case KB_MOD_NONE: {
       switch (key) {
         case KC(ENTER): {
-          /* promptmenu_enter_action() */
+          promptmenu_enter_action();
           break;
         }
         case KC(HOME): {
@@ -742,12 +734,30 @@ void kb_prompt_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED
           do_statusbar_left();
           break;
         }
+        case KC(DOWN): {
+          if (menu_get_active()) {
+            menu_selected_down(menu_get_active());
+          }
+          break;
+        }
+        case KC(UP): {
+          if (menu_get_active()) {
+            menu_selected_up(menu_get_active());
+          }
+          break;
+        }
         case KC(BACKSPACE): {
           do_statusbar_backspace(TRUE);
+          promptmenu_completions_search();
           break;
         }
         case KC(DELETE): {
           do_statusbar_delete();
+          promptmenu_completions_search();
+          break;
+        }
+        case KC(TAB): {
+          promptmenu_tab_action();
           break;
         }
       }
@@ -772,10 +782,12 @@ void kb_prompt_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED
         }
         case KC(Z): {
           do_statusbar_undo();
+          promptmenu_completions_search();
           break;
         }
         case KC(Y): {
           do_statusbar_redo();
+          promptmenu_completions_search();
           break;
         }
         case KC(RIGHT): {
@@ -788,10 +800,12 @@ void kb_prompt_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED
         }
         case KC(BACKSPACE): {
           do_statusbar_chop_prev_word();
+          promptmenu_completions_search();
           break;
         }
         case KC(DELETE): {
           do_statusbar_chop_next_word();
+          promptmenu_completions_search();
           break;
         }
       }
@@ -811,7 +825,7 @@ void kb_prompt_char_input(const char *const restrict data, Ushort mod) {
   Ulong len;
   char *burst;
   /* Only ever perform any action when no modifiers (excluding CAPS, SCROLL and NUM). */
-  if (MOD_NONE_IG_DEF(mod) && (len = strlen(data))) {
+  if (MOD_NONE_IG(mod, CAPS, NUM, SCROLL, SHIFT) && (len = STRLEN(data))) {
     burst = measured_copy(data, len);
     inject_into_answer(burst, len);
     free(burst);

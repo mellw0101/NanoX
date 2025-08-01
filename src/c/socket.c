@@ -73,11 +73,11 @@ int nanox_socketrun(void) {
         else {
           write(STDOUT_FILENO, buffer, bytesread);
           /* Check for hello. */
-          if (strncmp(buffer, S__LEN("hello")) == 0 && isblankornulc(buffer + STRLEN("hello"))) {
+          if (strncmp(buffer, S__LEN("hello")) == 0 && isblankornulc(buffer + SLTLEN("hello"))) {
             write(events[i].data.fd, S__LEN("Hello client.\n"));
           }
           /* Check for termination. */
-          else if (strncmp(buffer, S__LEN("kill")) == 0 && isblankornulc(buffer + STRLEN("kill"))) {
+          else if (strncmp(buffer, S__LEN("kill")) == 0 && isblankornulc(buffer + SLTLEN("kill"))) {
             break;
           }
         }

@@ -17,6 +17,8 @@
   ASSERT(pm->menu);         \
   ASSERT(pm->completions)
 
+#define PROMPTMENU_DEFAULT_WIDTH  600
+
 
 /* ---------------------------------------------------------- Enum's ---------------------------------------------------------- */
 
@@ -41,6 +43,11 @@ typedef struct {
   Element *element;
   Menu *menu;
   CVec *completions;
+
+  PromptMenuType mode;
+
+  /* Data used for actions. */
+  void *data;
 } PromptMenu;
 
 
@@ -66,10 +73,12 @@ static void promptmenu_pos(void *arg, float _UNUSED w, float _UNUSED h, float *c
 
 /* ----------------------------- Promptmenu accept ----------------------------- */
 
+/* `Menu accept routine`.  Note that this will simply replace the answer to the entry's lable. */
 static void promptmenu_accept(void *arg, const char *const restrict lable, int _UNUSED index) {
   ASSERT(arg);
   ASSERT(lable);
-  log_INFO_1("Lable: %s", lable);
+  do_statusbar_replace(lable);
+  pm->xflags |= PROMPTMENU_REFRESH_TEXT;
 }
 
 /* ----------------------------- Promptmenu add prompt text ----------------------------- */
@@ -94,10 +103,8 @@ static inline void promptmenu_add_cursor(void) {
   );
 }
 
-
 /* ----------------------------- Promptmenu find completions ----------------------------- */
 
-_UNUSED
 static void promptmenu_find_completions(void) {
   ASSERT_PM;
   HashMap *map;
@@ -131,7 +138,6 @@ static void promptmenu_find_completions(void) {
 
 /* ----------------------------- Promptmenu open file search ----------------------------- */
 
-_UNUSED
 static void promptmenu_open_file_search(void) {
   ASSERT_PM;
   directory_t dir;
@@ -156,12 +162,27 @@ static void promptmenu_open_file_search(void) {
       DIRECTORY_ITER(dir, i, entry,
         cvec_push(pm->completions, copy_of(entry->path));
       );
-      promptmenu_find_completions();
     }
     directory_data_free(&dir);
   }
-  menu_pos_refresh_needed(pm->menu);
-  menu_text_refresh_needed(pm->menu);
+  if (cvec_len(pm->completions)) {
+    menu_show(pm->menu, TRUE);
+    menu_pos_refresh_needed(pm->menu);
+    menu_text_refresh_needed(pm->menu);
+  }
+  else {
+    menu_show(pm->menu, FALSE);
+  }
+}
+
+/* ----------------------------- Promptmenu get x width ----------------------------- */
+
+static inline void promptmenu_get_x_width(float *const x, float *const width) {
+  ASSERT(x);
+  ASSERT(width);
+  float winwidth = gl_window_width();
+  *width = FMINF(winwidth, PROMPTMENU_DEFAULT_WIDTH);
+  *x = ((winwidth / 2) - (*width / 2));
 }
 
 
@@ -171,15 +192,27 @@ static void promptmenu_open_file_search(void) {
 /* ----------------------------- Promptmenu create ----------------------------- */
 
 void promptmenu_create(void) {
+  float x;
+  float width;
+  promptmenu_get_x_width(&x, &width);
   pm = xmalloc(sizeof *pm);
   pm->xflags = PROMPTMENU_DEFAULT_XFLAGS;
   pm->buf = vertex_buffer_new(FONT_VERTBUF);
-  pm->element = element_create(0, 0, gl_window_width(), font_height(uifont), TRUE);
+  pm->element = element_create(x, 0, width, font_height(uifont), TRUE);
   gl_window_add_root_child(pm->element);
   pm->element->color   = PACKED_UINT_VS_CODE_RED;
-  pm->element->xflags |= (ELEMENT_HIDDEN | ELEMENT_REL_WIDTH);
+  pm->element->xflags |= ELEMENT_HIDDEN;
   pm->completions = cvec_create_setfree(free);
   pm->menu = menu_create(pm->element, uifont, pm, promptmenu_pos, promptmenu_accept);
+  menu_set_tab_accept_behavior(pm->menu, TRUE);
+  pm->mode = PROMPTMENU_TYPE_NONE;
+  pm->data = NULL;
+  if (!prompt) {
+    prompt = COPY_OF("");
+  }
+  if (!answer) {
+    answer = COPY_OF("");
+  }
 }
 
 /* ----------------------------- Promptmenu free ----------------------------- */
@@ -252,5 +285,123 @@ void promptmenu_refresh_text(void) {
 /* ----------------------------- Promptmenu completions search ----------------------------- */
 
 void promptmenu_completions_search(void) {
-  promptmenu_open_file_search();
+  ASSERT_PM;
+  switch (pm->mode) {
+    case PROMPTMENU_TYPE_FILE_OPEN: {
+      promptmenu_open_file_search();
+      break;
+    }
+    default: {
+      break;
+    }
+  }
+  promptmenu_find_completions();
+}
+
+/* ----------------------------- Promptmenu enter action ----------------------------- */
+
+void promptmenu_enter_action(void) {
+  ASSERT_PM;
+  char *pwd;
+  Ulong pwdlen;
+  if (menu_get_active() && menu_len(pm->menu)) {
+    ALWAYS_ASSERT(menu_get_active() == pm->menu);
+    menu_accept_action(pm->menu);
+  }
+  switch (pm->mode) {
+    case PROMPTMENU_TYPE_FILE_OPEN: {
+      if (*answer) {
+        /* The answer is a directory. */
+        if (dir_exists(answer)) {
+          typing_x = strlen(answer);
+          if (answer[typing_x - 1] != '/') {
+            answer = xnstrncat(answer, typing_x++, S__LEN("/"));
+          }
+          promptmenu_open_file_search();
+          return;
+        }
+        else if (blkdev_exists(answer)) {
+          statusline(AHEM, "'%s' is a block device", answer);
+        }
+        else if (!file_exists(answer)) {
+          statusline(AHEM, "'%s' does not exist", answer);
+        }
+        else {
+          pwd    = getpwd();
+          pwdlen = strlen(pwd);
+          if (STRNCMP(answer, pwd, pwdlen) && file_exists(answer + pwdlen + 1)) {
+            editor_open_buffer(answer + pwdlen + 1);
+          }
+          else {
+            editor_open_buffer(answer);
+          }
+          FREE(pwd);
+        }
+        promptmenu_close();
+      }
+      break;
+    }
+    default: {
+      if (STRCASECMP(answer, "open file") == 0) {
+        promptmenu_open_file();
+      }
+      else {
+        promptmenu_close();
+      }
+    }
+  }
+}
+
+/* ----------------------------- Promptmenu tab action ----------------------------- */
+
+void promptmenu_tab_action(void) {
+  ASSERT_PM;
+  if (menu_get_active() && menu_len(pm->menu)) {
+    ALWAYS_ASSERT(menu_get_active() == pm->menu);
+    menu_accept_action(pm->menu);
+  }
+  switch (pm->mode) {
+    case PROMPTMENU_TYPE_FILE_OPEN: {
+      if (dir_exists(answer) && typing_x && answer[typing_x - 1] != '/') {
+        answer = xnstrncat(answer, typing_x++, S__LEN("/"));
+        pm->xflags |= PROMPTMENU_REFRESH_TEXT;
+        refresh_needed = TRUE;
+      }
+      break;
+    }
+    default: {
+      break;
+    }
+  }
+  promptmenu_completions_search();
+}
+
+/* ----------------------------- Promptmenu ask ----------------------------- */
+
+void promptmenu_ask(const char *const restrict question, PromptMenuType type) {
+  ASSERT_PM;
+  ASSERT(question);
+  promptmenu_open();
+  prompt = free_and_assign(prompt, fmtstr("%s: ", question));
+  if (answer) {
+    *answer = NUL;
+  }
+  else {
+    answer = COPY_OF("");
+  }
+  typing_x = 0;
+  pm->mode = type;
+}
+
+/* ----------------------------- Promptmenu open file ----------------------------- */
+
+void promptmenu_open_file(void) {
+  ASSERT_PM;
+  promptmenu_ask("File to open", PROMPTMENU_TYPE_FILE_OPEN);
+  answer   = free_and_assign(answer, getpwd());
+  typing_x = strlen(answer);
+  if (typing_x && answer[typing_x - 1] != '/') {
+    answer = xnstrncat(answer, typing_x++, S__LEN("/"));
+  }
+  promptmenu_completions_search();
 }

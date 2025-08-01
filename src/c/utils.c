@@ -451,7 +451,7 @@ char *construct_full_tab_string(Ulong *length) {
     return fmtstr("%*s", (int)tabsize, " ");
   }
   else {
-    ASSIGN_IF_VALID(length, STRLEN("\t"));
+    ASSIGN_IF_VALID(length, SLTLEN("\t"));
     return COPY_OF("\t");
   }
 }

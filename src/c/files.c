@@ -59,7 +59,7 @@
 /* static */ char *do_lockfile(const char *const restrict filename, bool ask_the_user) {
   char *namecopy     = copy_of(filename);
   char *secondcopy   = copy_of(filename);
-  Ulong locknamelen  = (strlen(filename) + STRLEN(LOCKING_PREFIX) + STRLEN(LOCKING_SUFFIX));
+  Ulong locknamelen  = (strlen(filename) + SLTLEN(LOCKING_PREFIX) + SLTLEN(LOCKING_SUFFIX));
   char *lockfilename = xmalloc(locknamelen);
   char lockprog[11];
   char lockuser[17];

@@ -153,7 +153,7 @@ static void csyntaxmacro_params(SyntaxFile *const sf, CSyntaxMacro *const macro,
     else if (iswordc(data, FALSE, "_.")) {
       if (*data == '.') {
         /* This is a valid variatic parameter argument. */
-        if (strncmp(data, S__LEN("...")) == 0 && (isblankornulc(data + STRLEN("...")) || isconeof(*(data + STRLEN("...")), "\\),"))) {
+        if (strncmp(data, S__LEN("...")) == 0 && (isblankornulc(data + SLTLEN("...")) || isconeof(*(data + SLTLEN("...")), "\\),"))) {
           cvec_push(macro->args, COPY_OF("..."));
           idx = 3;
         }
@@ -239,7 +239,7 @@ static void csyntaxmacro_parse(SyntaxFile *const sf, SyntaxFileLine **const outl
           syntaxfile_adderror(sf, line->lineno, (data - line->data), "Failed to parse macro arguments");
         }
         else {
-          data += STRLEN(")");
+          data += SLTLEN(")");
         }
       }
       data += indentlen(data);
@@ -261,9 +261,9 @@ static void csyntaxpp_parse(SyntaxFile *const sf, SyntaxFileLine **const outline
   SyntaxFileLine *line = *outline;
   const char *data = *outdata;
   /* Define directive. */
-  if (strncmp(data, S__LEN("define")) == 0 && isblankornulc(data + STRLEN("define"))) {
+  if (strncmp(data, S__LEN("define")) == 0 && isblankornulc(data + SLTLEN("define"))) {
     /* Advance the data ptr to the first non blank char after `define`. */
-    data += (indentlen(data + STRLEN("define")) + STRLEN("define"));
+    data += (indentlen(data + SLTLEN("define")) + SLTLEN("define"));
     /* Parse the macro. */
     csyntaxmacro_parse(sf, &line, &data);
   }
@@ -343,7 +343,7 @@ static void csyntaxstruct_parse(SyntaxFile *const sf, SyntaxFileLine **const out
   const char *data = *outdata;
   char *ptr;
   /* Move the ptr to the first non blank char after struct. */
-  data += (indentlen(data + STRLEN("struct")) + STRLEN("struct"));
+  data += (indentlen(data + SLTLEN("struct")) + SLTLEN("struct"));
   findnextchar(&line, &data);
   /* `EOL` here means either this is a multiline decl, or its invalid. */
   if (!*data) {
@@ -450,7 +450,7 @@ recheck:
     }
     /* If this line is a preprocessor line. */
     else if (*data == '#') {
-      data += (indentlen(data + STRLEN("#")) + STRLEN("#"));
+      data += (indentlen(data + SLTLEN("#")) + SLTLEN("#"));
       /* 'EOL' here means an error. */
       if (!*data) {
         syntaxfile_adderror(sf, line->lineno, (data - line->data), "'#' Needs a preprocessor directive");
@@ -460,20 +460,20 @@ recheck:
       }
     }
     /* If the line is a pure struct declaration.  So no typedef or such. */
-    else if (strncmp(data, S__LEN("struct")) == 0 && isblankornulc(data + STRLEN("struct"))) {
+    else if (strncmp(data, S__LEN("struct")) == 0 && isblankornulc(data + SLTLEN("struct"))) {
       csyntaxstruct_parse(sf, &line, &data, &recheck);
       if (recheck) {
         goto recheck;
       }
     }
-    else if (strncmp(data, S__LEN("typedef")) == 0 && isblankornulc(data + STRLEN("typedef"))) {
-      data += STRLEN("typedef");
+    else if (strncmp(data, S__LEN("typedef")) == 0 && isblankornulc(data + SLTLEN("typedef"))) {
+      data += SLTLEN("typedef");
       findnextchar(&line, &data);
       /* Typedef struct. */
-      if (strncmp(data, S__LEN("struct")) == 0 && isblankornulc(data + STRLEN("struct"))) {
+      if (strncmp(data, S__LEN("struct")) == 0 && isblankornulc(data + SLTLEN("struct"))) {
         writef("%s:[%lu:%lu]: Found typedef struct: %s\n", sf->path, line->lineno, (data - line->data), data);
       }
-      else if (strncmp(data, S__LEN("enum")) == 0 && isblankornulc(data + STRLEN("enum"))) {
+      else if (strncmp(data, S__LEN("enum")) == 0 && isblankornulc(data + SLTLEN("enum"))) {
         writef("%s:[%lu:%lu]: Found typedef enum: %s\n", sf->path, line->lineno, (data - line->data), data);
       }
     }

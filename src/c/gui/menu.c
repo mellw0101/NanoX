@@ -83,10 +83,14 @@ struct Menu {
   Element *selelem;
   
   CVec *entries;
+
+  /* What the viewtop */
+  int was_viewtop;
   int viewtop;
   int selected;
   int maxrows;
   int rows;
+
   Scrollbar *sb;
   Font *font;
 
@@ -104,8 +108,10 @@ struct Menu {
 };
 
 
-/* ---------------------------------------------------------- MenuEntry function's ---------------------------------------------------------- */
+/* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
+
+/* ----------------------------- Menu entry create ----------------------------- */
 
 /* Create a allocated `MenuEntry` structure with a `lable` and no menu ptr. */
 static MenuEntry *menu_entry_create(const char *const restrict lable) {
@@ -114,6 +120,8 @@ static MenuEntry *menu_entry_create(const char *const restrict lable) {
   me->menu  = NULL;
   return me;
 }
+
+/* ----------------------------- Menu entry free ----------------------------- */
 
 /* Free callback for a `MenuEntry`. */
 static void menu_entry_free(void *arg) {
@@ -124,6 +132,8 @@ static void menu_entry_free(void *arg) {
   free(me);
 }
 
+/* ----------------------------- Menu entry create with menu ----------------------------- */
+
 static MenuEntry *menu_entry_create_with_menu(const char *const restrict lable, Menu *const menu) {
   ASSERT(lable);
   ASSERT(menu);
@@ -132,27 +142,34 @@ static MenuEntry *menu_entry_create_with_menu(const char *const restrict lable, 
   return me;
 }
 
-
-/* ---------------------------------------------------------- Menu static function's ---------------------------------------------------------- */
-
+/* ----------------------------- Menu selected is above screen ----------------------------- */
 
 static bool menu_selected_is_above_screen(Menu *const menu) {
   ASSERT_MENU;
   return (menu->selected < menu->viewtop);
 }
 
+/* ----------------------------- Menu selected is below screen ----------------------------- */
+
 static bool menu_selected_is_below_screen(Menu *const menu) {
   ASSERT_MENU;
   return (menu->selected >= (menu->viewtop + menu->rows));
 }
 
-_UNUSED static bool menu_selected_is_off_screen(Menu *const menu) {
+/* ----------------------------- Menu selected is off screen ----------------------------- */
+
+_UNUSED
+static bool menu_selected_is_off_screen(Menu *const menu) {
   ASSERT_MENU;
   return (menu_selected_is_above_screen(menu) || menu_selected_is_below_screen(menu));
 }
 
+/* ----------------------------- Menu scrollbar update routine ----------------------------- */
+
 /* The scrollbar update routine for the `Menu` structure. */
-static void menu_scrollbar_update_routine(void *arg, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *top_offset, float *right_offset) {
+static void menu_scrollbar_update_routine(void *arg, float *total_length, Uint *start,
+  Uint *total, Uint *visible, Uint *current, float *top_offset, float *right_offset)
+{
   ASSERT(arg);
   Menu *menu = arg;
   ASSIGN_IF_VALID(total_length, (menu->element->height - (menu->border_size * 2)));
@@ -164,12 +181,16 @@ static void menu_scrollbar_update_routine(void *arg, float *total_length, Uint *
   ASSIGN_IF_VALID(right_offset, menu->border_size);
 }
 
+/* ----------------------------- Menu scrollbar moving routine ----------------------------- */
+
 /* The scrollbar moving routine for the `Menu` structure. */
 static void menu_scrollbar_moving_routine(void *arg, long index) {
   ASSERT(arg);
   Menu *menu = arg;
   menu->viewtop = lclamp(index, 0, (cvec_len(menu->entries) - menu->rows));
 }
+
+/* ----------------------------- Menu scrollbar create ----------------------------- */
 
 /* TODO: Make the menu tall enough so that the scrollbar gets corrently initilazed before first use. */
 static void menu_scrollbar_create(Menu *const menu) {
@@ -178,17 +199,23 @@ static void menu_scrollbar_create(Menu *const menu) {
   menu->sb = scrollbar_create(menu->element, menu, menu_scrollbar_update_routine, menu_scrollbar_moving_routine);
 }
 
+/* ----------------------------- Menu get entry lable ----------------------------- */
+
 /* Return's the `lable` of the entry at `index`. */
 static char *menu_get_entry_lable(Menu *const menu, int index) {
   ASSERT_MENU;
   return ((MenuEntry *)cvec_get(menu->entries, index))->lable;
 }
 
+/* ----------------------------- Menu get entry menu ----------------------------- */
+
 /* Return's the `menu` of the entry at `index`. */
 static Menu *menu_get_entry_menu(Menu *const menu, int index) {
   ASSERT_MENU;
   return ((MenuEntry *)cvec_get(menu->entries, index))->menu;
 }
+
+/* ----------------------------- Menu event bounds ----------------------------- */
 
 /* Assigns the global absolute y top and bottom position as well as the most right allowed x position. */
 static void menu_event_bounds(Menu *const menu, float *const top, float *const bot, float *const right) {
@@ -282,13 +309,7 @@ static float menu_calculate_width(Menu *const menu) {
   int longest_index;
   Ulong longest_string;
   Ulong value;
-  if (menu->xflags & MENU_WIDTH_IS_STATIC) {
-    /* TODO: Bandaid for today: 30-07-25.  FIX THIS PROPERLY. */
-    if (cvec_len(menu->entries) > menu->maxrows) {
-      return (menu->width - scrollbar_width(menu->sb));
-    }
-  }
-  else if (len && (menu->xflags & MENU_REFRESH_WIDTH)) {
+  if (len && !(menu->xflags & MENU_WIDTH_IS_STATIC) && (menu->xflags & MENU_REFRESH_WIDTH)) {
     longest_index = 0;
     longest_string = strlen(menu_get_entry_lable(menu, 0));
     for (int i=1; i<len; ++i) {
@@ -298,7 +319,10 @@ static float menu_calculate_width(Menu *const menu) {
       }
     }
     menu->width = (font_breadth(menu->font, menu_get_entry_lable(menu, longest_index)) + (menu->border_size * 2) + 2);
-    // menu->width_refresh_needed = FALSE;
+    /* When the menu has more entries then rows, this means we need to add width for the scrollbar to fit. */
+    if (len > menu->maxrows) {
+      menu->width += scrollbar_width(menu->sb);
+    }
     menu->xflags &= ~MENU_REFRESH_WIDTH;
   }
   return menu->width;
@@ -326,9 +350,9 @@ static void menu_resize(Menu *const menu) {
     width  = menu_calculate_width(menu);
     height = ((menu->rows * font_height(menu->font)) + (menu->border_size * 2) + 2);
     /* Add the size of the scrollbar if there is one. */
-    if (len > menu->maxrows) {
-      width += scrollbar_width(menu->sb);
-    }
+    // if (len > menu->maxrows) {
+    //   width += scrollbar_width(menu->sb);
+    // }
     /* Get the wanted position based on the calculated size. */
     if (!menu->parent) {
       menu->position_routine(menu->data, width, height, &x, &y);
@@ -338,7 +362,6 @@ static void menu_resize(Menu *const menu) {
     }
     /* Move and resize the element. */
     element_move_resize(menu->element, x, y, width, height);
-    // menu->pos_refresh_needed = FALSE;
     menu->xflags &= ~MENU_REFRESH_POS;
   }
 }
@@ -359,14 +382,11 @@ static void menu_draw_selected(Menu *const menu) {
     font_row_top_bot(menu->font, row, &y, &height);
     height -= (y - ((row == menu->rows - 1) ? 1 : 0));
     y      += (menu->element->y + menu->border_size);
-    // menu->selelem->hidden = FALSE;
     menu->selelem->xflags &= ~ELEMENT_HIDDEN;
     element_move_resize(menu->selelem, x, y, width, height);
     element_draw(menu->selelem);
-    // draw_rect_rgba(x, y, width, height, 1, 1, 1, 0.4f);
   }
   else {
-    // menu->selelem->hidden = TRUE;
     menu->selelem->xflags |= ELEMENT_HIDDEN;
   }
 }
@@ -376,7 +396,6 @@ static void menu_draw_selected(Menu *const menu) {
 static void menu_draw_text(Menu *const menu) {
   ASSERT_MENU;
   static int was_viewtop = -1;
-  // static Color color = {1, 1, 1, 1};
   int row = 0;
   char *str;
   float pen_x;
@@ -804,8 +823,7 @@ void menu_clear_entries(Menu *const menu) {
 void menu_set_static_width(Menu *const menu, float width) {
   ASSERT_MENU;
   ALWAYS_ASSERT_MSG((width > 0.0f), "The width of a menu must be positive");
-  menu->width = width;
-  // menu->width_is_static = TRUE;
+  menu->width   = width;
   menu->xflags |= MENU_WIDTH_IS_STATIC;
 }
 

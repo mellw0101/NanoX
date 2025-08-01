@@ -85,7 +85,7 @@ static void delete_guistruct(void) {
   nevhandler_stop(gui->handler, 0);
   nevhandler_free(gui->handler);
   /* Delete the prompt-menu struct. */
-  gui_promptmenu_free();
+  // gui_promptmenu_free();
   promptmenu_free();
   /* Free the gui suggestmenu substructure. */
   gui_suggestmenu_free();
@@ -154,7 +154,7 @@ void init_gui(void) {
   gui_suggestmenu_create();
   suggestmenu_create();
   /* Init the top bar. */
-  gui_promptmenu_create();
+  // gui_promptmenu_create();
   promptmenu_create();
   /* Init the bottom bar. */
   setup_botbar();
@@ -175,7 +175,7 @@ void init_gui(void) {
 
   /* Ensure we poll for the correct frame rate at the start. */
   frame_set_poll();
-  frame_should_report(TRUE);
+  // frame_should_report(TRUE);
   glDisable(GL_DEPTH_TEST);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_TEXTURE_2D);
@@ -204,7 +204,7 @@ void glfw_loop(void) {
         draw_editor(editor);
       );
       /* Draw the top menu bar. */
-      draw_topbar();
+      // draw_topbar();
       promptmenu_draw();
       /* Draw the bottom bar. */
       draw_botbar();

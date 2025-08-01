@@ -460,7 +460,7 @@
 //     die("%s: str ('%s') was not encoded properly.  Could not find ENCLOSE_DELIM '%s'.\n", __func__, str, ENCLOSE_DELIM);
 //   }
 //   *s1 = measured_copy(str, (enclose_delim - str));
-//   *s2 = copy_of(enclose_delim + STRLEN(ENCLOSE_DELIM));
+//   *s2 = copy_of(enclose_delim + SLTLEN(ENCLOSE_DELIM));
 // }
 
 /* If an area is marked then plase the 'str' at mark and current_x, thereby enclosing the marked area. */

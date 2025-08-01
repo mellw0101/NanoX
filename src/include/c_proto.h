@@ -867,6 +867,14 @@ bool promptmenu_active(void);
 void promptmenu_refresh_text(void);
 /* ----------------------------- Promptmenu completions search ----------------------------- */
 void promptmenu_completions_search(void);
+/* ----------------------------- Promptmenu enter action ----------------------------- */
+void promptmenu_enter_action(void);
+/* ----------------------------- Promptmenu tab action ----------------------------- */
+void promptmenu_tab_action(void);
+/* ----------------------------- Promptmenu ask ----------------------------- */
+void promptmenu_ask(const char *const restrict question, PromptMenuType type);
+/* ----------------------------- Promptmenu open file ----------------------------- */
+void promptmenu_open_file(void);
 
 
 /* ---------------------------------------------------------- files.c ---------------------------------------------------------- */
@@ -1451,6 +1459,8 @@ void inject_into_answer(char *burst, Ulong count);
 void do_statusbar_chop_next_word(void);
 /* ----------------------------- Do statusbar chop prev word ----------------------------- */
 void do_statusbar_chop_prev_word(void);
+/* ----------------------------- Do statusbar replace ----------------------------- */
+void do_statusbar_replace(const char *const restrict data);
 /* ----------------------------- Get statusbar page start ----------------------------- */
 Ulong get_statusbar_page_start(Ulong base, Ulong column);
 /* ----------------------------- Put cursor at the end of answer ----------------------------- */

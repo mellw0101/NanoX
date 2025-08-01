@@ -169,7 +169,7 @@
 // static char *do_lockfile(const char *filename, bool ask_the_user) {
 //   char *namecopy     = copy_of(filename);
 //   char *secondcopy   = copy_of(filename);
-//   Ulong locknamesize = (strlen(filename) + STRLEN(locking_prefix) + STRLEN(locking_suffix) + 3);
+//   Ulong locknamesize = (strlen(filename) + SLTLEN(locking_prefix) + SLTLEN(locking_suffix) + 3);
 //   char *lockfilename = (char *)nmalloc(locknamesize);
 //   struct stat fileinfo;
 //   snprintf(lockfilename, locknamesize, "%s/%s%s%s", dirname(namecopy), locking_prefix, basename(secondcopy), locking_suffix);

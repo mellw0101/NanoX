@@ -920,12 +920,14 @@ typedef enum {
   STATUSBAR_DEL,
   STATUSBAR_CHOP_NEXT_WORD,
   STATUSBAR_CHOP_PREV_WORD,
+  STATUSBAR_REPLACE,
   STATUSBAR_OTHER,
 # define STATUSBAR_ADD             STATUSBAR_ADD
 # define STATUSBAR_BACK            STATUSBAR_BACK
 # define STATUSBAR_DEL             STATUSBAR_DEL
 # define STATUSBAR_CHOP_NEXT_WORD  STATUSBAR_CHOP_NEXT_WORD
 # define STATUSBAR_CHOP_PREV_WORD  STATUSBAR_CHOP_PREV_WORD
+# define STATUSBAR_REPLACE         STATUSBAR_REPLACE
 # define STATUSBAR_OTHER           STATUSBAR_OTHER
 } statusbar_undo_type;
 
@@ -1344,6 +1346,17 @@ typedef enum {
 # define ELEMENT_DATA_SB      ELEMENT_DATA_SB
 # define ELEMENT_DATA_MENU    ELEMENT_DATA_MENU
 } ElementDataType;
+
+/* ----------------------------- gui/promptmenu.c ----------------------------- */
+
+typedef enum {
+  PROMPTMENU_TYPE_NONE,
+  PROMPTMENU_TYPE_FILE_SAVE,
+  PROMPTMENU_TYPE_FILE_OPEN,
+# define PROMPTMENU_TYPE_NONE       PROMPTMENU_TYPE_NONE
+# define PROMPTMENU_TYPE_FILE_SAVE  PROMPTMENU_TYPE_FILE_SAVE
+# define PROMPTMENU_TYPE_FILE_OPEN  PROMPTMENU_TYPE_FILE_OPEN
+} PromptMenuType;
 
 
 /* ---------------------------------------------------------- Struct's ---------------------------------------------------------- */

@@ -2642,7 +2642,7 @@ void enclose_str_decode(const char *const restrict str, char **const p1, char **
     die("%s: str ('%s') was not encoded properly.  Could not find ENCLOSE_DELIM '%s'.\n", __func__, str, ENCLOSE_DELIM);
   }
   *p1 = measured_copy(str, (enclose_delim - str));
-  *p2 = copy_of(enclose_delim + STRLEN(ENCLOSE_DELIM));
+  *p2 = copy_of(enclose_delim + SLTLEN(ENCLOSE_DELIM));
 }
 
 /* If `file` currently has a marked region, enclose that region where `p1` will

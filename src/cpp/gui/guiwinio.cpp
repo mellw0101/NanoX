@@ -725,7 +725,7 @@ void draw_editor(Editor *editor) {
       gui_draw_row(line, editor, &pen);
       line = line->next;
     }
-    if (!gui->flag.is_set<GUI_PROMPT>() && ((editor->openfile->current->lineno - editor->openfile->edittop->lineno) >= 0)) {
+    if (/* !gui->flag.is_set<GUI_PROMPT>() */ !promptmenu_active() && ((editor->openfile->current->lineno - editor->openfile->edittop->lineno) >= 0)) {
       line_add_cursor(
         (editor->openfile->current->lineno - editor->openfile->edittop->lineno),
         textfont,

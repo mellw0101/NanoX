@@ -44,7 +44,7 @@ static void statusbar_discard_until(const statusbar_undostruct *item) {
 
 /* Init a new 'statusbar_undostruct *' and add to the stack.  Then based on action perform nessesary actions. */
 static void statusbar_add_undo(statusbar_undo_type action, const char *message) {
-  statusbar_undostruct *u = xmalloc(sizeof(*u));
+  statusbar_undostruct *u = xmalloc(sizeof *u);
   /* Init the new undo item. */
   u->type       = action;
   u->xflags     = 0;
@@ -53,7 +53,8 @@ static void statusbar_add_undo(statusbar_undo_type action, const char *message) 
   u->answerdata = NULL;
   /* Discard the redo stack, as this will create a new branch. */
   statusbar_discard_until(statusbar_current_undo);
-  /* Ensure correct order. */ {
+  /* Ensure correct order. */
+  {
     u->next = statusbar_undotop;
     statusbar_undotop      = u;
     statusbar_current_undo = u;
@@ -81,6 +82,11 @@ static void statusbar_add_undo(statusbar_undo_type action, const char *message) 
       u->answerdata = copy_of(message);
       /* And save the length of that data, so we can later inject and erase it. */
       u->tail_x = strlen(u->answerdata);
+      break;
+    }
+    case STATUSBAR_REPLACE: {
+      u->answerdata = fmtstr("%s%s", answer, message);
+      u->tail_x = STRLEN(answer);
       break;
     }
     default: {
@@ -113,13 +119,11 @@ static void statusbar_update_undo(statusbar_undo_type action) {
       /* One more deletion. */  
       if (typing_x == u->head_x) {
         u->answerdata = xnstrninj(u->answerdata, datalen, textpos, charlen, datalen);
-        // inject_in(&u->answerdata, textpos, charlen, datalen);
         u->tail_x = typing_x;
       }
       /* Another backspace. */
       else if (typing_x == (u->head_x - charlen)) {
         u->answerdata = xstrninj(u->answerdata, textpos, charlen, 0);
-        // inject_in(&u->answerdata, textpos, charlen, 0, TRUE);
         u->head_x = typing_x;
       }
       /* Deletion not related to current item. */
@@ -138,7 +142,6 @@ static void statusbar_delete(void) {
   int charlen;
   if (answer[typing_x]) {
     charlen = char_length(answer + typing_x);
-    // erase_in(&answer, typing_x, charlen, FALSE);
     answer = xstr_erase(answer, typing_x, charlen);
     if (is_zerowidth(answer + typing_x)) {
       statusbar_delete();
@@ -480,28 +483,29 @@ void do_statusbar_undo(void) {
   }
   switch (u->type) {
     case STATUSBAR_ADD: {
-      // erase_in(&answer, u->head_x, strlen(u->answerdata));
       answer   = xstr_erase(answer, u->head_x, strlen(u->answerdata));
       typing_x = u->head_x;
       break;
     }
     case STATUSBAR_BACK:
     case STATUSBAR_DEL: {
-      // inject_in(&answer, u->answerdata, u->head_x);
       answer   = xstrinj(answer, u->answerdata, u->head_x);
       typing_x = u->tail_x;
       break;
     }
     case STATUSBAR_CHOP_PREV_WORD:
     case STATUSBAR_CHOP_NEXT_WORD: {
-      /* Inject the chop`ed string into the answer at the correct position. */
-      // inject_in(&answer, u->answerdata, u->head_x, TRUE);
       answer = xstrinj(answer, u->answerdata, u->head_x);
       /* Set the cursor position in the status-bar correctly. */
       typing_x = u->head_x;
       if (u->type == STATUSBAR_CHOP_PREV_WORD) {
         typing_x += u->tail_x;
       }
+      break;
+    }
+    case STATUSBAR_REPLACE: {
+      answer   = xstrncpy(answer, u->answerdata, u->tail_x);
+      typing_x = u->head_x;
       break;
     }
     default: {
@@ -527,14 +531,12 @@ void do_statusbar_redo(void) {
   }
   switch (u->type) {
     case STATUSBAR_ADD: {
-      // inject_in(&answer, u->answerdata, u->head_x);
       answer   = xstrinj(answer, u->answerdata, u->head_x);
       typing_x = u->tail_x;
       break;
     }
     case STATUSBAR_BACK:
     case STATUSBAR_DEL: {
-      // erase_in(&answer, u->head_x, strlen(u->answerdata));
       answer   = xstr_erase(answer, u->head_x, strlen(u->answerdata));
       typing_x = u->head_x;
       break;
@@ -542,10 +544,14 @@ void do_statusbar_redo(void) {
     case STATUSBAR_CHOP_PREV_WORD:
     case STATUSBAR_CHOP_NEXT_WORD: {
       /* Erase the cut string`s length in the answer at the recorded position where it happend. */
-      // erase_in(&answer, u->head_x, u->tail_x, TRUE);
       answer = xstr_erase(answer, u->head_x, u->tail_x);
       /* Then set the status-bar cursor pos corrently. */
       typing_x = u->head_x;
+      break;
+    }
+    case STATUSBAR_REPLACE: {
+      answer   = xstrcpy(answer, (u->answerdata + u->tail_x));
+      typing_x = STRLEN(answer);
       break;
     }
     default: {
@@ -778,6 +784,28 @@ void do_statusbar_chop_prev_word(void) {
       do_statusbar_backspace(FALSE);
     }
   }
+}
+
+/* ----------------------------- Do statusbar replace ----------------------------- */
+
+/* Replace the current `answer` with `data`, in a way that can be fully `un-done/re-done`. */
+void do_statusbar_replace(const char *const restrict data) {
+  ASSERT(data);
+  char *burst;
+  Ulong len = STRLEN(data);
+  /* To ensure safety, only perform a 'TRUE' replace, when the answer actually contains any data. */
+  if (*answer) {
+    statusbar_add_undo(STATUSBAR_REPLACE, data);
+    answer = xstrncpy(answer, data, len);
+  }
+  /* Otherwise, simply inject the data. */
+  else {
+    statusbar_last_action = STATUSBAR_OTHER;
+    burst = measured_copy(data, len);
+    inject_into_answer(burst, len);
+    FREE(burst);
+  }
+  typing_x = len;
 }
 
 /* ----------------------------- Get statusbar page start ----------------------------- */
