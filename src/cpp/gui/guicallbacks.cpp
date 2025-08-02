@@ -509,8 +509,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           break;
         }
         case GLFW_KEY_RIGHT: {
-          if (menu_get_active() && menu_allows_arrow_navigation(menu_get_active()) && !mods) {
-            menu_enter_submenu(menu_get_active());
+          if (menu_get_active() && menu_allows_arrow_depth_navigation(menu_get_active()) && !mods) {
+            menu_submenu_enter(menu_get_active());
             return;
           }
           switch (mods) {
@@ -547,8 +547,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           break;
         }
         case GLFW_KEY_LEFT: {
-          if (menu_get_active() && menu_allows_arrow_navigation(menu_get_active()) && !mods) {
-            menu_exit_submenu(menu_get_active());
+          if (menu_get_active() && menu_allows_arrow_depth_navigation(menu_get_active()) && !mods) {
+            menu_submenu_exit(menu_get_active());
             return;
           }
           switch (mods) {
@@ -685,7 +685,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           if (menu_get_active()) {
             switch (mods) {
               case 0: {
-                menu_accept_action(menu_get_active());
+                menu_action_accept(menu_get_active());
                 return;
               }
             }
@@ -706,10 +706,10 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         }
         case GLFW_KEY_TAB: {
           /* If there is an active menu, and that menu accepts on tab. */
-          if (menu_get_active() && menu_should_accept_on_tab(menu_get_active())) {
+          if (menu_get_active() && menu_allows_accept_on_tab(menu_get_active())) {
             switch (mods) {
               case 0: {
-                menu_accept_action(menu_get_active());
+                menu_action_accept(menu_get_active());
                 return;
               }
             }
@@ -1040,7 +1040,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
           menu_show(menu_get_active(), FALSE);
         }
         else if (menu_get_active() && test->dt == ELEMENT_DATA_MENU && menu_is_ancestor(test->dp_menu, menu_get_active()) && menu_element_is_main(test->dp_menu, test)) {
-          menu_click_action(test->dp_menu, mouse_gui_get_x(), mouse_gui_get_y());
+          menu_action_click(test->dp_menu, mouse_gui_get_x(), mouse_gui_get_y());
         }
         else if (test->dt == ELEMENT_DATA_EDITOR && test == test->dp_editor->text) {
           /* When a click occurs in the text element of a editor, make that editor the currently active editor. */
@@ -1236,7 +1236,7 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
         gui->current_cursor_type = test->cursor;
       }
       if (!gui->clicked && menu_get_active() && test->dt == ELEMENT_DATA_MENU && menu_is_ancestor(test->dp_menu, menu_get_active()) && menu_element_is_main(test->dp_menu, test)) {
-        menu_hover_action(test->dp_menu, mouse_gui_get_x(), mouse_gui_get_y());
+        menu_action_hover(test->dp_menu, mouse_gui_get_x(), mouse_gui_get_y());
         refresh_needed = TRUE;
       }
       else if (!gui->clicked && test == gui->promptmenu->element) {
@@ -1315,13 +1315,13 @@ void scroll_callback(GLFWwindow *window, double x, double y) {
       scrollbar_refresh_needed(test->dp_editor->sb);
       /* If the suggestmenu is active then make sure it updates the position and text. */
       if (menu_len(gui->suggestmenu->menu)) {
-        menu_text_refresh_needed(gui->suggestmenu->menu);
-        menu_pos_refresh_needed(gui->suggestmenu->menu);
+        menu_refresh_text(gui->suggestmenu->menu);
+        menu_refresh_pos(gui->suggestmenu->menu);
       }
       refresh_needed = TRUE;
     }
     if (menu_get_active() && test->dt == ELEMENT_DATA_MENU && menu_is_ancestor(test->dp_menu, menu_get_active()) && menu_element_is_main(test->dp_menu, test)) {
-      menu_scroll_action(test->dp_menu, ((y > 0) ? BACKWARD : FORWARD), mouse_gui_get_x(), mouse_gui_get_y());
+      menu_action_scroll(test->dp_menu, ((y > 0) ? BACKWARD : FORWARD), mouse_gui_get_x(), mouse_gui_get_y());
     }
     /* If this element is the gui promptmenu main element.  Then call the scroll function. */
     else if (test == gui->promptmenu->element) {

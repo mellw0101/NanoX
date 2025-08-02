@@ -729,46 +729,6 @@ static const Uint RECT_INDICES[6] = { 0, 1, 2, 2, 3, 0 };
 #define RECT_VERTBUF      "vertex:2f,color:4f"
 
 
-/* ---------------------------------------------------------- Typedef's ---------------------------------------------------------- */
-
-
-/* ----------------------------- Types ----------------------------- */
-
-#ifndef __cplusplus
-typedef float vec2[2];
-typedef float vec3[3];
-typedef float vec4[4];
-typedef vec4 mat4x4[4];
-#endif
-
-/* ----------------------------- General ----------------------------- */
-
-typedef void (*FreeFuncPtr)(void *);
-typedef void (*functionptrtype)(void);
-typedef void (*funcptr)(void);
-typedef void (*VoidFuncPtr)(void);
-
-/* ----------------------------- nevhandler.c ----------------------------- */
-
-/* Opaque structure that represents a event loop. */
-typedef struct nevhandler nevhandler;
-
-/* ----------------------------- nfdlistener.c ----------------------------- */
-
-/* `Opaque`  Structure to listen to file events. */
-typedef struct nfdlistener  nfdlistener;
-
-/* ----------------------------- scrollbar.c ----------------------------- */
-
-typedef void (*ScrollbarUpdateFunc)(void *, float *total_length, Uint *start, Uint *end, Uint *visible, Uint *current, float *top_offset, float *right_offset);
-typedef void (*ScrollbarMovingFunc)(void *, long);
-
-/* ----------------------------- menu.c ----------------------------- */
-
-typedef void (*MenuPositionFunc)(void *, float width, float height, float *const x, float *const y);
-typedef void (*MenuAcceptFunc)(void *, const char *const restrict lable, int index);
-
-
 /* ---------------------------------------------------------- Forward declaration's ---------------------------------------------------------- */
 
 
@@ -845,6 +805,50 @@ typedef struct Statusbar  Statusbar;
 /* ----------------------------- gui/shader.c ----------------------------- */
 
 typedef struct RectVertex  RectVertex;
+
+
+/* ---------------------------------------------------------- Typedef's ---------------------------------------------------------- */
+
+
+/* ----------------------------- Types ----------------------------- */
+
+#ifndef __cplusplus
+typedef float vec2[2];
+typedef float vec3[3];
+typedef float vec4[4];
+typedef vec4 mat4x4[4];
+#endif
+
+/* ----------------------------- General ----------------------------- */
+
+typedef void (*FreeFuncPtr)(void *);
+typedef void (*functionptrtype)(void);
+typedef void (*funcptr)(void);
+typedef void (*VoidFuncPtr)(void);
+
+/* ----------------------------- nevhandler.c ----------------------------- */
+
+/* Opaque structure that represents a event loop. */
+typedef struct nevhandler nevhandler;
+
+/* ----------------------------- nfdlistener.c ----------------------------- */
+
+/* `Opaque`  Structure to listen to file events. */
+typedef struct nfdlistener  nfdlistener;
+
+/* ----------------------------- gui/scrollbar.c ----------------------------- */
+
+typedef void (*ScrollbarUpdateFunc)(void *, float *total_length, Uint *start, Uint *end, Uint *visible, Uint *current, float *top_offset, float *right_offset);
+typedef void (*ScrollbarMovingFunc)(void *, long);
+
+/* ----------------------------- gui/menu.c ----------------------------- */
+
+typedef void (*MenuPositionFunc)(void *, float width, float height, float *const x, float *const y);
+typedef void (*MenuAcceptFunc)(void *, const char *const restrict lable, int index);
+
+/* ----------------------------- gui/element.c ----------------------------- */
+
+typedef void (*ElementExtraCallback)(Element *const, void *);
 
 
 /* ---------------------------------------------------------- Enum's ---------------------------------------------------------- */
@@ -1297,33 +1301,37 @@ typedef enum {
 
 /* State flags for elements. */
 typedef enum {
-  ELEMENT_HIDDEN       = (1 <<  0),
-  ELEMENT_LABLE        = (1 <<  1),
-  ELEMENT_REL_X        = (1 <<  2),
-  ELEMENT_REL_Y        = (1 <<  3),
-  ELEMENT_REVREL_X     = (1 <<  4),
-  ELEMENT_REVREL_Y     = (1 <<  5),
-  ELEMENT_REL_WIDTH    = (1 <<  6),
-  ELEMENT_REL_HEIGHT   = (1 <<  7),
-  ELEMENT_HAS_BORDERS  = (1 <<  8),
-  ELEMENT_NOT_IN_MAP   = (1 <<  9),
-  ELEMENT_ABOVE        = (1 << 10),
-  ELEMENT_RECT_REFRESH = (1 << 11),
-  ELEMENT_ROUNDED_RECT = (1 << 12),
+  ELEMENT_HIDDEN          = (1 <<  0),
+  ELEMENT_LABLE           = (1 <<  1),
+  ELEMENT_REL_X           = (1 <<  2),
+  ELEMENT_REL_Y           = (1 <<  3),
+  ELEMENT_REVREL_X        = (1 <<  4),
+  ELEMENT_REVREL_Y        = (1 <<  5),
+  ELEMENT_REL_WIDTH       = (1 <<  6),
+  ELEMENT_REL_HEIGHT      = (1 <<  7),
+  ELEMENT_HAS_BORDERS     = (1 <<  8),
+  ELEMENT_NOT_IN_MAP      = (1 <<  9),
+  ELEMENT_ABOVE           = (1 << 10),
+  ELEMENT_RECT_REFRESH    = (1 << 11),
+  ELEMENT_ROUNDED_RECT    = (1 << 12),
+  ELEMENT_CENTER_X        = (1 << 13),
+  ELEMENT_CONSTRAIN_WIDTH = (1 << 14),
   /* General flags. */
-# define ELEMENT_HIDDEN        ELEMENT_HIDDEN
-# define ELEMENT_LABLE         ELEMENT_LABLE
-# define ELEMENT_REL_X         ELEMENT_REL_X
-# define ELEMENT_REL_Y         ELEMENT_REL_Y
-# define ELEMENT_REVREL_X      ELEMENT_REVREL_X
-# define ELEMENT_REVREL_Y      ELEMENT_REVREL_Y
-# define ELEMENT_REL_WIDTH     ELEMENT_REL_WIDTH
-# define ELEMENT_REL_HEIGHT    ELEMENT_REL_HEIGHT
-# define ELEMENT_HAS_BORDERS   ELEMENT_HAS_BORDERS
-# define ELEMENT_NOT_IN_MAP    ELEMENT_NOT_IN_MAP
-# define ELEMENT_ABOVE         ELEMENT_ABOVE
-# define ELEMENT_RECT_REFRESH  ELEMENT_RECT_REFRESH
-# define ELEMENT_ROUNDED_RECT  ELEMENT_ROUNDED_RECT
+# define ELEMENT_HIDDEN           ELEMENT_HIDDEN
+# define ELEMENT_LABLE            ELEMENT_LABLE
+# define ELEMENT_REL_X            ELEMENT_REL_X
+# define ELEMENT_REL_Y            ELEMENT_REL_Y
+# define ELEMENT_REVREL_X         ELEMENT_REVREL_X
+# define ELEMENT_REVREL_Y         ELEMENT_REVREL_Y
+# define ELEMENT_REL_WIDTH        ELEMENT_REL_WIDTH
+# define ELEMENT_REL_HEIGHT       ELEMENT_REL_HEIGHT
+# define ELEMENT_HAS_BORDERS      ELEMENT_HAS_BORDERS
+# define ELEMENT_NOT_IN_MAP       ELEMENT_NOT_IN_MAP
+# define ELEMENT_ABOVE            ELEMENT_ABOVE
+# define ELEMENT_RECT_REFRESH     ELEMENT_RECT_REFRESH
+# define ELEMENT_ROUNDED_RECT     ELEMENT_ROUNDED_RECT
+# define ELEMENT_CENTER_X         ELEMENT_CENTER_X
+# define ELEMENT_CONSTRAIN_WIDTH  ELEMENT_CONSTRAIN_WIDTH
   /* Group states. */
 # define ELEMENT_REL_POS         (ELEMENT_REL_X | ELEMENT_REL_Y)
 # define ELEMENT_REVREL_POS      (ELEMENT_REVREL_X | ELEMENT_REVREL_Y)
@@ -1753,6 +1761,9 @@ struct Element {
   float rel_width;
   float rel_height;
 
+  /* This is used when the `ELEMENT_CENTER_X` and `ELEMENT_CONSTRIAN_WIDTH` */
+  float prefered_width;
+
   Uint color;
   Uint text_color;
 
@@ -1778,7 +1789,7 @@ struct Element {
   vertex_buffer_t *rect_buffer;
 
   /* The type of data that `data_ptr` currently points to, otherwise `ELEMENT_DATA_NONE`
-   * when none.  Note that `ELEMENT_DATA_NONE` is equal to zero so `!e->dt` also works. */
+   * when none.  Note that `ELEMENT_DATA_NONE` is equal to zero, so `!e->dt` also works. */
   ElementDataType dt;
   union {
     void           *raw;
@@ -1793,6 +1804,12 @@ struct Element {
   Ushort border_rsize;
   Ushort border_bsize;
   Uint border_color;
+
+  /* Ptr to some data used for callbacks. */
+  void *cbdata;
+
+  /* Callbacks */
+  ElementExtraCallback extra_routine_rect;
 };
 
 /* ----------------------------- gui/editor/editor.c ----------------------------- */

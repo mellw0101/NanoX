@@ -64,37 +64,44 @@ static void element_children_relative_pos(Element *const e) {
     y      = child->y;
     width  = child->width;
     height = child->height;
-    /* Normal relative position. */
-    // if (child->has_relative_pos) {
-    //   x = (e->x + child->relative_x);
-    //   y = (e->y + child->relative_y);
-    // }
-    /* Reverse relative position. */
-    // else if (child->has_reverse_relative_pos) {
-    //   x = ((e->x + e->width)  - child->relative_x); 
-    //   y = ((e->y + e->height) - child->relative_y);
-    // }
-    /* Check reverse or regular relative x position. */
-    if (child->xflags & ELEMENT_REL_X) {
-      x = (e->x + child->rel_x);
+    /* If the element whishes to be placed in the absolute center of its parent, we oblige. */
+    if (child->xflags & ELEMENT_CENTER_X) {
+      x = ((e->width / 2) - (child->width / 2));
+      /* We should constrain the width of the element to the parent when the width would be smaller then the prefered width. */
+      if ((child->xflags & ELEMENT_CONSTRAIN_WIDTH)) {
+        if (x < e->x || child->prefered_width > e->width) {
+          x     = e->x;
+          width = e->width;
+        }
+        else {
+          width = child->prefered_width;
+        }
+      }
     }
-    else if (child->xflags & ELEMENT_REVREL_X) {
-      x = ((e->x + e->width) - child->rel_x);
-    }
-    /* Check reverse or regular relative y position. */
-    if (child->xflags & ELEMENT_REL_Y) {
-      y = (e->y + child->rel_y);
-    }
-    else if (child->xflags & ELEMENT_REVREL_Y) {
-      y = ((e->y + e->height) - child->rel_y);
-    }
-    /* Relative width. */
-    if (child->xflags & ELEMENT_REL_WIDTH) {
-      width = (e->width - child->rel_x - child->rel_width);
-    }
-    /* Relative_height. */
-    if (child->xflags & ELEMENT_REL_HEIGHT) {
-      height = (e->height - child->rel_y - child->rel_height);
+    /* Otherwise, check for other relative position/size. */
+    else {
+      /* Check reverse or regular relative x position. */
+      if (child->xflags & ELEMENT_REL_X) {
+        x = (e->x + child->rel_x);
+      }
+      else if (child->xflags & ELEMENT_REVREL_X) {
+        x = ((e->x + e->width) - child->rel_x);
+      }
+      /* Check reverse or regular relative y position. */
+      if (child->xflags & ELEMENT_REL_Y) {
+        y = (e->y + child->rel_y);
+      }
+      else if (child->xflags & ELEMENT_REVREL_Y) {
+        y = ((e->y + e->height) - child->rel_y);
+      }
+      /* Relative width. */
+      if (child->xflags & ELEMENT_REL_WIDTH) {
+        width = (e->width - child->rel_x - child->rel_width);
+      }
+      /* Relative_height. */
+      if (child->xflags & ELEMENT_REL_HEIGHT) {
+        height = (e->height - child->rel_y - child->rel_height);
+      }
     }
     /* If any value has changed, call `element_move_resize()`. */
     if (x != child->x || y != child->y || width != child->width || height != child->height) {
@@ -196,6 +203,10 @@ static inline void element_draw_rect(Element *const e) {
   RectVertex vert[4];
   /* Only update the rect vertex buffer when needed. */
   if (e->xflags & ELEMENT_RECT_REFRESH) {
+    /* If the user has set a extra routine to run when refreshing the rect, we call it here. */
+    if (e->cbdata && e->extra_routine_rect) {
+      e->extra_routine_rect(e, e->cbdata);
+    }
     vertex_buffer_clear(e->rect_buffer);
     if (e->xflags & ELEMENT_ROUNDED_RECT) {
       element_rounded_rect(e);
@@ -225,20 +236,30 @@ static inline void element_draw_rect(Element *const e) {
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
+/* ----------------------------- Element create ----------------------------- */
+
+/* Create a new allocated `element`.  Note that is `in_gridmap` is `TRUE`
+ * then the element must also be hidden to not react to mouse events. */
 Element *element_create(float x, float y, float width, float height, bool in_gridmap) {
   Element *e = element_create_internal();
   e->x      = x;
   e->y      = y;
   e->width  = width;
   e->height = height;
+  /* Always set the prefered width. */
+  e->prefered_width = width;
   if (in_gridmap) {
     element_grid_set(e);
   }
   else {
     e->xflags |= ELEMENT_NOT_IN_MAP;
   }
+  e->cbdata = NULL;
+  e->extra_routine_rect = NULL;
   return e;
 }
+
+/* ----------------------------- Element free ----------------------------- */
 
 void element_free(Element *const e) {
   if (!e) {
@@ -256,6 +277,8 @@ void element_free(Element *const e) {
   free(e);
 }
 
+/* ----------------------------- Element draw ----------------------------- */
+
 /* Draw a `Element` structure using its internal values. */
 void element_draw(Element *const e) {
   ASSERT(e);
@@ -264,6 +287,8 @@ void element_draw(Element *const e) {
     element_draw_rect(e);
   }
 }
+
+/* ----------------------------- Element move ----------------------------- */
 
 void element_move(Element *const e, float x, float y) {
   ASSERT(e);
@@ -277,6 +302,8 @@ void element_move(Element *const e, float x, float y) {
   element_grid_remove(e);
 }
 
+/* ----------------------------- Element resize ----------------------------- */
+
 void element_resize(Element *const e, float width, float height) {
   ASSERT(e);
   element_grid_remove(e);
@@ -288,6 +315,8 @@ void element_resize(Element *const e, float width, float height) {
   element_children_relative_pos(e);
   element_grid_set(e);
 }
+
+/* ----------------------------- Element move resize ----------------------------- */
  
 void element_move_resize(Element *const e, float x, float y, float width, float height) {
   ASSERT(e);
@@ -303,6 +332,8 @@ void element_move_resize(Element *const e, float x, float y, float width, float 
   element_grid_set(e);
 }
 
+/* ----------------------------- Element move y clamp ----------------------------- */
+
 /* Move `e` to a new y position `y` while clamping it so it can be no less then `min` and no more then `max`. */
 void element_move_y_clamp(Element *const e, float y, float min, float max) {
   ASSERT(e);
@@ -316,6 +347,8 @@ void element_move_y_clamp(Element *const e, float y, float min, float max) {
   element_children_relative_pos(e);
   element_grid_set(e);
 }
+
+/* ----------------------------- Element delete borders ----------------------------- */
 
 /* Delete the borders of `e`.  If any exests. */
 void element_delete_borders(Element *const e) {
@@ -352,6 +385,8 @@ bool element_is_ancestor(Element *const e, Element *const ancestor) {
   return FALSE;
 }
 
+/* ----------------------------- Element set lable ----------------------------- */
+
 void element_set_lable(Element *const e, const char *const restrict lable, Ulong len) {
   ASSERT(e);
   ASSERT(lable);
@@ -363,6 +398,8 @@ void element_set_lable(Element *const e, const char *const restrict lable, Ulong
   e->xflags   |= ELEMENT_LABLE;
 }
 
+/* ----------------------------- Element set borders ----------------------------- */
+
 void element_set_borders(Element *const e, float lsize, float tsize, float rsize, float bsize, Uint color) {
   ASSERT(e);
   ASSERT(color);
@@ -373,6 +410,8 @@ void element_set_borders(Element *const e, float lsize, float tsize, float rsize
   e->border_bsize = bsize;
   e->border_color = color;
 }
+
+/* ----------------------------- Element set layers ----------------------------- */
 
 /* Set the event layer of `e`.  Note that this does not change drawing layer as that depends on the order of drawing. */
 void element_set_layer(Element *const e, Ushort layer) {
@@ -388,6 +427,8 @@ void element_set_layer(Element *const e, Ushort layer) {
   );
 }
 
+/* ----------------------------- Element set parent ----------------------------- */
+
 /* Set the parent of `e` to `p`, as well as adding `e` to the children vector of `p`. */
 void element_set_parent(Element *const e, Element *const p) {
   ASSERT(e);
@@ -397,7 +438,10 @@ void element_set_parent(Element *const e, Element *const p) {
   element_set_layer(p, 0);
 }
 
-/* Set the internal data ptr of `e` to `void *` data.  Note that this should be the only way of setting the internal data of a element. */
+/* ----------------------------- Element set raw data ----------------------------- */
+
+/* Set the internal data ptr of `e` to `void *` data.  Note that this
+ * should be the only way of setting the internal data of a element. */
 void element_set_raw_data(Element *const e, void *const data) {
   ASSERT(e);
   ASSERT(data);
@@ -405,7 +449,10 @@ void element_set_raw_data(Element *const e, void *const data) {
   e->dp_raw = data;
 }
 
-/* Set the internal data ptr of `e` to `Scrollbar *` data.  Note that this should be the only way of setting the internal data of a element. */
+/* ----------------------------- Element set sb data ----------------------------- */
+
+/* Set the internal data ptr of `e` to `Scrollbar *` data.  Note that
+ * this should be the only way of setting the internal data of a element. */
 void element_set_sb_data(Element *const e, Scrollbar *const data) {
   ASSERT(e);
   ASSERT(data);
@@ -413,7 +460,10 @@ void element_set_sb_data(Element *const e, Scrollbar *const data) {
   e->dp_sb = data;
 }
 
-/* Set the internal data ptr of `e` to `Menu *` data.  Note that this should be the only way of setting the internal data of a element. */
+/* ----------------------------- Element set menu data ----------------------------- */
+
+/* Set the internal data ptr of `e` to `Menu *` data.  Note that this
+ * should be the only way of setting the internal data of a element. */
 void element_set_menu_data(Element *const e, Menu *const data) {
   ASSERT(e);
   ASSERT(data);
@@ -421,7 +471,10 @@ void element_set_menu_data(Element *const e, Menu *const data) {
   e->dp_menu = data;
 }
 
-/* Set the internal data ptr of `e` to `openfilestruct *` data.  Note that this should be the only way of setting the internal data of a element. */
+/* ----------------------------- Element set file data ----------------------------- */
+
+/* Set the internal data ptr of `e` to `openfilestruct *` data.  Note that
+ * this should be the only way of setting the internal data of a element. */
 void element_set_file_data(Element *const e, openfilestruct *const data) {
   ASSERT(e);
   ASSERT(data);
@@ -429,7 +482,10 @@ void element_set_file_data(Element *const e, openfilestruct *const data) {
   e->dp_file = data;
 }
 
-/* Set the internal data ptr of `e` to `Editor *` data.  Note that this should be the only way of setting the internal data of a element. */
+/* ----------------------------- Element set editor data ----------------------------- */
+
+/* Set the internal data ptr of `e` to `Editor *` data.  Note that this
+ * should be the only way of setting the internal data of a element. */
 void element_set_editor_data(Element *const e, Editor *const data) {
   ASSERT(e);
   ASSERT(data);
@@ -444,4 +500,25 @@ void element_set_editor_data(Element *const e, Editor *const data) {
 void element_set_rounded_apex_fraction(Element *const e, float t) {
   ASSERT(e);
   PACK_INT_DATA(e->xrectopts, FLOAT_TO_UCHAR(t), 0);
+}
+
+/* ----------------------------- Element set data callback ----------------------------- */
+
+/* Set the `void *` that will be passed to all extra routine callbacks. */
+void element_set_data_callback(Element *const e, void *const ptr) {
+  ASSERT(e);
+  ASSERT(ptr);
+  e->cbdata = ptr;
+}
+
+/* ----------------------------- Element set extra routine rect ----------------------------- */
+
+/* Set the callback that will be called when updating the rect of `e`.
+ * Note that this is an extra thing to be performed, and not a replacement. */
+void element_set_extra_routine_rect(Element *const e, ElementExtraCallback callback) {
+  ASSERT(e);
+  /* Ensure that the caller must have set the callback data ptr before setting the callback. */
+  ASSERT(e->cbdata);
+  ASSERT(callback);
+  e->extra_routine_rect = callback;
 }

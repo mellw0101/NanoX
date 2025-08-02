@@ -45,14 +45,20 @@ struct Scrollbar {
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
+/* ----------------------------- Scrollbar length ----------------------------- */
+
 static inline float scrollbar_length(float total_length, Uint start, Uint end, Uint visible) {
   return fclamp((((float)visible / ((end - start) + visible)) * total_length), 0, total_length);
 }
+
+/* ----------------------------- Scrollbar step value for ----------------------------- */
 
 static inline float scrollbar_step_value_for(Uint idx, float total_length, float length, Uint startidx, Uint endidx) {
   float ratio = fclamp((float)(idx - startidx) / (endidx - startidx), 0.0f, 1.0f);
   return fclamp((ratio * (total_length - length)), 0, (total_length - length));
 }
+
+/* ----------------------------- Scrollbar closest step values ----------------------------- */
 
 /* Return's a allocated `float *` containing the preceding index position, the current index position and
  * the following index position, and when either at the first or last index just return 2 positions. */

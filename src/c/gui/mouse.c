@@ -271,7 +271,7 @@ void mouse_gui_button_down(Uchar button, Ushort _UNUSED mod, float x, float y) {
       menu_show(menu_get_active(), FALSE);
     }
     else if (menu_get_active() && e->dt == ELEMENT_DATA_MENU && menu_is_ancestor(e->dp_menu, menu_get_active()) && menu_element_is_main(e->dp_menu, e)) {
-      menu_click_action(e->dp_menu, x, y);
+      menu_action_click(e->dp_menu, x, y);
     }
     else if (e->dt == ELEMENT_DATA_EDITOR && e == e->dp_editor->text) {
       editor_set_open(e->dp_editor);
@@ -432,7 +432,7 @@ void mouse_gui_position(float x, float y) {
       if (menu_get_active() && hovered->dt == ELEMENT_DATA_MENU
       && menu_is_ancestor(hovered->dp_menu, menu_get_active()) && menu_element_is_main(hovered->dp_menu, hovered))
       {
-        menu_hover_action(hovered->dp_menu, x, y);
+        menu_action_hover(hovered->dp_menu, x, y);
         refresh_needed = TRUE;
       }
       else if (!entered || hovered != entered) {
@@ -509,7 +509,7 @@ void mouse_gui_scroll(float mx, float my, int _UNUSED ix, int iy, SDL_MouseWheel
       else if (hovered->dt == ELEMENT_DATA_MENU && menu_get_active()
       && menu_is_ancestor(hovered->dp_menu, menu_get_active()) && menu_element_is_main(hovered->dp_menu, hovered))
       {
-        menu_scroll_action(hovered->dp_menu, direction, mx, my);
+        menu_action_scroll(hovered->dp_menu, direction, mx, my);
       }
       /* TODO: Add the promptmenu here when it has been rebuilt. */
     }

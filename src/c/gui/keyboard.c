@@ -207,8 +207,8 @@ void kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
           break;
         }
         case KC(RIGHT): {
-          if (menu_get_active() && menu_allows_arrow_navigation(menu_get_active())) {
-            menu_enter_submenu(menu_get_active());
+          if (menu_get_active() && menu_allows_arrow_depth_navigation(menu_get_active())) {
+            menu_submenu_enter(menu_get_active());
             return;
           }
           else {
@@ -217,8 +217,8 @@ void kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
           break;
         }
         case KC(LEFT): {
-          if (menu_get_active() && menu_allows_arrow_navigation(menu_get_active())) {
-            menu_exit_submenu(menu_get_active());
+          if (menu_get_active() && menu_allows_arrow_depth_navigation(menu_get_active())) {
+            menu_submenu_exit(menu_get_active());
             return;
           }
           else {
@@ -256,7 +256,7 @@ void kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
         }
         case KC(ENTER): {
           if (menu_get_active()) {
-            menu_accept_action(menu_get_active());
+            menu_action_accept(menu_get_active());
             return;
           }
           else {
@@ -265,8 +265,8 @@ void kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
           break;
         }
         case KC(TAB): {
-          if (menu_get_active() && menu_should_accept_on_tab(menu_get_active())) {
-            menu_accept_action(menu_get_active());
+          if (menu_get_active() && menu_allows_accept_on_tab(menu_get_active())) {
+            menu_action_accept(menu_get_active());
             return;
           }
           else {
@@ -423,6 +423,24 @@ void kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
           editor_open_new_empty_buffer();
           break;
         }
+        case KC(O): {
+          promptmenu_open_file();
+          break;
+        }
+        case KC(S): {
+          if (*GUI_OF->filename && file_exists(GUI_OF->filename)) {
+            func = do_savefile;
+          }
+          else {
+            promptmenu_ask("Save file", PROMPTMENU_TYPE_FILE_SAVE);
+            if (*GUI_OF->filename) {
+              answer   = xstrcpy(answer, GUI_OF->filename);
+              typing_x = STRLEN(answer);
+            }
+            return;
+          }
+          break;
+        }
         case KC(Q): {
           if (!GUI_OF->modified && !ISSET(VIEW_MODE)) {
             if (gl_window_quit()) {
@@ -509,6 +527,13 @@ void kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
           }
           break;
         }
+        case KC(T): {
+          if (!repeat) {
+            TOGGLE(TABS_TO_SPACES);
+            refresh_needed = TRUE;
+          }
+          break;
+        }
         case KC(RIGHT): {
           func = editor_switch_openfile_to_next;
           break;
@@ -578,10 +603,7 @@ void kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
   if (wanted_to_move(func) || changes_something(func) || func == do_undo || func == do_redo) {
     scrollbar_refresh_needed(openeditor->sb);
   }
-  /* TODO: Add this when the suggest menu has been made in C
-  if (menu_len(suggestmenu)) {
-    suggestmenu_run() ?.
-  } */
+  /* If the suggest-menu has entries in it, we should update it. */
   if (menu_len(suggestmenu())) {
     suggestmenu_run();
   }
@@ -714,6 +736,10 @@ void kb_prompt_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED
     }
     case KB_MOD_NONE: {
       switch (key) {
+        case KC(ESCAPE): {
+          promptmenu_close();
+          break;
+        }
         case KC(ENTER): {
           promptmenu_enter_action();
           break;

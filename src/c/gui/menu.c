@@ -10,25 +10,29 @@
 /* ---------------------------------------------------------- Define's ---------------------------------------------------------- */
 
 
-#define ASSERT_MENU                \
-  ASSERT(menu);                    \
-  ASSERT(menu->buffer);            \
-  ASSERT(menu->element);           \
-  ASSERT(menu->entries);           \
-  ASSERT(menu->sb);                \
-  ASSERT(menu->font);              \
-  ASSERT(menu->data);              \
-  ASSERT(menu->position_routine);  \
+#define ASSERT_MENU                        \
+  /* Internal whole struct validation. */  \
+  ASSERT(menu);                            \
+  ASSERT(menu->buffer);                    \
+  ASSERT(menu->element);                   \
+  ASSERT(menu->entries);                   \
+  ASSERT(menu->sb);                        \
+  ASSERT(menu->font);                      \
+  ASSERT(menu->data);                      \
+  ASSERT(menu->position_routine);          \
   ASSERT(menu->accept_routine)
 
-#define GUI_MENU_DEFAULT_BORDER_SIZE   1
-#define GUI_MENU_DEFAULT_MAX_ROWS      8
-#define GUI_MENU_DEFAULT_BORDER_COLOR  PACKED_UINT_FLOAT(0.5f, 0.5f, 0.5f, 1.0f)  /* vec4(vec3(0.5f), 1.0f) */
+#define MENU_DEFAULT_BORDER_SIZE     1
+#define MENU_DEFAULT_LABLE_OFFSET    0
+#define MENU_DEFAULT_MAX_ROWS        8
+#define MENU_DEFAULT_BORDER_COLOR    PACKED_UINT_FLOAT(0.5f, 0.5f, 0.5f, 1.0f)
+#define MENU_DEFAULT_SELECTED_COLOR  PACKED_UINT_FLOAT(1.f, 1.f, 1.f, .4f)
 
 
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
 
 
+/* The currently active menu, as we enforce only a single active menu at all times. */
 static Menu *active_menu = NULL;
 
 
@@ -53,6 +57,7 @@ typedef enum {
 # define MENU_ACCEPT_ON_TAB           MENU_ACCEPT_ON_TAB
 # define MENU_WIDTH_IS_STATIC         MENU_WIDTH_IS_STATIC
 # define MENU_ARROW_DEPTH_NAVIGATION  MENU_ARROW_DEPTH_NAVIGATION
+# define MENU_HAS_LABLE_OFFSET        MENU_HAS_LABLE_OFFSET
   /* The Default flags used for initilizing. */
 # define MENU_XFLAGS_DEFAULT (MENU_REFRESH_TEXT | MENU_REFRESH_POS | MENU_REFRESH_WIDTH | MENU_ARROW_DEPTH_NAVIGATION)
 } MenuFlag;
@@ -75,23 +80,29 @@ struct Menu {
   /* Configuration variables. */
   Uchar border_size;
   float width;
+  Ushort lable_offset;
 
   vertex_buffer_t *buffer;
 
   Element *element;
+
   /* The element representing the selected rect to be drawn.  TODO: Maybe add a way to add additional rects to an element...? */
   Element *selelem;
   
   CVec *entries;
 
-  /* What the viewtop */
+  /* What the viewtop was before the last update to it. */
   int was_viewtop;
+
   int viewtop;
   int selected;
   int maxrows;
   int rows;
 
+  /* The scrollbar of this menu. */
   Scrollbar *sb;
+
+  /* The font this menu is using.  Note that this is just a ptr to either the text or ui font (for now). */
   Font *font;
 
   /* Used when this menu is a `submenu`, otherwise always `NULL`. */
@@ -102,6 +113,7 @@ struct Menu {
 
   /* This ptr gets passed to all callbacks and should be passed to `menu_create()` as `data`. */
   void *data;
+
   /* Callback's. */
   MenuPositionFunc position_routine;
   MenuAcceptFunc   accept_routine;
@@ -144,22 +156,21 @@ static MenuEntry *menu_entry_create_with_menu(const char *const restrict lable, 
 
 /* ----------------------------- Menu selected is above screen ----------------------------- */
 
-static bool menu_selected_is_above_screen(Menu *const menu) {
+static inline bool menu_selected_is_above_screen(Menu *const menu) {
   ASSERT_MENU;
   return (menu->selected < menu->viewtop);
 }
 
 /* ----------------------------- Menu selected is below screen ----------------------------- */
 
-static bool menu_selected_is_below_screen(Menu *const menu) {
+static inline bool menu_selected_is_below_screen(Menu *const menu) {
   ASSERT_MENU;
   return (menu->selected >= (menu->viewtop + menu->rows));
 }
 
 /* ----------------------------- Menu selected is off screen ----------------------------- */
 
-_UNUSED
-static bool menu_selected_is_off_screen(Menu *const menu) {
+static inline bool menu_selected_is_off_screen(Menu *const menu) {
   ASSERT_MENU;
   return (menu_selected_is_above_screen(menu) || menu_selected_is_below_screen(menu));
 }
@@ -349,10 +360,6 @@ static void menu_resize(Menu *const menu) {
     /* Calculate the size of the suggestmenu window. */
     width  = menu_calculate_width(menu);
     height = ((menu->rows * font_height(menu->font)) + (menu->border_size * 2) + 2);
-    /* Add the size of the scrollbar if there is one. */
-    // if (len > menu->maxrows) {
-    //   width += scrollbar_width(menu->sb);
-    // }
     /* Get the wanted position based on the calculated size. */
     if (!menu->parent) {
       menu->position_routine(menu->data, width, height, &x, &y);
@@ -395,22 +402,21 @@ static void menu_draw_selected(Menu *const menu) {
 
 static void menu_draw_text(Menu *const menu) {
   ASSERT_MENU;
-  static int was_viewtop = -1;
   int row = 0;
   char *str;
   float pen_x;
   float pen_y;
   /* Only clear and reconstruct the vertex buffer when asked or when the viewtop has changed. */
-  if ((menu->xflags & MENU_REFRESH_TEXT) || was_viewtop != menu->viewtop) {
+  if ((menu->xflags & MENU_REFRESH_TEXT) || menu->was_viewtop != menu->viewtop) {
     vertex_buffer_clear(menu->buffer);
     while (row < menu->rows) {
-      str   = menu_get_entry_lable(menu, (menu->viewtop + row));
-      pen_x = (menu->element->x + menu->border_size + 1);
+      pen_x = ((menu->element->x + menu->border_size + 1) + menu->lable_offset);
       pen_y = (font_row_baseline(menu->font, row) + menu->element->y + menu->border_size + 1);
+      str   = menu_get_entry_lable(menu, (menu->viewtop + row));
       font_vertbuf_add_mbstr(menu->font, menu->buffer, str, strlen(str), NULL, PACKED_UINT(255, 255, 255, 255), &pen_x, &pen_y);
       ++row;
     }
-    was_viewtop = menu->viewtop;
+    menu->was_viewtop = menu->viewtop;
     menu->xflags &= ~MENU_REFRESH_TEXT;
   }
   render_vertbuf(menu->font, menu->buffer);
@@ -546,11 +552,12 @@ Menu *menu_create(Element *const parent, Font *const font, void *data, MenuPosit
   ASSERT(data);
   ASSERT(position_routine);
   ASSERT(accept_routine);
-  Menu *menu = xmalloc(sizeof(*menu));
+  Menu *menu = xmalloc(sizeof *menu);
   menu->xflags = MENU_XFLAGS_DEFAULT;
   /* Configuration variables. */
-  menu->border_size = GUI_MENU_DEFAULT_BORDER_SIZE;
+  menu->border_size = MENU_DEFAULT_BORDER_SIZE;
   menu->width = 0.0f;
+  menu->lable_offset = MENU_DEFAULT_LABLE_OFFSET;
   /* Vertex buffer. */
   menu->buffer = vertex_buffer_new(FONT_VERTBUF);
   /* Entries vector. */
@@ -561,18 +568,18 @@ Menu *menu_create(Element *const parent, Font *const font, void *data, MenuPosit
   menu->element->color = PACKED_UINT(0, 0, 0, 255);
   element_set_parent(menu->element, parent);
   menu->element->xflags |= ELEMENT_HIDDEN;
-  // menu->element->hidden = TRUE;
   /* As default all menus should have borders, to create a uniform look.  Note that this can be configured.  TODO: Implement the config of borders. */
   element_set_borders(menu->element, menu->border_size, menu->border_size, menu->border_size, menu->border_size, PACKED_UINT_DEFAULT_BORDERS);
   element_set_menu_data(menu->element, menu);
   /* Create the selected rect element. */
   menu->selelem = element_create(100, 100, 100, font_height(font), FALSE);
-  menu->selelem->color = PACKED_UINT_FLOAT(1.f, 1.f, 1.f, .4f);
+  menu->selelem->color = MENU_DEFAULT_SELECTED_COLOR;
   /* Row init. */
-  menu->viewtop  = 0;
-  menu->selected = 0;
-  menu->maxrows  = GUI_MENU_DEFAULT_MAX_ROWS;
-  menu->rows     = 0;
+  menu->was_viewtop = -1;
+  menu->viewtop     = 0;
+  menu->selected    = 0;
+  menu->maxrows     = MENU_DEFAULT_MAX_ROWS;
+  menu->rows        = 0;
   menu_scrollbar_create(menu);
   menu->font = font;
   /* Always init the `parent` and `active_submenu` as `NULL`. */
@@ -585,6 +592,8 @@ Menu *menu_create(Element *const parent, Font *const font, void *data, MenuPosit
   return menu;
 }
 
+/* ----------------------------- Menuu create submenu ----------------------------- */
+
 Menu *menu_create_submenu(Menu *const parent, const char *const restrict lable, void *data, MenuAcceptFunc accept_routine) {
   ASSERT(parent);
   ASSERT(data);
@@ -594,6 +603,8 @@ Menu *menu_create_submenu(Menu *const parent, const char *const restrict lable, 
   menu_push_back_submenu(parent, lable, menu);
   return menu;
 }
+
+/* ----------------------------- Menu free ----------------------------- */
 
 void menu_free(Menu *const menu) {
   if (!menu) {
@@ -607,9 +618,13 @@ void menu_free(Menu *const menu) {
   free(menu);
 }
 
+/* ----------------------------- Menu get active ----------------------------- */
+
 Menu *menu_get_active(void) {
   return active_menu;
 }
+
+/* ----------------------------- Menu draw ----------------------------- */
 
 /* Perform a draw call for a `Menu`.  Note that this should be called every frame for all root menu's and never for submenu's. */
 void menu_draw(Menu *const menu) {
@@ -635,35 +650,44 @@ void menu_draw(Menu *const menu) {
   }
 }
 
+/* ----------------------------- Menu push back ----------------------------- */
+
 void menu_push_back(Menu *const menu, const char *const restrict string) {
   ASSERT_MENU;
   ASSERT(string);
   cvec_push(menu->entries, menu_entry_create(string));
-  // menu->width_refresh_needed = TRUE;
   menu->xflags |= MENU_REFRESH_WIDTH;
 }
 
-void menu_pos_refresh_needed(Menu *const menu) {
+/* ----------------------------- Menu refresh pos ----------------------------- */
+
+void menu_refresh_pos(Menu *const menu) {
   ASSERT_MENU;
   menu->xflags |= MENU_REFRESH_POS;
 }
 
-void menu_text_refresh_needed(Menu *const menu) {
+/* ----------------------------- Menu refresh text ----------------------------- */
+
+void menu_refresh_text(Menu *const menu) {
   ASSERT_MENU;
-  // menu->text_refresh_needed = TRUE;
   menu->xflags |= MENU_REFRESH_TEXT;
 }
 
-void menu_scrollbar_refresh_needed(Menu *const menu) {
+/* ----------------------------- Menu refresh scrollbar ----------------------------- */
+
+void menu_refresh_scrollbar(Menu *const menu) {
   ASSERT_MENU;
   scrollbar_refresh_needed(menu->sb);
 }
+
+/* ----------------------------- Menu show ----------------------------- */
 
 void menu_show(Menu *const menu, bool show) {
   ASSERT_MENU;
   /* Showing this menu. */
   if (show) {
-    /* Always close the currently active menu, even when its the same as `menu`.  This ensures correctness related to submenus. */
+    /* Always close the currently active menu, even when its the
+     * same as `menu`.  This ensures correctness related to submenus. */
     if (active_menu) {
       menu_show_internal(active_menu, FALSE);
     }
@@ -680,6 +704,8 @@ void menu_show(Menu *const menu, bool show) {
   }
 }
 
+/* ----------------------------- Menu selected up ----------------------------- */
+
 void menu_selected_up(Menu *const menu) {
   ASSERT_MENU;
   /* Recursivly call this function, until we reach the bottom. */
@@ -691,6 +717,8 @@ void menu_selected_up(Menu *const menu) {
     menu_selected_up_internal(menu);
   }
 }
+
+/* ----------------------------- Menu selected down ----------------------------- */
 
 void menu_selected_down(Menu *const menu) {
   ASSERT_MENU;
@@ -704,30 +732,36 @@ void menu_selected_down(Menu *const menu) {
   }
 }
 
-void menu_exit_submenu(Menu *const menu) {
+/* ----------------------------- Menu submenu exit ----------------------------- */
+
+void menu_submenu_exit(Menu *const menu) {
   ASSERT_MENU;
   if (menu->active_submenu) {
-    menu_exit_submenu(menu->active_submenu);
+    menu_submenu_exit(menu->active_submenu);
   }
   else {
     menu_exit_submenu_internal(menu);
   }
 }
 
-void menu_enter_submenu(Menu *const menu) {
+/* ----------------------------- Menu submenu enter ----------------------------- */
+
+void menu_submenu_enter(Menu *const menu) {
   ASSERT_MENU;
   if (menu->active_submenu) {
-    menu_enter_submenu(menu->active_submenu);
+    menu_submenu_enter(menu->active_submenu);
   }
   else {
     menu_check_submenu(menu);
   }
 }
 
+/* ----------------------------- Menu action accept ----------------------------- */
+
 /* This is used to perform the accept action of the depest opened menu's currently selected entry,
  * or if that selected entry has a submenu and its not open, then it will open it.  This is used
  * for both clicking and kb related execution of the accept routine for that menu. */
-void menu_accept_action(Menu *const menu) {
+void menu_action_accept(Menu *const menu) {
   ASSERT_MENU;
   /* As a sanity check only perform any action when the menu is not empty. */
   if (cvec_len(menu->entries)) {
@@ -744,12 +778,14 @@ void menu_accept_action(Menu *const menu) {
     }
     /* And if that menu is currently active, recursivly call this function on that menu. */
     else {
-      menu_accept_action(menu->active_submenu);
+      menu_action_accept(menu->active_submenu);
     }
   }
 }
 
-void menu_hover_action(Menu *const menu, float x_pos, float y_pos) {
+/* ----------------------------- Menu action hover ----------------------------- */
+
+void menu_action_hover(Menu *const menu, float x_pos, float y_pos) {
   ASSERT_MENU;
   long row;
   float top;
@@ -767,7 +803,9 @@ void menu_hover_action(Menu *const menu, float x_pos, float y_pos) {
   }
 }
 
-void menu_scroll_action(Menu *const menu, bool direction, float x_pos, float y_pos) {
+/* ----------------------------- Menu scroll action ----------------------------- */
+
+void menu_action_scroll(Menu *const menu, bool direction, float x_pos, float y_pos) {
   ASSERT_MENU;
   float top;
   float bot;
@@ -782,14 +820,16 @@ void menu_scroll_action(Menu *const menu, bool direction, float x_pos, float y_p
       menu->viewtop += (!direction ? -1 : 1);
       menu->xflags |= MENU_REFRESH_TEXT;
       /* Ensure that the currently selected entry gets correctly set based on where the mouse is. */
-      menu_hover_action(menu, x_pos, y_pos);
+      menu_action_hover(menu, x_pos, y_pos);
       scrollbar_refresh_needed(menu->sb);
       refresh_needed = TRUE;
     }
   }
 }
 
-void menu_click_action(Menu *const menu, float x_pos, float y_pos) {
+/* ----------------------------- Menu click action ----------------------------- */
+
+void menu_action_click(Menu *const menu, float x_pos, float y_pos) {
   ASSERT_MENU;
   float top;
   float bot;
@@ -799,14 +839,16 @@ void menu_click_action(Menu *const menu, float x_pos, float y_pos) {
     /* Get the absolute values where events are allowed. */
     menu_event_bounds(menu, &top, &bot, &right);
     if (y_pos >= top && y_pos <= bot && x_pos < right) {
-      menu_hover_action(menu, x_pos, y_pos);
+      menu_action_hover(menu, x_pos, y_pos);
       /* Only allow clickes on non submenu entries. */
       if (!menu_get_entry_menu(menu, menu->selected)) {
-        menu_accept_action(menu);
+        menu_action_accept(menu);
       }
     }
   }
 }
+
+/* ----------------------------- Menu clear entries ----------------------------- */
 
 void menu_clear_entries(Menu *const menu) {
   ASSERT_MENU;
@@ -819,7 +861,10 @@ void menu_clear_entries(Menu *const menu) {
   // menu->width_refresh_needed = TRUE;
 }
 
-/* Set a static width for `menu`.  TODO: Implement this into text drawing function, so that when there is not enough room it cuts of the entry. */
+/* ----------------------------- Menu set static width ----------------------------- */
+
+/* Set a static width for `menu`.  TODO: Implement this into text drawing
+ * function, so that when there is not enough room it cuts of the entry. */
 void menu_set_static_width(Menu *const menu, float width) {
   ASSERT_MENU;
   ALWAYS_ASSERT_MSG((width > 0.0f), "The width of a menu must be positive");
@@ -827,8 +872,10 @@ void menu_set_static_width(Menu *const menu, float width) {
   menu->xflags |= MENU_WIDTH_IS_STATIC;
 }
 
+/* ----------------------------- Menu behavior tab accept ----------------------------- */
+
 /* Configure's the tab behavior for `menu`, if `accept_on_tab` is `TRUE` then tab will act like enter when this menu is active. */
-void menu_set_tab_accept_behavior(Menu *const menu, bool accept_on_tab) {
+void menu_behavior_tab_accept(Menu *const menu, bool accept_on_tab) {
   ASSERT_MENU;
   if (accept_on_tab) {
     menu->xflags |= MENU_ACCEPT_ON_TAB;
@@ -839,8 +886,11 @@ void menu_set_tab_accept_behavior(Menu *const menu, bool accept_on_tab) {
   // menu->accept_on_tab = accept_on_tab;
 }
 
-/* Configure's if `menu` should use right arrow to open the submenu at the currently selected entry if it exists and left arrow to close the currently open submenu. */
-void menu_set_arrow_depth_navigation(Menu *const menu, bool enable_arrow_depth_navigation) {
+/* ----------------------------- Menu behavior arrow depth navigation ----------------------------- */
+
+/* Configure's if `menu` should use right arrow to open the submenu at the currently
+ * selected entry if it exists and left arrow to close the currently open submenu. */
+void menu_behavior_arrow_depth_navigation(Menu *const menu, bool enable_arrow_depth_navigation) {
   ASSERT_MENU;
   if (enable_arrow_depth_navigation) {
     menu->xflags |= MENU_ARROW_DEPTH_NAVIGATION;
@@ -851,13 +901,22 @@ void menu_set_arrow_depth_navigation(Menu *const menu, bool enable_arrow_depth_n
   // menu->arrow_depth_navigation = enable_arrow_depth_navigation;
 }
 
-/* ----------------------------- Boolian function's ----------------------------- */
+/* ----------------------------- Menu set lable offset ----------------------------- */
+
+void menu_set_lable_offset(Menu *const menu, Ushort pixels) {
+  ASSERT_MENU;
+  menu->lable_offset = pixels;
+}
+
+/* ----------------------------- Menu owns element ----------------------------- */
 
 /* Return's `TRUE` if `e` is part of `menu`. */
 bool menu_owns_element(Menu *const menu, Element *const e) {
   ASSERT_MENU;
   return element_is_ancestor(e, menu->element);
 }
+
+/* ----------------------------- Menu element is main ----------------------------- */
 
 /* Return's `TRUE` if `e` is the main element of `menu`. */
 bool menu_element_is_main(Menu *const menu, Element *const e) {
@@ -866,17 +925,24 @@ bool menu_element_is_main(Menu *const menu, Element *const e) {
   return (menu->element == e);
 }
 
+/* ----------------------------- Menu allows accept on tab ----------------------------- */
+
 /* Return's `TRUE` if `menu` has `accept_on_tab` flag set. */
-bool menu_should_accept_on_tab(Menu *const menu) {
+bool menu_allows_accept_on_tab(Menu *const menu) {
   ASSERT_MENU;
   return (menu->xflags & MENU_ACCEPT_ON_TAB);
 }
 
-/* Return's `TRUE` if `menu` has `arrow_depth_navigation` flag set.  This means that `left` and `right arrow` close's and open's `submenu's`. */
-bool menu_allows_arrow_navigation(Menu *const menu) {
+/* ----------------------------- Menu allows arrow depth navigation ----------------------------- */
+
+/* Return's `TRUE` if `menu` has `arrow_depth_navigation` flag set.
+ * This means that `left` and `right arrow` close's and open's `submenu's`. */
+bool menu_allows_arrow_depth_navigation(Menu *const menu) {
   ASSERT_MENU;
   return (menu->xflags & MENU_ARROW_DEPTH_NAVIGATION);
 }
+
+/* ----------------------------- Menu is ancestor ----------------------------- */
 
 /* Return's `TRUE` when `ancestor` is an ancestor to `menu`. */
 bool menu_is_ancestor(Menu *const menu, Menu *const ancestor) {
@@ -892,28 +958,32 @@ bool menu_is_ancestor(Menu *const menu, Menu *const ancestor) {
   return FALSE;
 }
 
+/* ----------------------------- Menu is shown ----------------------------- */
+
 /* Return's `TRUE` when `menu` is currently being shown and has more then zero entries. */
 bool menu_is_shown(Menu *const menu) {
   ASSERT_MENU;
   return (!(menu->element->xflags & ELEMENT_HIDDEN) && cvec_len(menu->entries));
 }
 
-/* ----------------------------- Getter function's ----------------------------- */
+/* ----------------------------- Menu get font ----------------------------- */
 
 Font *menu_get_font(Menu *const menu) {
   ASSERT_MENU;
   return menu->font;
 }
 
+/* ----------------------------- Menu len ----------------------------- */
+
 int menu_len(Menu *const menu) {
   ASSERT_MENU;
   return cvec_len(menu->entries);
 }
 
-/* ----------------------------- Menu qsort callback's ----------------------------- */
+/* ----------------------------- Menu qsort cb strlen ----------------------------- */
 
 /* Function callback used for sorting menu entries by length of lable.  Note that this should be passed to `menu_qsort()` */
-int menu_entry_qsort_strlen_cb(const void *a, const void *b) {
+int menu_qsort_cb_strlen(const void *a, const void *b) {
   const MenuEntry *lhs = *(const MenuEntry **)a;
   const MenuEntry *rhs = *(const MenuEntry **)b;
   long lhs_len = strlen(lhs->lable);
@@ -924,7 +994,7 @@ int menu_entry_qsort_strlen_cb(const void *a, const void *b) {
   return (lhs_len - rhs_len); 
 }
 
-/* ----------------------------- Menu qsort call ----------------------------- */
+/* ----------------------------- Menu qsort ----------------------------- */
 
 void menu_qsort(Menu *const menu, CmpFuncPtr cmp_func) {
   ASSERT_MENU;

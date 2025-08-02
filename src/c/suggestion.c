@@ -303,9 +303,9 @@ void accept_suggestion(void) {
 void suggestmenu_create(void) {
   suggest = xmalloc(sizeof(*suggest));
   suggest->menu = menu_create(gl_window_root(), textfont, suggest, suggestmenu_pos, suggestmenu_accept);
-  menu_set_tab_accept_behavior(suggest->menu, TRUE);
+  menu_behavior_tab_accept(suggest->menu, TRUE);
   /* Insure <Left>/<Right> arrow input is ignored fully, as this menu will always only have a depth of one. */
-  menu_set_arrow_depth_navigation(suggest->menu, FALSE);
+  menu_behavior_arrow_depth_navigation(suggest->menu, FALSE);
   suggest->length = 0;
   suggest->buffer = NULL;
 }
@@ -408,7 +408,7 @@ void suggestmenu_find(void) {
     }
   }
   hashmap_free(map);
-  menu_qsort(suggest->menu, menu_entry_qsort_strlen_cb);
+  menu_qsort(suggest->menu, menu_qsort_cb_strlen);
 }
 
 /* ----------------------------- Suggestmenu run ----------------------------- */

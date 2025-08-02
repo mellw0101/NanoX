@@ -38,11 +38,20 @@
 
 
 struct Font {
-  Uint             size;        /* The size of the font. */
-  Uint             atlas_size;  /* This is how big the base of the atlas is, so when this is the `512` the atlas size is `512x512`. */
-  char            *path;        /* The path of the loaded font, this is useful when changing size. */
-  texture_atlas_t *atlas;       /* The texture atlas ptr. */
-  texture_font_t  *font;        /* The freetype font type. */
+  /* The size of the font. */
+  Uint size;
+
+  /* This is how big the base of the atlas is, so when this is the `512` the atlas size is `512x512`. */
+  Uint atlas_size;
+
+  /* The path of the loaded font, this is useful when changing size. */
+  char *path;
+
+  /* The texture atlas ptr. */
+  texture_atlas_t *atlas;
+
+  /* The freetype font type. */
+  texture_font_t  *font;
 
   /* This represents a deviation from the base separation between rows.  Note that this can be negative or positive. */
   long line_height;
@@ -52,6 +61,8 @@ struct Font {
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
+/* ----------------------------- Texture font free ----------------------------- */
+
 /* A simple wrapper of `texture_font_delete` that makes it a `NO-OP` function, meaning passing `NULL` to it is safe. */
 static inline void texture_font_free(texture_font_t *const font) {
   if (!font) {
@@ -59,6 +70,8 @@ static inline void texture_font_free(texture_font_t *const font) {
   }
   texture_font_delete(font);
 }
+
+/* ----------------------------- Texture atlas free ----------------------------- */
 
 /* A simple wrapper of `texture_atlas_delete` that makes it a `NO-OP` function, meaning passing `NULL` to it is safe. */
 static inline void texture_atlas_free(texture_atlas_t *const atlas) {
@@ -431,6 +444,8 @@ float font_wideness(Font *const f, const char *const restrict string, Ulong to_i
   return ret;
 }
 
+/* ----------------------------- Font add glyph ----------------------------- */
+
 /* Add one glyph to 'buffer' to be rendered.  At position pen. */
 void font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const restrict current, const char *const restrict prev, Uint color, float *const pen_x, float *const pen_y) {
   ASSERT_FONT;
@@ -455,6 +470,8 @@ void font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const
   (*pen_x) += glyph->advance_x;
 }
 
+/* ----------------------------- Font vertbuf add mbstr ----------------------------- */
+
 void font_vertbuf_add_mbstr(Font *const f, vertex_buffer_t *buf, const char *string, Ulong len, const char *previous, Uint color, float *const pen_x, float *const pen_y) {
   ASSERT_FONT;
   ASSERT(buf);
@@ -472,6 +489,8 @@ void font_vertbuf_add_mbstr(Font *const f, vertex_buffer_t *buf, const char *str
     }
   }
 }
+
+/* ----------------------------- Font upload texture atlas ----------------------------- */
 
 /* Upload a atlas texture. */
 void font_upload_texture_atlas(Font *const f) {

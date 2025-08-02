@@ -110,7 +110,7 @@ ContextMenu *context_menu_create(void) {
   menu_push_back(cxm->sm0, "Sm0: 15");
   menu_push_back(cxm->sm0, "Sm0: 16");
   menu_push_back(cxm->sm0, "Sm0: 17");
-  menu_set_tab_accept_behavior(cxm->menu, TRUE);
+  menu_behavior_tab_accept(cxm->menu, TRUE);
   return cxm;
 }
 

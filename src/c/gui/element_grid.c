@@ -85,11 +85,15 @@ static inline void element_grid_get_action(Ulong _UNUSED key, void *value, void 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
+/* ----------------------------- Element grid create ----------------------------- */
+
 void element_grid_create(int cell_size) {
   MALLOC_STRUCT(element_grid);
   element_grid->cell_size = cell_size;
   element_grid->map = hashmapnum_create_wfreefunc(hashmapnum_free_void_ptr);
 }
+
+/* ----------------------------- Element grid free ----------------------------- */
 
 void element_grid_free(void) {
   if (!element_grid) {
@@ -99,6 +103,8 @@ void element_grid_free(void) {
   free(element_grid);
   element_grid = NULL;
 }
+
+/* ----------------------------- Element grid set ----------------------------- */
 
 void element_grid_set(Element *const e) {
   ASSERT(element_grid);
@@ -125,6 +131,8 @@ void element_grid_set(Element *const e) {
   }
 }
 
+/* ----------------------------- Element grid remove ----------------------------- */
+
 void element_grid_remove(Element *const e) {
   ASSERT(element_grid);
   ASSERT(e);
@@ -132,25 +140,35 @@ void element_grid_remove(Element *const e) {
   ElementGridpos end;
   Ulong key;
   HashMapNum *cellmap;
+  /* If the element do not wish to be part of the grid, and therefor not be part of mouse events, respect that. */
   if (e->xflags & ELEMENT_NOT_IN_MAP) {
     return;
   }
   start = element_grid_get_start(e);
   end   = element_grid_get_end(e);
+  /* Columns */
   for (int x=start.x; x<=end.x; ++x) {
+    /* Rows */
     for (int y=start.y; y<=end.y; ++y) {
-      key = element_grid_key(x, y);
+      key     = element_grid_key(x, y);
       cellmap = hashmapnum_get(element_grid->map, key);
       if (!cellmap) {
         continue;
       }
       hashmapnum_remove(cellmap, (Ulong)e);
-      // if (!hashmapnum_size(cellmap)) {
-      //   hashmapnum_remove(grid->map, key);
-      // }
+      /* Currently we only grow, in the sense that we never free empty grid tile maps. If we wanted to
+       * we could do it like this.  But first we should improve the grid map as a whole and the hashmap.
+
+        if (!hashmapnum_size(cellmap)) {
+          hashmapnum_remove(grid->map, key);
+        } 
+
+       */
     }
   }
 }
+
+/* ----------------------------- Element grid get ----------------------------- */
 
 Element *element_grid_get(float x, float y) {
   ASSERT(element_grid);
@@ -162,7 +180,7 @@ Element *element_grid_get(float x, float y) {
   if (!cellmap) {
     return NULL;
   }
-  p = xmalloc(sizeof(*p));
+  p = xmalloc(sizeof *p);
   p->x   = x;
   p->y   = y;
   p->ret = NULL;
@@ -172,6 +190,11 @@ Element *element_grid_get(float x, float y) {
   return ret;
 }
 
+/* ----------------------------- Element grid contains ----------------------------- */
+
+/* Returns true if the grid tile of `x` and `y` contains any elements at all, this is
+ * more efficent then running `element_grid_get()` as that does more to verify what
+ * exact element in the grid should be returned based on layer and exact position. */
 bool element_grid_contains(float x, float y) {
   ASSERT(element_grid);
   ElementGridpos gridpos = element_gridpos_get(x, y);

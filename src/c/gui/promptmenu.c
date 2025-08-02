@@ -131,8 +131,8 @@ static void promptmenu_find_completions(void) {
       menu_push_back(pm->menu, entry);
     }
     hashmap_free(map);
-    menu_qsort(pm->menu, menu_entry_qsort_strlen_cb);
-    menu_text_refresh_needed(pm->menu);
+    menu_qsort(pm->menu, menu_qsort_cb_strlen);
+    menu_refresh_text(pm->menu);
   }
 }
 
@@ -165,14 +165,6 @@ static void promptmenu_open_file_search(void) {
     }
     directory_data_free(&dir);
   }
-  if (cvec_len(pm->completions)) {
-    menu_show(pm->menu, TRUE);
-    menu_pos_refresh_needed(pm->menu);
-    menu_text_refresh_needed(pm->menu);
-  }
-  else {
-    menu_show(pm->menu, FALSE);
-  }
 }
 
 /* ----------------------------- Promptmenu get x width ----------------------------- */
@@ -183,6 +175,17 @@ static inline void promptmenu_get_x_width(float *const x, float *const width) {
   float winwidth = gl_window_width();
   *width = FMINF(winwidth, PROMPTMENU_DEFAULT_WIDTH);
   *x = ((winwidth / 2) - (*width / 2));
+}
+
+/* ----------------------------- Promptmenu extra routine rect ----------------------------- */
+
+static void promptmenu_extra_routine_rect(Element *const e, void *arg) {
+  ASSERT(e);
+  ASSERT(arg);
+  PromptMenu *p = arg;
+  p->xflags |= PROMPTMENU_REFRESH_TEXT;
+  menu_refresh_text(p->menu);
+  menu_refresh_pos(p->menu);
 }
 
 
@@ -201,10 +204,14 @@ void promptmenu_create(void) {
   pm->element = element_create(x, 0, width, font_height(uifont), TRUE);
   gl_window_add_root_child(pm->element);
   pm->element->color   = PACKED_UINT_VS_CODE_RED;
-  pm->element->xflags |= ELEMENT_HIDDEN;
+  /* Ensure that when the root element is resized, the element keeps in the center. */
+  pm->element->xflags |= (ELEMENT_HIDDEN | ELEMENT_CENTER_X | ELEMENT_CONSTRAIN_WIDTH);
+  /* And also ensure that the menu and text of the prompt-menu is fully updated. */
+  element_set_data_callback(pm->element, pm);
+  element_set_extra_routine_rect(pm->element, promptmenu_extra_routine_rect);
   pm->completions = cvec_create_setfree(free);
   pm->menu = menu_create(pm->element, uifont, pm, promptmenu_pos, promptmenu_accept);
-  menu_set_tab_accept_behavior(pm->menu, TRUE);
+  menu_set_lable_offset(pm->menu, font_breadth(uifont, " "));
   pm->mode = PROMPTMENU_TYPE_NONE;
   pm->data = NULL;
   if (!prompt) {
@@ -303,12 +310,33 @@ void promptmenu_completions_search(void) {
 void promptmenu_enter_action(void) {
   ASSERT_PM;
   char *pwd;
+  char *full_path;
   Ulong pwdlen;
   if (menu_get_active() && menu_len(pm->menu)) {
     ALWAYS_ASSERT(menu_get_active() == pm->menu);
-    menu_accept_action(pm->menu);
+    menu_action_accept(pm->menu);
   }
+  log_ERR_NF("hello");
   switch (pm->mode) {
+    case PROMPTMENU_TYPE_FILE_SAVE: {
+      if (*answer) {
+        full_path = get_full_path(answer);
+        if (*GUI_OF->filename && STRCMP(answer, GUI_OF->filename) != 0) {
+          /* TODO: Add the [Y/N] prompt type. */
+        }
+        else {
+          statusline(INFO, "Saving file: %s", answer);
+          GUI_OF->filename = xstrcpy(GUI_OF->filename, answer);
+          etb_entries_refresh_needed(openeditor->tb);
+          if (write_it_out(FALSE, FALSE) == 2) {
+            log_ERR_FA("Failed to write file %s to disk", full_path);
+          }
+          promptmenu_close();
+        }
+        free(full_path);
+      }
+      break;
+    }
     case PROMPTMENU_TYPE_FILE_OPEN: {
       if (*answer) {
         /* The answer is a directory. */
@@ -358,7 +386,7 @@ void promptmenu_tab_action(void) {
   ASSERT_PM;
   if (menu_get_active() && menu_len(pm->menu)) {
     ALWAYS_ASSERT(menu_get_active() == pm->menu);
-    menu_accept_action(pm->menu);
+    menu_action_accept(pm->menu);
   }
   switch (pm->mode) {
     case PROMPTMENU_TYPE_FILE_OPEN: {

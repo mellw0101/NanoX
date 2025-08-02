@@ -810,8 +810,9 @@ void do_statusbar_replace(const char *const restrict data) {
 
 /* ----------------------------- Get statusbar page start ----------------------------- */
 
-/* Return the column number of the first character of the answer that is displayed in the status bar when the cursor is at the given
- * column, with the available room for the answer starting at base.  Note that (0 <= column - get_statusbar_page_start(column) < COLS). */
+/* Return the column number of the first character of the answer that is displayed in the
+ * status bar when the cursor is at the given column, with the available room for the answer
+ * starting at base.  Note that (0 <= column - get_statusbar_page_start(column) < COLS). */
 Ulong get_statusbar_page_start(Ulong base, Ulong column) {
   if (column == base || (int)column < (COLS - 1)) {
     return 0;

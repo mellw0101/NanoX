@@ -285,8 +285,8 @@ void gui_suggestmenu_create(void) {
   ASSERT(gui);
   MALLOC_STRUCT(gui->suggestmenu);
   gui->suggestmenu->menu = menu_create(gl_window_root(), textfont, gui->suggestmenu, gui_suggestmenu_pos_routine, gui_suggestmenu_accept_routine);
-  menu_set_tab_accept_behavior(gui->suggestmenu->menu, TRUE);
-  menu_set_arrow_depth_navigation(gui->suggestmenu->menu, FALSE);
+  menu_behavior_tab_accept(gui->suggestmenu->menu, TRUE);
+  menu_behavior_arrow_depth_navigation(gui->suggestmenu->menu, FALSE);
   gui->suggestmenu->buf[0] = '\0';
   gui->suggestmenu->len    = 0;
 }
@@ -392,7 +392,7 @@ void gui_suggestmenu_find(void) {
     }
   }
   hashmap_free(hash_map);
-  menu_qsort(gui->suggestmenu->menu, menu_entry_qsort_strlen_cb);
+  menu_qsort(gui->suggestmenu->menu, menu_qsort_cb_strlen);
   TIMER_END(timer, ms);
   TIMER_PRINT(ms);
 }

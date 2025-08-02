@@ -666,74 +666,130 @@ void set_cursor_type(GLFWwindow *const window, int type) _NONNULL(1);
 /* ---------------------------------------------------------- gui/font.c ---------------------------------------------------------- */
 
 
+/* ----------------------------- Font create ----------------------------- */
 Font *font_create(void);
+/* ----------------------------- Font free ----------------------------- */
 void font_free(Font *const f);
+/* ----------------------------- Font load ----------------------------- */
 void font_load(Font *const f, const char *const restrict path, Uint size, Uint atlas_size);
+/* ----------------------------- Font get font ----------------------------- */
 texture_font_t  *font_get_font(Font *const f);
+/* ----------------------------- Font get atlas ----------------------------- */
 texture_atlas_t *font_get_atlas(Font *const f);
+/* ----------------------------- Font get glyph ----------------------------- */
 texture_glyph_t *font_get_glyph(Font *const f, const char *const restrict codepoint);
+/* ----------------------------- Font get size ----------------------------- */
 Uint font_get_size(Font *const f);
+/* ----------------------------- Font get atlas size ----------------------------- */
 Uint font_get_atlas_size(Font *const f);
+/* ----------------------------- Font get line height ----------------------------- */
 long font_get_line_height(Font *const f);
+/* ----------------------------- Font is mono ----------------------------- */
 bool font_is_mono(Font *const f);
+/* ----------------------------- Font height ----------------------------- */
 float font_height(Font *const f);
+/* ----------------------------- Font row baseline ----------------------------- */
 float font_row_baseline(Font *const f, long row);
+/* ----------------------------- Font row top bot ----------------------------- */
 void font_row_top_bot(Font *const f, long row, float *const top, float *const bot);
+/* ----------------------------- Font row top pix ----------------------------- */
 float font_row_top_pix(Font *const f, long row) _NODISCARD _NONNULL(1);
+/* ----------------------------- Font row bottom pix ----------------------------- */
 float font_row_bottom_pix(Font *const f, long row) _NODISCARD _NONNULL(1);
+/* ----------------------------- Font change size ----------------------------- */
 void font_change_size(Font *const f, Uint new_size);
+/* ----------------------------- Font increase size ----------------------------- */
 void font_increase_size(Font *const f);
+/* ----------------------------- Font decrease size ----------------------------- */
 void font_decrease_size(Font *const f);
+/* ----------------------------- Font decrease line height ----------------------------- */
 void font_decrease_line_height(Font *const f);
+/* ----------------------------- Font increase line height ----------------------------- */
 void font_increase_line_height(Font *const f);
+/* ----------------------------- Font rows cols ----------------------------- */
 void font_rows_cols(Font *const f, float width, float height, int *const outrows, int *const outcols);
+/* ----------------------------- Font row from pos ----------------------------- */
 bool font_row_from_pos(Font *const f, float y_top, float y_bot, float y_pos, long *outrow);
+/* ----------------------------- Font index from pos ----------------------------- */
 Ulong font_index_from_pos(Font *const f, const char *const restrict string, Ulong len, float rawx, float normx);
+/* ----------------------------- Font breadth ----------------------------- */
 float font_breadth(Font *const f, const char *const restrict string);
+/* ----------------------------- Font wideness ----------------------------- */
 float font_wideness(Font *const f, const char *const restrict string, Ulong to_index);
+/* ----------------------------- Font add glyph ----------------------------- */
 void font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const restrict current, const char *const restrict prev, Uint color, float *const pen_x, float *const pen_y);
+/* ----------------------------- Font vertbuf add mbstr ----------------------------- */
 void font_vertbuf_add_mbstr(Font *const f, vertex_buffer_t *buf, const char *string, Ulong len, const char *previous, Uint color, float *const pen_x, float *const pen_y);
+/* ----------------------------- Font upload texture atlas ----------------------------- */
 void font_upload_texture_atlas(Font *const f);
+/* ----------------------------- Font add cursor ----------------------------- */
 void font_add_cursor(Font *const f, vertex_buffer_t *const buf, long row, Uint color, float x, float rowzero_y);
 
 
 /* ---------------------------------------------------------- gui/element_grid.c ---------------------------------------------------------- */
 
 
-void     element_grid_create(int cell_size);
-void     element_grid_free(void);
-void     element_grid_set(Element *const e);
-void     element_grid_remove(Element *const e);
+/* ----------------------------- Element grid create ----------------------------- */
+void element_grid_create(int cell_size);
+/* ----------------------------- Element grid free ----------------------------- */
+void element_grid_free(void);
+/* ----------------------------- Element grid set ----------------------------- */
+void element_grid_set(Element *const e);
+/* ----------------------------- Element grid remove ----------------------------- */
+void element_grid_remove(Element *const e);
+/* ----------------------------- Element grid get ----------------------------- */
 Element *element_grid_get(float x, float y);
-bool     element_grid_contains(float x, float y);
+/* ----------------------------- Element grid contains ----------------------------- */
+bool element_grid_contains(float x, float y);
 
 
 /* ---------------------------------------------------------- gui/element.c ---------------------------------------------------------- */
 
 
+/* ----------------------------- Element create ----------------------------- */
 Element *element_create(float x, float y, float width, float height, bool in_gridmap);
-void     element_free(Element *const e);
-void     element_draw(Element *const e);
-void     element_move(Element *const e, float x, float y);
-void     element_resize(Element *const e, float width, float height);
-void     element_move_resize(Element *const e, float x, float y, float width, float height);
-void     element_move_y_clamp(Element *const e, float y, float min, float max);
-void     element_delete_borders(Element *const e);
+/* ----------------------------- Element free ----------------------------- */
+void element_free(Element *const e);
+/* ----------------------------- Element draw ----------------------------- */
+void element_draw(Element *const e);
+/* ----------------------------- Element move ----------------------------- */
+void element_move(Element *const e, float x, float y);
+/* ----------------------------- Element resize ----------------------------- */
+void element_resize(Element *const e, float width, float height);
+/* ----------------------------- Element move resize ----------------------------- */
+void element_move_resize(Element *const e, float x, float y, float width, float height);
+/* ----------------------------- Element move y clamp ----------------------------- */
+void element_move_y_clamp(Element *const e, float y, float min, float max);
+/* ----------------------------- Element delete borders ----------------------------- */
+void element_delete_borders(Element *const e);
 /* ----------------------------- Element set color ----------------------------- */
 void element_set_color(Element *const e, Uint color);
 /* ----------------------------- Element is ancestor ----------------------------- */
 bool element_is_ancestor(Element *const e, Element *const ancestor);
-void     element_set_lable(Element *const e, const char *const restrict lable, Ulong len);
-void     element_set_borders(Element *const e, float lsize, float tsize, float rsize, float bsize, Uint color /* Color *color */);
-void     element_set_layer(Element *const e, Ushort layer);
-void     element_set_parent(Element *const e, Element *const parent);
-void     element_set_raw_data(Element *const e, void *const data);
-void     element_set_sb_data(Element *const e, Scrollbar *const data);
-void     element_set_menu_data(Element *const e, Menu *const data);
-void     element_set_file_data(Element *const e, openfilestruct *const data);
-void     element_set_editor_data(Element *const e, Editor *const data);
-
+/* ----------------------------- Element set lable ----------------------------- */
+void element_set_lable(Element *const e, const char *const restrict lable, Ulong len);
+/* ----------------------------- Element set borders ----------------------------- */
+void element_set_borders(Element *const e, float lsize, float tsize, float rsize, float bsize, Uint color);
+/* ----------------------------- Element set layers ----------------------------- */
+void element_set_layer(Element *const e, Ushort layer);
+/* ----------------------------- Element set parent ----------------------------- */
+void element_set_parent(Element *const e, Element *const parent);
+/* ----------------------------- Element set raw data ----------------------------- */
+void element_set_raw_data(Element *const e, void *const data);
+/* ----------------------------- Element set sb data ----------------------------- */
+void element_set_sb_data(Element *const e, Scrollbar *const data);
+/* ----------------------------- Element set menu data ----------------------------- */
+void element_set_menu_data(Element *const e, Menu *const data);
+/* ----------------------------- Element set file data ----------------------------- */
+void element_set_file_data(Element *const e, openfilestruct *const data);
+/* ----------------------------- Element set editor data ----------------------------- */
+void element_set_editor_data(Element *const e, Editor *const data);
+/* ----------------------------- Element set rounded apex  ----------------------------- */
 void element_set_rounded_apex_fraction(Element *const e, float t);
+/* ----------------------------- Element set data callback ----------------------------- */
+void element_set_data_callback(Element *const e, void *const ptr);
+/* ----------------------------- Element set extra routine rect ----------------------------- */
+void element_set_extra_routine_rect(Element *const e, ElementExtraCallback callback);
 
 
 /* ---------------------------------------------------------- gui/scrollbar.c ---------------------------------------------------------- */
@@ -762,38 +818,72 @@ vertex_buffer_t *vertbuf_create(void);
 /* ---------------------------------------------------------- gui/menu.c ---------------------------------------------------------- */
 
 
+/* ----------------------------- Menu create ----------------------------- */
 Menu *menu_create(Element *const parent, Font *const font, void *data, MenuPositionFunc position_routine, MenuAcceptFunc accept_routine);
+/* ----------------------------- Menuu create submenu ----------------------------- */
 Menu *menu_create_submenu(Menu *const parent, const char *const restrict lable, void *data, MenuAcceptFunc accept_routine);
-void  menu_free(Menu *const menu);
+/* ----------------------------- Menu free ----------------------------- */
+void menu_free(Menu *const menu);
+/* ----------------------------- Menu get active ----------------------------- */
 Menu *menu_get_active(void);
-void  menu_draw(Menu *const menu);
-void  menu_push_back(Menu *const menu, const char *const restrict string);
-void  menu_pos_refresh_needed(Menu *const menu);
-void  menu_text_refresh_needed(Menu *const menu);
-void  menu_scrollbar_refresh_needed(Menu *const menu);
-void  menu_show(Menu *const menu, bool show);
-void  menu_selected_up(Menu *const menu);
-void  menu_selected_down(Menu *const menu);
-void  menu_exit_submenu(Menu *const menu);
-void  menu_enter_submenu(Menu *const menu);
-void  menu_accept_action(Menu *const menu);
-void  menu_hover_action(Menu *const menu, float x_pos, float y_pos);
-void  menu_scroll_action(Menu *const menu, bool direction, float x_pos, float y_pos);
-void  menu_click_action(Menu *const menu, float x_pos, float y_pos);
-void  menu_clear_entries(Menu *const menu);
-void  menu_set_static_width(Menu *const menu, float width);
-void  menu_set_tab_accept_behavior(Menu *const menu, bool accept_on_tab);
-void  menu_set_arrow_depth_navigation(Menu *const menu, bool enable_arrow_depth_navigation);
-bool  menu_owns_element(Menu *const menu, Element *const e);
-bool  menu_element_is_main(Menu *const menu, Element *const e);
-bool  menu_should_accept_on_tab(Menu *const menu);
-bool  menu_allows_arrow_navigation(Menu *const menu);
-bool  menu_is_ancestor(Menu *const menu, Menu *const ancestor);
-bool  menu_is_shown(Menu *const menu);
+/* ----------------------------- Menu draw ----------------------------- */
+void menu_draw(Menu *const menu);
+/* ----------------------------- Menu push back ----------------------------- */
+void menu_push_back(Menu *const menu, const char *const restrict string);
+/* ----------------------------- Menu refresh pos ----------------------------- */
+void menu_refresh_pos(Menu *const menu);
+/* ----------------------------- Menu refresh text ----------------------------- */
+void menu_refresh_text(Menu *const menu);
+/* ----------------------------- Menu refresh scrollbar ----------------------------- */
+void menu_refresh_scrollbar(Menu *const menu);
+/* ----------------------------- Menu show ----------------------------- */
+void menu_show(Menu *const menu, bool show);
+/* ----------------------------- Menu selected up ----------------------------- */
+void menu_selected_up(Menu *const menu);
+/* ----------------------------- Menu selected down ----------------------------- */
+void menu_selected_down(Menu *const menu);
+/* ----------------------------- Menu submenu exit ----------------------------- */
+void menu_submenu_exit(Menu *const menu);
+/* ----------------------------- Menu submenu enter ----------------------------- */
+void menu_submenu_enter(Menu *const menu);
+/* ----------------------------- Menu action accept ----------------------------- */
+void menu_action_accept(Menu *const menu);
+/* ----------------------------- Menu action hover ----------------------------- */
+void menu_action_hover(Menu *const menu, float x_pos, float y_pos);
+/* ----------------------------- Menu scroll action ----------------------------- */
+void menu_action_scroll(Menu *const menu, bool direction, float x_pos, float y_pos);
+/* ----------------------------- Menu click action ----------------------------- */
+void menu_action_click(Menu *const menu, float x_pos, float y_pos);
+/* ----------------------------- Menu clear entries ----------------------------- */
+void menu_clear_entries(Menu *const menu);
+/* ----------------------------- Menu set static width ----------------------------- */
+void menu_set_static_width(Menu *const menu, float width);
+/* ----------------------------- Menu behavior tab accept ----------------------------- */
+void menu_behavior_tab_accept(Menu *const menu, bool accept_on_tab);
+/* ----------------------------- Menu behavior arrow depth navigation ----------------------------- */
+void menu_behavior_arrow_depth_navigation(Menu *const menu, bool enable_arrow_depth_navigation);
+/* ----------------------------- Menu set lable offset ----------------------------- */
+void menu_set_lable_offset(Menu *const menu, Ushort pixels);
+/* ----------------------------- Menu owns element ----------------------------- */
+bool menu_owns_element(Menu *const menu, Element *const e);
+/* ----------------------------- Menu element is main ----------------------------- */
+bool menu_element_is_main(Menu *const menu, Element *const e);
+/* ----------------------------- Menu allows accept on tab ----------------------------- */
+bool menu_allows_accept_on_tab(Menu *const menu);
+/* ----------------------------- Menu allows arrow depth navigation ----------------------------- */
+bool menu_allows_arrow_depth_navigation(Menu *const menu);
+/* ----------------------------- Menu is ancestor ----------------------------- */
+bool menu_is_ancestor(Menu *const menu, Menu *const ancestor);
+/* ----------------------------- Menu is shown ----------------------------- */
+bool menu_is_shown(Menu *const menu);
+/* ----------------------------- Menu get font ----------------------------- */
 Font *menu_get_font(Menu *const menu);
-int   menu_len(Menu *const menu);
-int   menu_entry_qsort_strlen_cb(const void *a, const void *b);
-void  menu_qsort(Menu *const menu, CmpFuncPtr cmp_func);
+/* ----------------------------- Menu len ----------------------------- */
+int menu_len(Menu *const menu);
+/* ----------------------------- Menu qsort cb strlen ----------------------------- */
+int menu_qsort_cb_strlen(const void *a, const void *b);
+/* ----------------------------- Menu qsort ----------------------------- */
+void menu_qsort(Menu *const menu, CmpFuncPtr cmp_func);
 
 
 /* ---------------------------------------------------------- gui/frame.c ---------------------------------------------------------- */
