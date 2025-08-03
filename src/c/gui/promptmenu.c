@@ -27,9 +27,11 @@ typedef enum {
   PROMPTMENU_ACTIVE       = (1 << 0),
   PROMPTMENU_REFRESH_TEXT = (1 << 1),
   PROMPTMENU_REFRESH_POS  = (1 << 2),
+  PROMPTMENU_YN_MODE      = (1 << 3),
 # define PROMPTMENU_ACTIVE          PROMPTMENU_ACTIVE
 # define PROMPTMENU_REFRESH_TEXT    PROMPTMENU_REFRESH_TEXT
 # define PROMPTMENU_REFRESH_POS     PROMPTMENU_REFRESH_POS
+# define PROMPTMENU_YN_MODE         PROMPTMENU_YN_MODE
 # define PROMPTMENU_DEFAULT_XFLAGS  (0U)
 } PromptMenuState;
 
@@ -44,6 +46,7 @@ typedef struct {
   Menu *menu;
   CVec *completions;
 
+  /* The current mode we are in. */
   PromptMenuType mode;
 
   /* Data used for actions. */
@@ -54,6 +57,7 @@ typedef struct {
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
 
 
+/* The source file global ptr to the opaque prompt-menu structure. */
 static PromptMenu *pm = NULL;
 
 
@@ -134,6 +138,14 @@ static void promptmenu_find_completions(void) {
     menu_qsort(pm->menu, menu_qsort_cb_strlen);
     menu_refresh_text(pm->menu);
   }
+  /* If we did add some entries to the menu, we should show it. */
+  if (menu_len(pm->menu)) {
+    menu_show(pm->menu, TRUE);
+    menu_refresh_pos(pm->menu);
+  }
+  else {
+    menu_show(pm->menu, FALSE);
+  }
 }
 
 /* ----------------------------- Promptmenu open file search ----------------------------- */
@@ -186,6 +198,17 @@ static void promptmenu_extra_routine_rect(Element *const e, void *arg) {
   p->xflags |= PROMPTMENU_REFRESH_TEXT;
   menu_refresh_text(p->menu);
   menu_refresh_pos(p->menu);
+}
+
+/* ----------------------------- Promptmenu check completion ----------------------------- */
+
+/* Check if there is a active completion, and if there is, then run the menu accept function. */
+static inline void promptmenu_should_accept_completion(void) {
+  ASSERT_PM;
+  if (menu_get_active() && menu_len(pm->menu)) {
+    ALWAYS_ASSERT(menu_get_active() == pm->menu);
+    menu_action_accept(pm->menu);
+  }
 }
 
 
@@ -271,6 +294,7 @@ void promptmenu_close(void) {
   pm->element->xflags |= ELEMENT_HIDDEN;
   menu_clear_entries(pm->menu);
   cvec_clear(pm->completions);
+  pm->data = NULL;
   refresh_needed = TRUE;
 }
 
@@ -279,6 +303,14 @@ void promptmenu_close(void) {
 bool promptmenu_active(void) {
   ASSERT_PM;
   return !!(pm->xflags & PROMPTMENU_ACTIVE);
+}
+
+/* ----------------------------- Promptmenu yn mode ----------------------------- */
+
+/* Returns `TRUE` when the current mode only wants a `Y/y` or `N/n`. */
+bool promptmenu_yn_mode(void) {
+  ASSERT_PM;
+  return !!(pm->xflags & PROMPTMENU_YN_MODE);
 }
 
 /* ----------------------------- Promptmenu refresh text ----------------------------- */
@@ -305,18 +337,15 @@ void promptmenu_completions_search(void) {
   promptmenu_find_completions();
 }
 
-/* ----------------------------- Promptmenu enter action ----------------------------- */
+/* ----------------------------- Promptmenu action enter ----------------------------- */
 
-void promptmenu_enter_action(void) {
+/* The routine that is performed when `enter` is pressed. */
+void promptmenu_action_enter(void) {
   ASSERT_PM;
   char *pwd;
   char *full_path;
   Ulong pwdlen;
-  if (menu_get_active() && menu_len(pm->menu)) {
-    ALWAYS_ASSERT(menu_get_active() == pm->menu);
-    menu_action_accept(pm->menu);
-  }
-  log_ERR_NF("hello");
+  promptmenu_should_accept_completion();
   switch (pm->mode) {
     case PROMPTMENU_TYPE_FILE_SAVE: {
       if (*answer) {
@@ -371,7 +400,7 @@ void promptmenu_enter_action(void) {
     }
     default: {
       if (STRCASECMP(answer, "open file") == 0) {
-        promptmenu_open_file();
+        promptmenu_ask(PROMPTMENU_TYPE_FILE_OPEN);
       }
       else {
         promptmenu_close();
@@ -380,14 +409,12 @@ void promptmenu_enter_action(void) {
   }
 }
 
-/* ----------------------------- Promptmenu tab action ----------------------------- */
+/* ----------------------------- Promptmenu action tab ----------------------------- */
 
-void promptmenu_tab_action(void) {
+/* The routine that is performed when `tab` is pressed. */
+void promptmenu_action_tab(void) {
   ASSERT_PM;
-  if (menu_get_active() && menu_len(pm->menu)) {
-    ALWAYS_ASSERT(menu_get_active() == pm->menu);
-    menu_action_accept(pm->menu);
-  }
+  promptmenu_should_accept_completion();
   switch (pm->mode) {
     case PROMPTMENU_TYPE_FILE_OPEN: {
       if (dir_exists(answer) && typing_x && answer[typing_x - 1] != '/') {
@@ -404,32 +431,79 @@ void promptmenu_tab_action(void) {
   promptmenu_completions_search();
 }
 
-/* ----------------------------- Promptmenu ask ----------------------------- */
+/* ----------------------------- Promptmenu action yes ----------------------------- */
 
-void promptmenu_ask(const char *const restrict question, PromptMenuType type) {
+/* This will be called when prompting for a single `y/n` char and the user presses `y`. */
+void promptmenu_routine_yes(void) {
   ASSERT_PM;
-  ASSERT(question);
-  promptmenu_open();
-  prompt = free_and_assign(prompt, fmtstr("%s: ", question));
-  if (answer) {
-    *answer = NUL;
+  switch (pm->mode) {
+    case PROMPTMENU_TYPE_FILE_SAVE_MODIFIED: {
+      /* TODO: Fix this.  Extend/Modify do_savefile_for() to save any file in the given context. */
+      break;
+    }
+    default: {
+      break;
+    }
   }
-  else {
-    answer = COPY_OF("");
-  }
-  typing_x = 0;
-  pm->mode = type;
+  pm->xflags &= ~PROMPTMENU_YN_MODE;
+  promptmenu_close();
 }
 
-/* ----------------------------- Promptmenu open file ----------------------------- */
+/* ----------------------------- Promptmenu action no ----------------------------- */
 
-void promptmenu_open_file(void) {
+/* This will be called when prompting for a single `y/n` char and the user presses `n`. */
+void promptmenu_routine_no(void) {
   ASSERT_PM;
-  promptmenu_ask("File to open", PROMPTMENU_TYPE_FILE_OPEN);
-  answer   = free_and_assign(answer, getpwd());
-  typing_x = strlen(answer);
-  if (typing_x && answer[typing_x - 1] != '/') {
-    answer = xnstrncat(answer, typing_x++, S__LEN("/"));
+  switch (pm->mode) {
+    case PROMPTMENU_TYPE_FILE_SAVE_MODIFIED: {
+      ALWAYS_ASSERT(pm->data);
+      editor_close_a_open_buffer((openfilestruct *)pm->data);
+      break;
+    }
+    default: {
+      break;
+    }
   }
-  promptmenu_completions_search();
+  pm->xflags &= ~PROMPTMENU_YN_MODE;
+  promptmenu_close();
+}
+
+/* ----------------------------- Promptmenu ask ----------------------------- */
+
+void promptmenu_ask(PromptMenuType type) {
+  ASSERT_PM;
+  promptmenu_open();
+  pm->mode = type;
+  *answer = NUL;
+  typing_x = 0;
+  switch (type) {
+    case PROMPTMENU_TYPE_NONE: {
+      prompt = xstrncpy(prompt, S__LEN("> "));
+      break;
+    }
+    case PROMPTMENU_TYPE_FILE_SAVE: {
+      prompt = xstrncpy(prompt, S__LEN("Save file: "));
+      if (*GUI_OF->filename) {
+        answer   = xstrcpy(answer, GUI_OF->filename);
+        typing_x = STRLEN(answer);
+      }
+      break;
+    }
+    case PROMPTMENU_TYPE_FILE_OPEN: {
+      prompt = xstrncpy(prompt, S__LEN("File to open: "));
+      answer = free_and_assign(answer, getpwd());
+      typing_x = STRLEN(answer);
+      if (typing_x && answer[typing_x - 1] != '/') {
+        answer = xnstrncat(answer, typing_x++, S__LEN("/"));
+      }
+      promptmenu_completions_search();
+      break;
+    }
+    case PROMPTMENU_TYPE_FILE_SAVE_MODIFIED: {
+      prompt   = xstrncpy(prompt, S__LEN("Save modified buffer? "));
+      pm->data = GUI_OF;
+      pm->xflags |= PROMPTMENU_YN_MODE;
+      break;
+    }
+  }
 }

@@ -373,3 +373,10 @@ bool gl_window_quit(void) {
     }
   }
 }
+
+/* ----------------------------- Gl window should quit ----------------------------- */
+
+/* Inform the window we should no longer be running. */
+void gl_window_should_quit(void) {
+  gl_win_running = FALSE;
+}

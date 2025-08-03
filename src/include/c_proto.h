@@ -953,18 +953,22 @@ void promptmenu_open(void);
 void promptmenu_close(void);
 /* ----------------------------- Promptmenu active ----------------------------- */
 bool promptmenu_active(void);
+/* ----------------------------- Promptmenu yn mode ----------------------------- */
+bool promptmenu_yn_mode(void);
 /* ----------------------------- Promptmenu refresh text ----------------------------- */
 void promptmenu_refresh_text(void);
 /* ----------------------------- Promptmenu completions search ----------------------------- */
 void promptmenu_completions_search(void);
 /* ----------------------------- Promptmenu enter action ----------------------------- */
-void promptmenu_enter_action(void);
+void promptmenu_action_enter(void);
 /* ----------------------------- Promptmenu tab action ----------------------------- */
-void promptmenu_tab_action(void);
+void promptmenu_action_tab(void);
+/* ----------------------------- Promptmenu action yes ----------------------------- */
+void promptmenu_routine_yes(void);
+/* ----------------------------- Promptmenu action no ----------------------------- */
+void promptmenu_routine_no(void);
 /* ----------------------------- Promptmenu ask ----------------------------- */
-void promptmenu_ask(const char *const restrict question, PromptMenuType type);
-/* ----------------------------- Promptmenu open file ----------------------------- */
-void promptmenu_open_file(void);
+void promptmenu_ask(PromptMenuType type);
 
 
 /* ---------------------------------------------------------- files.c ---------------------------------------------------------- */
@@ -1783,6 +1787,8 @@ void gl_window_poll_events(void);
 void gl_window_swap(void);
 bool gl_window_running(void);
 bool gl_window_quit(void);
+/* ----------------------------- Gl window should quit ----------------------------- */
+void gl_window_should_quit(void);
 
 
 /* ---------------------------------------------------------- gui/keyboard.c ---------------------------------------------------------- */

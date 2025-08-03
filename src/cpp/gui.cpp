@@ -248,7 +248,7 @@ bool gui_quit(void) {
   else {
     /* If there is only one editor open.  We tell glfw we should quit, we also return `TRUE` so that the calling function can halt execution. */
     if (CLIST_SINGLE(openeditor)) {
-      glfwSetWindowShouldClose(gl_window(), TRUE);
+      // glfwSetWindowShouldClose(gl_window(), TRUE);
       return TRUE;
     }
     else {

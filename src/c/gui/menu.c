@@ -545,8 +545,10 @@ static void menu_exit_submenu_internal(Menu *const menu) {
 
 /* ----------------------------- Menu create ----------------------------- */
 
-/* Create a allocated `Menu`. */
-Menu *menu_create(Element *const parent, Font *const font, void *data, MenuPositionFunc position_routine, MenuAcceptFunc accept_routine) {
+/* Create a `root-menu`.  Note that all passed argument's must be valid. */
+Menu *menu_create(Element *const parent, Font *const font, void *data,
+  MenuPositionFunc position_routine, MenuAcceptFunc accept_routine)
+{
   ASSERT(parent);
   ASSERT(font);
   ASSERT(data);
@@ -626,7 +628,8 @@ Menu *menu_get_active(void) {
 
 /* ----------------------------- Menu draw ----------------------------- */
 
-/* Perform a draw call for a `Menu`.  Note that this should be called every frame for all root menu's and never for submenu's. */
+/* Perform a draw call for a `Menu`.  Note that this should be
+ * called every frame for all `root-menu's` and never for `sub-menu's`. */
 void menu_draw(Menu *const menu) {
   ASSERT_MENU;
   Menu *submenu;
@@ -641,7 +644,7 @@ void menu_draw(Menu *const menu) {
     scrollbar_draw(menu->sb);
     /* Draw the text of the suggestmenu entries. */
     menu_draw_text(menu);
-    /*  */
+    /* Recursivly draw all submenus of this menu, this way we can have any number of nested menus. */
     for (int i=0; i<cvec_len(menu->entries); ++i) {
       if ((submenu = menu_get_entry_menu(menu, i))) {
         menu_draw(submenu);
@@ -661,9 +664,11 @@ void menu_push_back(Menu *const menu, const char *const restrict string) {
 
 /* ----------------------------- Menu refresh pos ----------------------------- */
 
+/* When refreshing the postition, we also always refresh the text of the
+ * menu, as the text must always be refreshed when the position changes. */
 void menu_refresh_pos(Menu *const menu) {
   ASSERT_MENU;
-  menu->xflags |= MENU_REFRESH_POS;
+  menu->xflags |= (MENU_REFRESH_POS | MENU_REFRESH_TEXT);
 }
 
 /* ----------------------------- Menu refresh text ----------------------------- */

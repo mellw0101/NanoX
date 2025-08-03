@@ -300,7 +300,7 @@ void kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
           break;
         }
         case KC(P): {
-          promptmenu_ask(">", PROMPTMENU_TYPE_NONE);
+          promptmenu_ask(/* ">", */ PROMPTMENU_TYPE_NONE);
           break;
         }
         case KC(RIGHT): {
@@ -424,7 +424,7 @@ void kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
           break;
         }
         case KC(O): {
-          promptmenu_open_file();
+          promptmenu_ask(PROMPTMENU_TYPE_FILE_OPEN);
           break;
         }
         case KC(S): {
@@ -432,11 +432,7 @@ void kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
             func = do_savefile;
           }
           else {
-            promptmenu_ask("Save file", PROMPTMENU_TYPE_FILE_SAVE);
-            if (*GUI_OF->filename) {
-              answer   = xstrcpy(answer, GUI_OF->filename);
-              typing_x = STRLEN(answer);
-            }
+            promptmenu_ask(PROMPTMENU_TYPE_FILE_SAVE);
             return;
           }
           break;
@@ -446,6 +442,13 @@ void kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
             if (gl_window_quit()) {
               return;
             }
+          }
+          /* TODO: Fix this. */
+          else if (ISSET(SAVE_ON_EXIT) && *GUI_OF->filename) {
+            ;
+          }
+          else {
+            promptmenu_ask(PROMPTMENU_TYPE_FILE_SAVE_MODIFIED);
           }
           break;
         }
@@ -730,118 +733,156 @@ void kb_char_input(const char *const restrict data, Ushort mod) {
 /* ----------------------------- Kb prompt key pressed ----------------------------- */
 
 void kb_prompt_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED repeat) {
-  switch (kb_filter_mod(mod)) {
-    case KB_MOD_NOT_SUPPORTED: {
-      break;
-    }
-    case KB_MOD_NONE: {
-      switch (key) {
-        case KC(ESCAPE): {
-          promptmenu_close();
-          break;
-        }
-        case KC(ENTER): {
-          promptmenu_enter_action();
-          break;
-        }
-        case KC(HOME): {
-          do_statusbar_home();
-          break;
-        }
-        case KC(END): {
-          do_statusbar_end();
-          break;
-        }
-        case KC(RIGHT): {
-          do_statusbar_right();
-          break;
-        }
-        case KC(LEFT): {
-          do_statusbar_left();
-          break;
-        }
-        case KC(DOWN): {
-          if (menu_get_active()) {
-            menu_selected_down(menu_get_active());
+  if (promptmenu_yn_mode()) {
+    switch (kb_filter_mod(mod)) {
+      case KB_MOD_NONE:
+      case KB_MOD_SHIFT: {
+        switch (key) {
+          case KC(ESCAPE): {
+            promptmenu_close();
+            break;
           }
-          break;
-        }
-        case KC(UP): {
-          if (menu_get_active()) {
-            menu_selected_up(menu_get_active());
+          case KC(N): {
+            promptmenu_routine_no();
+            break;
           }
-          break;
+          case KC(Y): {
+            promptmenu_routine_yes();
+            break;
+          }
         }
-        case KC(BACKSPACE): {
-          do_statusbar_backspace(TRUE);
-          promptmenu_completions_search();
-          break;
-        }
-        case KC(DELETE): {
-          do_statusbar_delete();
-          promptmenu_completions_search();
-          break;
-        }
-        case KC(TAB): {
-          promptmenu_tab_action();
-          break;
-        }
+        break;
       }
-      break;
-    }
-    case KB_MOD_SHIFT_CTRL: {
-      break;
-    }
-    case KB_MOD_SHIFT_ALT: {
-      break;
-    }
-    case KB_MOD_SHIFT: {
-      break;
-    }
-    case KB_MOD_CTRL: {
-      switch (key) {
-        case KC(C):
-        case KC(Q):
-        case KC(ESCAPE): {
-          promptmenu_close();
-          break;
+      case KB_MOD_CTRL: {
+        switch (key) {
+          case KC(C):
+          case KC(Q):
+          case KC(ESCAPE): {
+            promptmenu_close();
+            break;
+          }
         }
-        case KC(Z): {
-          do_statusbar_undo();
-          promptmenu_completions_search();
-          break;
-        }
-        case KC(Y): {
-          do_statusbar_redo();
-          promptmenu_completions_search();
-          break;
-        }
-        case KC(RIGHT): {
-          do_statusbar_next_word();
-          break;
-        }
-        case KC(LEFT): {
-          do_statusbar_prev_word();
-          break;
-        }
-        case KC(BACKSPACE): {
-          do_statusbar_chop_prev_word();
-          promptmenu_completions_search();
-          break;
-        }
-        case KC(DELETE): {
-          do_statusbar_chop_next_word();
-          promptmenu_completions_search();
-          break;
-        }
+        break;
       }
-      break;
-    }
-    case KB_MOD_ALT: {
-      break;
-    }
+      default: {
+        break;
+      }
+    } 
   }
-  promptmenu_refresh_text();
+  else {
+    switch (kb_filter_mod(mod)) {
+      case KB_MOD_NOT_SUPPORTED: {
+        break;
+      }
+      case KB_MOD_NONE: {
+        switch (key) {
+          case KC(ESCAPE): {
+            promptmenu_close();
+            break;
+          }
+          case KC(ENTER): {
+            promptmenu_action_enter();
+            break;
+          }
+          case KC(HOME): {
+            do_statusbar_home();
+            break;
+          }
+          case KC(END): {
+            do_statusbar_end();
+            break;
+          }
+          case KC(RIGHT): {
+            do_statusbar_right();
+            break;
+          }
+          case KC(LEFT): {
+            do_statusbar_left();
+            break;
+          }
+          case KC(DOWN): {
+            if (menu_get_active()) {
+              menu_selected_down(menu_get_active());
+            }
+            break;
+          }
+          case KC(UP): {
+            if (menu_get_active()) {
+              menu_selected_up(menu_get_active());
+            }
+            break;
+          }
+          case KC(BACKSPACE): {
+            do_statusbar_backspace(TRUE);
+            promptmenu_completions_search();
+            break;
+          }
+          case KC(DELETE): {
+            do_statusbar_delete();
+            promptmenu_completions_search();
+            break;
+          }
+          case KC(TAB): {
+            promptmenu_action_tab();
+            break;
+          }
+        }
+        break;
+      }
+      case KB_MOD_SHIFT_CTRL: {
+        break;
+      }
+      case KB_MOD_SHIFT_ALT: {
+        break;
+      }
+      case KB_MOD_SHIFT: {
+        break;
+      }
+      case KB_MOD_CTRL: {
+        switch (key) {
+          case KC(C):
+          case KC(Q):
+          case KC(ESCAPE): {
+            promptmenu_close();
+            break;
+          }
+          case KC(Z): {
+            do_statusbar_undo();
+            promptmenu_completions_search();
+            break;
+          }
+          case KC(Y): {
+            do_statusbar_redo();
+            promptmenu_completions_search();
+            break;
+          }
+          case KC(RIGHT): {
+            do_statusbar_next_word();
+            break;
+          }
+          case KC(LEFT): {
+            do_statusbar_prev_word();
+            break;
+          }
+          case KC(BACKSPACE): {
+            do_statusbar_chop_prev_word();
+            promptmenu_completions_search();
+            break;
+          }
+          case KC(DELETE): {
+            do_statusbar_chop_next_word();
+            promptmenu_completions_search();
+            break;
+          }
+        }
+        break;
+      }
+      case KB_MOD_ALT: {
+        break;
+      }
+    }
+    promptmenu_refresh_text();
+  }
 }
 
 /* ----------------------------- Kb prompt char input ----------------------------- */
@@ -850,8 +891,8 @@ void kb_prompt_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED
 void kb_prompt_char_input(const char *const restrict data, Ushort mod) {
   Ulong len;
   char *burst;
-  /* Only ever perform any action when no modifiers (excluding CAPS, SCROLL and NUM). */
-  if (MOD_NONE_IG(mod, CAPS, NUM, SCROLL, SHIFT) && (len = STRLEN(data))) {
+  /* Only ever perform any action when no modifiers (excluding CAPS, SCROLL and NUM).  And when not in Y/N mode. */
+  if (!promptmenu_yn_mode() && MOD_NONE_IG(mod, CAPS, NUM, SCROLL, SHIFT) && (len = STRLEN(data))) {
     burst = measured_copy(data, len);
     inject_into_answer(burst, len);
     free(burst);

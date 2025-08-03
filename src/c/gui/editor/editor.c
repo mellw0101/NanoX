@@ -482,7 +482,7 @@ void editor_close_a_open_buffer(openfilestruct *const file) {
   }
   else {
     if (CLIST_SINGLE(editor)) {
-      glfwSetWindowShouldClose(gl_window(), TRUE);
+      gl_window_should_quit();
     }
     else {
       editor->should_close = TRUE;
