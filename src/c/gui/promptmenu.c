@@ -321,9 +321,9 @@ void promptmenu_refresh_text(void) {
   refresh_needed = TRUE;
 }
 
-/* ----------------------------- Promptmenu completions search ----------------------------- */
+/* ----------------------------- Promptmenu routine completions search ----------------------------- */
 
-void promptmenu_completions_search(void) {
+void promptmenu_routine_completions_search(void) {
   ASSERT_PM;
   switch (pm->mode) {
     case PROMPTMENU_TYPE_FILE_OPEN: {
@@ -337,10 +337,10 @@ void promptmenu_completions_search(void) {
   promptmenu_find_completions();
 }
 
-/* ----------------------------- Promptmenu action enter ----------------------------- */
+/* ----------------------------- Promptmenu routine enter ----------------------------- */
 
 /* The routine that is performed when `enter` is pressed. */
-void promptmenu_action_enter(void) {
+void promptmenu_routine_enter(void) {
   ASSERT_PM;
   char *pwd;
   char *full_path;
@@ -409,10 +409,10 @@ void promptmenu_action_enter(void) {
   }
 }
 
-/* ----------------------------- Promptmenu action tab ----------------------------- */
+/* ----------------------------- Promptmenu routine tab ----------------------------- */
 
 /* The routine that is performed when `tab` is pressed. */
-void promptmenu_action_tab(void) {
+void promptmenu_routine_tab(void) {
   ASSERT_PM;
   promptmenu_should_accept_completion();
   switch (pm->mode) {
@@ -428,10 +428,10 @@ void promptmenu_action_tab(void) {
       break;
     }
   }
-  promptmenu_completions_search();
+  promptmenu_routine_completions_search();
 }
 
-/* ----------------------------- Promptmenu action yes ----------------------------- */
+/* ----------------------------- Promptmenu routine yes ----------------------------- */
 
 /* This will be called when prompting for a single `y/n` char and the user presses `y`. */
 void promptmenu_routine_yes(void) {
@@ -439,6 +439,13 @@ void promptmenu_routine_yes(void) {
   switch (pm->mode) {
     case PROMPTMENU_TYPE_FILE_SAVE_MODIFIED: {
       /* TODO: Fix this.  Extend/Modify do_savefile_for() to save any file in the given context. */
+      ALWAYS_ASSERT(pm->data);
+      /* TODO: Here we need to prompt for a name.
+      if (!*((openfilestruct *)pm->data)->filename) {
+
+      } */
+      editor_buffer_save(pm->data);
+      editor_close_a_open_buffer(pm->data);
       break;
     }
     default: {
@@ -449,7 +456,7 @@ void promptmenu_routine_yes(void) {
   promptmenu_close();
 }
 
-/* ----------------------------- Promptmenu action no ----------------------------- */
+/* ----------------------------- Promptmenu routine no ----------------------------- */
 
 /* This will be called when prompting for a single `y/n` char and the user presses `n`. */
 void promptmenu_routine_no(void) {
@@ -457,7 +464,7 @@ void promptmenu_routine_no(void) {
   switch (pm->mode) {
     case PROMPTMENU_TYPE_FILE_SAVE_MODIFIED: {
       ALWAYS_ASSERT(pm->data);
-      editor_close_a_open_buffer((openfilestruct *)pm->data);
+      editor_close_a_open_buffer(pm->data);
       break;
     }
     default: {
@@ -482,7 +489,7 @@ void promptmenu_ask(PromptMenuType type) {
       break;
     }
     case PROMPTMENU_TYPE_FILE_SAVE: {
-      prompt = xstrncpy(prompt, S__LEN("Save file: "));
+      prompt = xstrncpy(prompt, S__LEN("Save buffer: "));
       if (*GUI_OF->filename) {
         answer   = xstrcpy(answer, GUI_OF->filename);
         typing_x = STRLEN(answer);
@@ -496,11 +503,11 @@ void promptmenu_ask(PromptMenuType type) {
       if (typing_x && answer[typing_x - 1] != '/') {
         answer = xnstrncat(answer, typing_x++, S__LEN("/"));
       }
-      promptmenu_completions_search();
+      promptmenu_routine_completions_search();
       break;
     }
     case PROMPTMENU_TYPE_FILE_SAVE_MODIFIED: {
-      prompt   = xstrncpy(prompt, S__LEN("Save modified buffer? "));
+      prompt   = free_and_assign(prompt, fmtstr("Save modified buffer [%s] before closing?: ", GUI_OF->filename));
       pm->data = GUI_OF;
       pm->xflags |= PROMPTMENU_YN_MODE;
       break;

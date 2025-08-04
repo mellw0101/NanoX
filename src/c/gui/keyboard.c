@@ -282,6 +282,12 @@ void kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
           func = do_end;
           break;
         }
+        case KC(F11): {
+          if (!repeat) {
+            gl_window_borderless_fullscreen();
+          }
+          break;
+        }
       }
       break;
     }
@@ -300,7 +306,7 @@ void kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
           break;
         }
         case KC(P): {
-          promptmenu_ask(/* ">", */ PROMPTMENU_TYPE_NONE);
+          promptmenu_ask(PROMPTMENU_TYPE_NONE);
           break;
         }
         case KC(RIGHT): {
@@ -781,7 +787,7 @@ void kb_prompt_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED
             break;
           }
           case KC(ENTER): {
-            promptmenu_action_enter();
+            promptmenu_routine_enter();
             break;
           }
           case KC(HOME): {
@@ -814,16 +820,16 @@ void kb_prompt_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED
           }
           case KC(BACKSPACE): {
             do_statusbar_backspace(TRUE);
-            promptmenu_completions_search();
+            promptmenu_routine_completions_search();
             break;
           }
           case KC(DELETE): {
             do_statusbar_delete();
-            promptmenu_completions_search();
+            promptmenu_routine_completions_search();
             break;
           }
           case KC(TAB): {
-            promptmenu_action_tab();
+            promptmenu_routine_tab();
             break;
           }
         }
@@ -848,12 +854,12 @@ void kb_prompt_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED
           }
           case KC(Z): {
             do_statusbar_undo();
-            promptmenu_completions_search();
+            promptmenu_routine_completions_search();
             break;
           }
           case KC(Y): {
             do_statusbar_redo();
-            promptmenu_completions_search();
+            promptmenu_routine_completions_search();
             break;
           }
           case KC(RIGHT): {
@@ -866,12 +872,12 @@ void kb_prompt_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED
           }
           case KC(BACKSPACE): {
             do_statusbar_chop_prev_word();
-            promptmenu_completions_search();
+            promptmenu_routine_completions_search();
             break;
           }
           case KC(DELETE): {
             do_statusbar_chop_next_word();
-            promptmenu_completions_search();
+            promptmenu_routine_completions_search();
             break;
           }
         }
@@ -897,6 +903,6 @@ void kb_prompt_char_input(const char *const restrict data, Ushort mod) {
     inject_into_answer(burst, len);
     free(burst);
     promptmenu_refresh_text();
-    promptmenu_completions_search();
+    promptmenu_routine_completions_search();
   }
 }

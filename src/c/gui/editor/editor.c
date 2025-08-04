@@ -489,3 +489,24 @@ void editor_close_a_open_buffer(openfilestruct *const file) {
     }
   }
 }
+
+/* ----------------------------- Editor buffer save ----------------------------- */
+
+/* Save any given buffer of any editor editor. */
+void editor_buffer_save(openfilestruct *const file) {
+  ASSERT(file);
+  Editor *editor;
+  openfilestruct *was_open;
+  ALWAYS_ASSERT(editor = editor_from_file(file));
+  /* If file is not the currently open buffer of the host editor.
+   * Then save the currently open buffer so we can restore it later. */
+  if (file != editor->openfile) {
+    was_open = editor->openfile;
+    editor->openfile = file;
+    do_savefile_for(&editor->startfile, &editor->openfile, editor->cols);
+    editor->openfile = was_open;
+  }
+  else {
+    do_savefile_for(&editor->startfile, &editor->openfile, editor->cols);
+  }
+}

@@ -957,15 +957,15 @@ bool promptmenu_active(void);
 bool promptmenu_yn_mode(void);
 /* ----------------------------- Promptmenu refresh text ----------------------------- */
 void promptmenu_refresh_text(void);
-/* ----------------------------- Promptmenu completions search ----------------------------- */
-void promptmenu_completions_search(void);
-/* ----------------------------- Promptmenu enter action ----------------------------- */
-void promptmenu_action_enter(void);
-/* ----------------------------- Promptmenu tab action ----------------------------- */
-void promptmenu_action_tab(void);
-/* ----------------------------- Promptmenu action yes ----------------------------- */
+/* ----------------------------- Promptmenu routine completions search ----------------------------- */
+void promptmenu_routine_completions_search(void);
+/* ----------------------------- Promptmenu routine enter ----------------------------- */
+void promptmenu_routine_enter(void);
+/* ----------------------------- Promptmenu routine tab ----------------------------- */
+void promptmenu_routine_tab(void);
+/* ----------------------------- Promptmenu routine yes ----------------------------- */
 void promptmenu_routine_yes(void);
-/* ----------------------------- Promptmenu action no ----------------------------- */
+/* ----------------------------- Promptmenu routine no ----------------------------- */
 void promptmenu_routine_no(void);
 /* ----------------------------- Promptmenu ask ----------------------------- */
 void promptmenu_ask(PromptMenuType type);
@@ -1691,6 +1691,7 @@ Ulong editor_get_text_index(Editor *const editor, linestruct *const line, float 
 void editor_get_text_line_index(Editor *const editor, float x_pos, float y_pos, linestruct **const outline, Ulong *const outindex);
 void editor_open_buffer(const char *const restrict path);
 void editor_close_a_open_buffer(openfilestruct *const file);
+void editor_buffer_save(openfilestruct *const file);
 
 
 /* ---------------------------------------------------------- gui/statusbar.c ---------------------------------------------------------- */

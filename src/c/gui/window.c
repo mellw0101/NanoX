@@ -13,14 +13,15 @@
 /* To inforce the glfw rules about only performing some things in the main thread,
  * we will store these things and only update them when a rezing chech happens. */
 static bool gl_window_maximized = FALSE;
-// static bool gl_window_decorated = TRUE;
+
+static bool gl_win_borderless_fullscreen = FALSE;
 
 static bool gl_window_flip_maximized = FALSE;
 
 static bool resize_needed = TRUE;
 static bool fetch_needed = FALSE;
 /* Start with this at the highest possible positive
- * value so that we ensure that we will resize at startup. */
+value so that we ensure that we will resize at startup. */
 static Ulong last_resize = HIGHEST_POSITIVE;
 
 static int width  = 1100;
@@ -50,55 +51,84 @@ static bool gl_win_running = TRUE;
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
-/* ----------------------------- Gl window init SDL ----------------------------- */
+/* ----------------------------- Gl window SDL init ----------------------------- */
 
-_UNUSED
-static void gl_window_init_SDL(void) {
+/* Init all openGL related window variables. */
+static void gl_window_SDL_init(void) {
   /* Init SDL3. */
   if (!SDL_Init(SDL_INIT_VIDEO)) {
     log_ERR_FA("Failed to init SDL3: %s", SDL_GetError());
   }
   /* Create a openGL SDL3 window. */
-  if (!(gl_win = SDL_CreateWindow(PROJECT_NAME, width, height, (SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE)))) {
+  gl_win = SDL_CreateWindow(PROJECT_NAME, width, height, (SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE));
+  if (!gl_win) {
     SDL_Quit();
     log_ERR_FA("Failed to create an openGL SDL3 window: %s", SDL_GetError());
   }
+  /* Get the windowID of the main window. */
   gl_win_id = SDL_GetWindowID(gl_win);
+  if (!gl_win_id) {
+    SDL_DestroyWindow(gl_win);
+    SDL_Quit();
+    log_ERR_FA("Failed to get the windowID of our main window: %s", SDL_GetError());
+  }
+  /* Enable text input for our main window. */
+  if (!SDL_StartTextInput(gl_win)) {
+    SDL_DestroyWindow(gl_win);
+    SDL_Quit();
+    log_ERR_FA("Could not start text input for the main window: %s", SDL_GetError());
+  }
   /* Create the context for the SDL3 window. */
-  if (!(gl_context = SDL_GL_CreateContext(gl_win))) {
+  gl_context = SDL_GL_CreateContext(gl_win);
+  if (!gl_context) {
     SDL_DestroyWindow(gl_win);
     SDL_Quit();
     log_ERR_FA("Failed to create SDL3 openGL context: %s", SDL_GetError());
   }
-  if (!SDL_StartTextInput(gl_win)) {
-    log_ERR_FA("Could not start text input for the main window: %s", SDL_GetError());
-  }
 }
 
-/* ----------------------------- Gl window callback resize ----------------------------- */
+/* ----------------------------- Gl window SDL free ----------------------------- */
 
-_UNUSED
-static void gl_window_callback_resize(GLFWwindow *_UNUSED win, int w, int h) {
-  if (!(w == ATOMIC_FETCH(width) && h == ATOMIC_FETCH(height))) {
-    ATOMIC_STORE(width, w);
-    ATOMIC_STORE(height, h);
-    ATOMIC_STORE(resize_needed, TRUE);
+/* Free all openGL related window variables. */
+static void gl_window_SDL_free(void) {
+  SDL_GL_DestroyContext(gl_context);
+  SDL_StopTextInput(gl_win);
+  SDL_DestroyWindow(gl_win);
+  SDL_Quit();
+}
+
+/* ----------------------------- Gl window resize ----------------------------- */
+
+/* `Private:` Routine to resize the window.  Note that this should be the only way we resize the window. */
+static void gl_window_resize(int w, int h) {
+  if (w != width || h != height) {
+    width  = w;
+    height = h;
+    glViewport(0, 0, w, h);
+    shader_set_projection(0, w, 0, h, -1.F, 1.F);
+    shader_upload_projection();
+    /* Resize the root element first, then editors. */
+    element_resize(root, w, h);
+    CLIST_ITER(starteditor, editor,
+      editor_resize(editor);
+    );
+    refresh_needed = TRUE;
   }
 }
 
 /* ----------------------------- Gl window callback maximize ----------------------------- */
 
 _UNUSED
-static void gl_window_callback_maximize(GLFWwindow *_UNUSED win, int _UNUSED maximized) {
+static void gl_win_cb_maximize(GLFWwindow *_UNUSED win, int _UNUSED maximized) {
   ATOMIC_STORE(fetch_needed, TRUE);
 }
 
 /* ----------------------------- Gl window callback framebuffer ----------------------------- */
 
 _UNUSED
-static void gl_window_callback_framebuffer(GLFWwindow *_UNUSED win, int w, int h) {
+static void gl_win_cb_framebuffer(GLFWwindow *_UNUSED win, int w, int h) {
   if (!(w == ATOMIC_FETCH(width) && h == ATOMIC_FETCH(height))) {
-    ATOMIC_STORE(width, w);
+    ATOMIC_STORE(width,  w);
     ATOMIC_STORE(height, h);
     ATOMIC_STORE(resize_needed, TRUE);
   }
@@ -181,7 +211,7 @@ bool gl_window_resize_needed(void) {
 /* ----------------------------- Gl window init ----------------------------- */
 
 void gl_window_init(void) {
-  gl_window_init_SDL();
+  gl_window_SDL_init();
   // window = glfwCreateWindow(width, height, PROJECT_NAME, NULL, NULL);
   // if (!window) {
   //   glfwTerminate();
@@ -197,9 +227,7 @@ void gl_window_init(void) {
 /* ----------------------------- Gl window free ----------------------------- */
 
 void gl_window_free(void) {
-  SDL_GL_DestroyContext(gl_context);
-  SDL_DestroyWindow(gl_win);
-  SDL_Quit();
+  gl_window_SDL_free();
   element_free(root);
 }
 
@@ -233,10 +261,14 @@ void gl_window_add_root_child(Element *const child) {
   element_set_parent(child, root);
 }
 
+/* ----------------------------- Gl window borderless fullscreen ----------------------------- */
+
+/* Request the window manager to become borderless fullscreen. */
 void gl_window_borderless_fullscreen(void) {
-  ATOMIC_STORE(resize_needed, TRUE);
-  ATOMIC_STORE(gl_window_flip_maximized, TRUE);
+  SDL_SetWindowFullscreen(gl_win, !gl_win_borderless_fullscreen);
 }
+
+/* ----------------------------- Gl window poll events ----------------------------- */
 
 void gl_window_poll_events(void) {
   while (SDL_PollEvent(&ev)) {
@@ -279,14 +311,15 @@ void gl_window_poll_events(void) {
         break;
       }
       case SDL_EVENT_WINDOW_RESIZED: {
-        if (!(ev.window.data1 == ATOMIC_FETCH(width) && ev.window.data2 == ATOMIC_FETCH(height))) {
-          ATOMIC_STORE(width,  ev.window.data1);
-          ATOMIC_STORE(height, ev.window.data2);
-          ATOMIC_STORE(resize_needed, TRUE);
+        /* Despite the fact that we currently only have one window,
+         * we should ensure the event window is our main window. */
+        if (gl_win_id == ev.window.windowID) {
+          gl_window_resize(ev.window.data1, ev.window.data2);
         }
         break;
       }
       case SDL_EVENT_WINDOW_MAXIMIZED: {
+        gl_window_maximized = TRUE;
         log_INFO_1("Window maximized");
         break;
       }
@@ -295,7 +328,18 @@ void gl_window_poll_events(void) {
         break;
       }
       case SDL_EVENT_WINDOW_RESTORED: {
+        gl_window_maximized = FALSE;
         log_INFO_1("window restored");
+        break;
+      }
+      case SDL_EVENT_WINDOW_ENTER_FULLSCREEN: {
+        gl_win_borderless_fullscreen = TRUE;
+        log_INFO_1("Window entered fullscreen");
+        break;
+      }
+      case SDL_EVENT_WINDOW_LEAVE_FULLSCREEN: {
+        gl_win_borderless_fullscreen = FALSE;
+        log_INFO_1("Window left fullscreen");
         break;
       }
       case SDL_EVENT_WINDOW_DISPLAY_CHANGED: {
@@ -337,13 +381,19 @@ void gl_window_poll_events(void) {
   }
 }
 
+/* ----------------------------- Gl window swap ----------------------------- */
+
 void gl_window_swap(void) {
   SDL_GL_SwapWindow(gl_win);
 }
 
+/* ----------------------------- Gl window running ----------------------------- */
+
 bool gl_window_running(void) {
   return gl_win_running;
 }
+
+/* ----------------------------- Gl window quit ----------------------------- */
 
 bool gl_window_quit(void) {
   ASSERT_EDITOR(openeditor);
