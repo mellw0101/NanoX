@@ -2155,8 +2155,11 @@ int main(int argc, char **argv) {
   if (ISSET(USING_GUI)) {
     prosses_callback_queue();
     restore_terminal();
-    init_gui();
-    glfw_loop();
+    gl_loop();
+    /* Should never be reached. */
+    exit(0);
+    // init_gui();
+    // glfw_loop();
   }
   else if (ISSET(NO_NCURSES)) {
     tui_main_loop(NULL);

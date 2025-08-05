@@ -898,7 +898,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void show_statusmsg(message_type type, float seconds, const char *format, ...);
   void show_toggle_statusmsg(int flag);
   // void draw_editor(guieditor *editor);
-  void draw_editor(Editor *editor);
+  // void draw_editor(Editor *editor);
   // void draw_topbar(void);
   // void draw_suggestmenu(void);
   // void draw_botbar(void);

@@ -1767,6 +1767,8 @@ int shader_get_location_rect_projection(void);
 /* ----------------------------------------------------------  ---------------------------------------------------------- */
 
 
+/* ----------------------------- Gl window resize ----------------------------- */
+void gl_window_resize(int w, int h);
 /* ----------------------------- Gl window resize needed ----------------------------- */
 bool gl_window_resize_needed(void);
 /* ----------------------------- Gl window init ----------------------------- */
@@ -1803,6 +1805,13 @@ void kb_char_input(const char *const restrict data, Ushort mod);
 void kb_key_pressed_prompt(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED repeat);
 /* ----------------------------- Kb prompt char input ----------------------------- */
 void kb_char_input_prompt(const char *const restrict data, Ushort mod);
+
+
+/* ---------------------------------------------------------- gui/loop.c ---------------------------------------------------------- */
+
+
+/* ----------------------------- Gl loop ----------------------------- */
+void gl_loop(void);
 
 
 /* ---------------------------------------------------------- nanox.c ---------------------------------------------------------- */
@@ -1918,6 +1927,8 @@ void syntax_check_file(openfilestruct *file);
 bool wanted_to_move(functionptrtype f);
 bool changes_something(functionptrtype f);
 void do_exit(void);
+
+void draw_editor(Editor *editor);
 
 
 _END_C_LINKAGE

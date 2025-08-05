@@ -97,25 +97,6 @@ static void gl_window_SDL_free(void) {
   SDL_Quit();
 }
 
-/* ----------------------------- Gl window resize ----------------------------- */
-
-/* `Private:` Routine to resize the window.  Note that this should be the only way we resize the window. */
-static void gl_window_resize(int w, int h) {
-  if (w != width || h != height) {
-    width  = w;
-    height = h;
-    glViewport(0, 0, w, h);
-    shader_set_projection(0, w, 0, h, -1.F, 1.F);
-    shader_upload_projection();
-    /* Resize the root element first, then editors. */
-    element_resize(root, w, h);
-    CLIST_ITER(starteditor, editor,
-      editor_resize(editor);
-    );
-    refresh_needed = TRUE;
-  }
-}
-
 /* ----------------------------- Gl window callback maximize ----------------------------- */
 
 _UNUSED
@@ -136,6 +117,25 @@ static void gl_win_cb_framebuffer(GLFWwindow *_UNUSED win, int w, int h) {
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
+
+/* ----------------------------- Gl window resize ----------------------------- */
+
+/* `Private:` Routine to resize the window.  Note that this should be the only way we resize the window. */
+void gl_window_resize(int w, int h) {
+  if (w != width || h != height) {
+    width  = w;
+    height = h;
+    glViewport(0, 0, w, h);
+    shader_set_projection(0, w, 0, h, -1.F, 1.F);
+    shader_upload_projection();
+    /* Resize the root element first, then editors. */
+    element_resize(root, w, h);
+    CLIST_ITER(starteditor, editor,
+      editor_resize(editor);
+    );
+    refresh_needed = TRUE;
+  }
+}
 
 /* ----------------------------- Gl window resize needed ----------------------------- */
 

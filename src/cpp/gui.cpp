@@ -116,9 +116,9 @@ static void init_glew(void) {
   if ((err = glewInit()) != 0) {
     gl_window_free();
     glfwTerminate();
-    log_ERR_FA("GLEW: ERROR: %s\n", glewGetErrorString(err));
+    log_ERR_FA("GLEW: ERROR: %s", glewGetErrorString(err));
   }
-  log_INFO_1("Using GLEW %s\n", glewGetString(GLEW_VERSION));
+  log_INFO_1("Using GLEW %s", glewGetString(GLEW_VERSION));
 }
 
 static inline bool should_swap_buffer(void) {
