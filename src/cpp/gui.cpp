@@ -7,30 +7,30 @@
 
 
 /* The main structure that holds all the data the gui needs. */
-guistruct *gui = NULL;
+// guistruct *gui = NULL;
 
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
 /* Setup the bottom bar for the gui. */
-static void setup_botbar(void) {
-  gui->botbuf = make_new_font_buffer();
-  gui->botbar = element_create(0, (gl_window_height() - font_height(uifont)), gl_window_width(), font_height(uifont), TRUE);
-  gl_window_add_root_child(gui->botbar);
-  gui->botbar->color = PACKED_UINT(0, 0, 0, 255);
-  gui->botbar->xflags |= (ELEMENT_REVREL_Y | ELEMENT_REL_WIDTH);
-  gui->botbar->rel_y = gui->botbar->height;
-}
+// static void setup_botbar(void) {
+//   gui->botbuf = make_new_font_buffer();
+//   gui->botbar = element_create(0, (gl_window_height() - font_height(uifont)), gl_window_width(), font_height(uifont), TRUE);
+//   gl_window_add_root_child(gui->botbar);
+//   gui->botbar->color = PACKED_UINT(0, 0, 0, 255);
+//   gui->botbar->xflags |= (ELEMENT_REVREL_Y | ELEMENT_REL_WIDTH);
+//   gui->botbar->rel_y = gui->botbar->height;
+// }
 
 /* Set up the bottom bar. */
-static void setup_statusbar(void) {
-  gui->statusbuf = make_new_font_buffer();
-  gui->statusbar = element_create(0, gl_window_height(), gl_window_width(), font_height(uifont), FALSE);
-  gui->statusbar->color = PACKED_UINT_VS_CODE_RED;
-  gl_window_add_root_child(gui->statusbar);
-  gui->statusbar->xflags |= ELEMENT_HIDDEN;
-}
+// static void setup_statusbar(void) {
+//   gui->statusbuf = make_new_font_buffer();
+//   gui->statusbar = element_create(0, gl_window_height(), gl_window_width(), font_height(uifont), FALSE);
+//   gui->statusbar->color = PACKED_UINT_VS_CODE_RED;
+//   gl_window_add_root_child(gui->statusbar);
+//   gui->statusbar->xflags |= ELEMENT_HIDDEN;
+// }
 
 /* Allocate and init the edit element. */
 static void setup_edit_element(void) {
@@ -38,33 +38,33 @@ static void setup_edit_element(void) {
 }
 
 /* Create the main guistruct, completely blank. */
-static void make_guistruct(void) {
+// static void make_guistruct(void) {
   /* Allocate the gui object. */
-  MALLOC_STRUCT(gui);
-  gui->flag                 = bit_flag_t<8>();
-  gui->handler              = NULL;
-  gui->botbar               = NULL;
-  gui->statusbar            = NULL;
-  gui->entered              = NULL;
-  gui->clicked              = NULL;
-  gui->botbuf               = NULL;
-  gui->statusbuf            = NULL;
-  gui->promptmenu           = NULL;
-  gui->current_cursor_type  = GLFW_ARROW_CURSOR;
-  gui->suggestmenu          = NULL;
-  gui->context_menu         = NULL;
-}
+  // MALLOC_STRUCT(gui);
+  // gui->flag                 = bit_flag_t<8>();
+  // gui->handler              = NULL;
+  // gui->botbar               = NULL;
+  // gui->statusbar            = NULL;
+  // gui->entered              = NULL;
+  // gui->clicked              = NULL;
+  // gui->botbuf               = NULL;
+  // gui->statusbuf            = NULL;
+  // gui->promptmenu           = NULL;
+  // gui->current_cursor_type  = GLFW_ARROW_CURSOR;
+  // gui->suggestmenu          = NULL;
+  // gui->context_menu         = NULL;
+// }
 
 /* Init the gui struct, it reprecents everything that the gui needs. */
 static void init_guistruct(void) {
   /* Create the fully blank guistruct. */
-  make_guistruct();
+  // make_guistruct();
   /* Then create the glfw window. */
   gl_window_init();
   mouse_gui_init();
   /* Create and start the event handler. */
-  gui->handler = nevhandler_create();
-  nevhandler_start(gui->handler, TRUE);
+  // gui->handler = nevhandler_create();
+  // nevhandler_start(gui->handler, TRUE);
 }
 
 /* Delete the gui struct. */
@@ -75,24 +75,24 @@ static void delete_guistruct(void) {
   /* Destroy the shaders, and the allocated text and ui font. */
   shader_free();
   /* Delete all the vertex buffers. */
-  if (gui->botbuf) {
-    vertex_buffer_delete(gui->botbuf);
-  }
-  if (gui->statusbuf) {
-    vertex_buffer_delete(gui->statusbuf);
-  }
+  // if (gui->botbuf) {
+  //   vertex_buffer_delete(gui->botbuf);
+  // }
+  // if (gui->statusbuf) {
+  //   vertex_buffer_delete(gui->statusbuf);
+  // }
   /* Stop and free the event handler. */
-  nevhandler_stop(gui->handler, 0);
-  nevhandler_free(gui->handler);
+  // nevhandler_stop(gui->handler, 0);
+  // nevhandler_free(gui->handler);
   /* Delete the prompt-menu struct. */
   // gui_promptmenu_free();
   promptmenu_free();
   /* Free the gui suggestmenu substructure. */
-  gui_suggestmenu_free();
+  // gui_suggestmenu_free();
   suggestmenu_free();
-  context_menu_free(gui->context_menu);
-  free(gui);
-  gui = NULL;
+  // context_menu_free(gui->context_menu);
+  // free(gui);
+  // gui = NULL;
 }
 
 /* Cleanup before exit. */
@@ -149,17 +149,17 @@ void init_gui(void) {
   init_glew();
   /* Compile the shaders. */
   shader_compile();
-  gui->context_menu = context_menu_create();
+  // gui->context_menu = context_menu_create();
   /* Init the gui suggestmenu substructure. */
-  gui_suggestmenu_create();
+  // gui_suggestmenu_create();
   suggestmenu_create();
   /* Init the top bar. */
   // gui_promptmenu_create();
   promptmenu_create();
   /* Init the bottom bar. */
-  setup_botbar();
+  // setup_botbar();
   /* Init the bottom bar, that will be used for status updates, among other thing. */
-  setup_statusbar();
+  // setup_statusbar();
   // statusbar_init(gui->root);
   statusbar_init();
   /* Init the edit element. */
@@ -207,12 +207,12 @@ void glfw_loop(void) {
       // draw_topbar();
       promptmenu_draw();
       /* Draw the bottom bar. */
-      draw_botbar();
+      // draw_botbar();
       /* Draw the status bar, if there is any status messages. */
       statusbar_draw();
-      context_menu_draw(gui->context_menu);
+      // context_menu_draw(gui->context_menu);
       /* Draw the suggestmenu. */
-      draw_suggestmenu();
+      // draw_suggestmenu();
       suggestmenu_draw();
       /* If refresh was needed it has been done so set it to FALSE. */
       // glfwSwapBuffers(gl_window());

@@ -246,165 +246,165 @@
 /* ----------------------------- Static helper function's. ----------------------------- */
 
 /* Copy the word that begins at `*text`. */
-static char *gui_suggestmenu_copy_completion(char *const restrict text) {
-  Ulong len = 0;
-  /* Find the end of the word to get the length. */
-  while (is_word_char(&text[len], FALSE) || text[len] == '_') {
-    len = step_right(text, len);
-  }
-  /* Return a copy of the word. */
-  return measured_copy(text, len);
-}
+// static char *gui_suggestmenu_copy_completion(char *const restrict text) {
+//   Ulong len = 0;
+//   /* Find the end of the word to get the length. */
+//   while (is_word_char(&text[len], FALSE) || text[len] == '_') {
+//     len = step_right(text, len);
+//   }
+//   /* Return a copy of the word. */
+//   return measured_copy(text, len);
+// }
 
-static void gui_suggestmenu_pos_routine(void *arg, float width, float height, float *const x, float *const y) {
-  ASSERT(arg);
-  ASSERT(x);
-  ASSERT(y);
-  SuggestMenu *sm = (__TYPE(sm))arg;
-  /* Calculate the correct position for the suggestmenu window. */
-  (*x) = (openeditor->text->x + font_wideness(menu_get_font(sm->menu), GUI_OF->current->data, GUI_OF->current_x));
-  (*y) = (openeditor->text->y + font_row_bottom_pix(menu_get_font(sm->menu), (GUI_OF->current->lineno - GUI_OF->edittop->lineno)));
-}
+// static void gui_suggestmenu_pos_routine(void *arg, float width, float height, float *const x, float *const y) {
+//   ASSERT(arg);
+//   ASSERT(x);
+//   ASSERT(y);
+//   SuggestMenu *sm = (__TYPE(sm))arg;
+//   /* Calculate the correct position for the suggestmenu window. */
+//   (*x) = (openeditor->text->x + font_wideness(menu_get_font(sm->menu), GUI_OF->current->data, GUI_OF->current_x));
+//   (*y) = (openeditor->text->y + font_row_bottom_pix(menu_get_font(sm->menu), (GUI_OF->current->lineno - GUI_OF->edittop->lineno)));
+// }
 
-static void gui_suggestmenu_accept_routine(void *arg, const char *const restrict lable, int index) {
-  ASSERT(arg);
-  ASSERT(lable);
-  SuggestMenu *sm = (__TYPE(sm))arg;
-  char *str = copy_of(lable);
-  GUI_OF->last_action = OTHER;
-  inject((str + sm->len), (strlen(str) - sm->len));
-  free(str);
-  gui_suggestmenu_clear();
-  refresh_needed = TRUE;
-}
+// static void gui_suggestmenu_accept_routine(void *arg, const char *const restrict lable, int index) {
+//   ASSERT(arg);
+//   ASSERT(lable);
+//   SuggestMenu *sm = (__TYPE(sm))arg;
+//   char *str = copy_of(lable);
+//   GUI_OF->last_action = OTHER;
+//   inject((str + sm->len), (strlen(str) - sm->len));
+//   free(str);
+//   gui_suggestmenu_clear();
+//   refresh_needed = TRUE;
+// }
 
 /* ----------------------------- Global function's ----------------------------- */
 
 /* Init the gui suggestmenu substructure. */
-void gui_suggestmenu_create(void) {
-  ASSERT(gui);
-  MALLOC_STRUCT(gui->suggestmenu);
-  gui->suggestmenu->menu = menu_create(gl_window_root(), textfont, gui->suggestmenu, gui_suggestmenu_pos_routine, gui_suggestmenu_accept_routine);
-  menu_behavior_tab_accept(gui->suggestmenu->menu, TRUE);
-  menu_behavior_arrow_depth_navigation(gui->suggestmenu->menu, FALSE);
-  gui->suggestmenu->buf[0] = '\0';
-  gui->suggestmenu->len    = 0;
-}
+// void gui_suggestmenu_create(void) {
+//   ASSERT(gui);
+//   MALLOC_STRUCT(gui->suggestmenu);
+//   gui->suggestmenu->menu = menu_create(gl_window_root(), textfont, gui->suggestmenu, gui_suggestmenu_pos_routine, gui_suggestmenu_accept_routine);
+//   menu_behavior_tab_accept(gui->suggestmenu->menu, TRUE);
+//   menu_behavior_arrow_depth_navigation(gui->suggestmenu->menu, FALSE);
+//   gui->suggestmenu->buf[0] = '\0';
+//   gui->suggestmenu->len    = 0;
+// }
 
 /* Free the suggestmenu substructure. */
-void gui_suggestmenu_free(void) {
-  ASSERT_SUGGEST_MENU;
-  menu_free(gui->suggestmenu->menu);
-  free(gui->suggestmenu);
-}
+// void gui_suggestmenu_free(void) {
+//   ASSERT_SUGGEST_MENU;
+//   menu_free(gui->suggestmenu->menu);
+//   free(gui->suggestmenu);
+// }
 
 /* Fully clear the suggestions and reset the suggestmenu buffer. */
-void gui_suggestmenu_clear(void) {
-  ASSERT_SUGGEST_MENU;
-  gui->suggestmenu->buf[0] = '\0';
-  gui->suggestmenu->len = 0;
-  menu_clear_entries(gui->suggestmenu->menu);
-  menu_show(gui->suggestmenu->menu, FALSE);
-}
+// void gui_suggestmenu_clear(void) {
+//   ASSERT_SUGGEST_MENU;
+//   gui->suggestmenu->buf[0] = '\0';
+//   gui->suggestmenu->len = 0;
+//   menu_clear_entries(gui->suggestmenu->menu);
+//   menu_show(gui->suggestmenu->menu, FALSE);
+// }
 
 /* Load the word cursor is currently on into the suggestmenu buffer, from the cursor to the beginning of the word, if any. */
-void gui_suggestmenu_load_str(void) {
-  ASSERT_SUGGEST_MENU;
-  Ulong pos;
-  /* Ensure we clear the buffer every time. */
-  gui->suggestmenu->buf[0] = '\0';
-  if (openeditor->openfile->current_x > 0 && openeditor->openfile->current_x < 128) {
-    gui->suggestmenu->len = 0;
-    pos = get_prev_cursor_word_start_index(TRUE);
-    while (pos < openeditor->openfile->current_x) {
-      gui->suggestmenu->buf[gui->suggestmenu->len++] = openeditor->openfile->current->data[pos++];
-    }
-    gui->suggestmenu->buf[gui->suggestmenu->len] = '\0';
-  }
-}
+// void gui_suggestmenu_load_str(void) {
+//   ASSERT_SUGGEST_MENU;
+//   Ulong pos;
+//   /* Ensure we clear the buffer every time. */
+//   gui->suggestmenu->buf[0] = '\0';
+//   if (openeditor->openfile->current_x > 0 && openeditor->openfile->current_x < 128) {
+//     gui->suggestmenu->len = 0;
+//     pos = get_prev_cursor_word_start_index(TRUE);
+//     while (pos < openeditor->openfile->current_x) {
+//       gui->suggestmenu->buf[gui->suggestmenu->len++] = openeditor->openfile->current->data[pos++];
+//     }
+//     gui->suggestmenu->buf[gui->suggestmenu->len] = '\0';
+//   }
+// }
 
 /* Perform the searching throue all openfiles and all lines. */
-void gui_suggestmenu_find(void) {
-  ASSERT_SUGGEST_MENU;
-  TIMER_START(timer);
-  /* We use our hash map for fast lookup. */
-  HashMap *hash_map;
-  openfilestruct *current_file;
-  linestruct *search_line;
-  int search_x;
-  long threshhold;
-  char *completion;
-  Ulong i, j;
-  menu_clear_entries(gui->suggestmenu->menu);
-  if (!gui->suggestmenu->len) {
-    return;
-  }
-  hash_map = hashmap_create_wfreefunc(free);
-  current_file = openfile;
-  search_line  = current_file->filetop;
-  search_x     = 0;
-  while (search_line) {
-    threshhold = (strlen(search_line->data) - gui->suggestmenu->len - 1);
-    /* Go thrue whole line. */
-    for (i=search_x; (long)i<threshhold; ++i) {
-      /* If the first byte does not match, move on. */
-      if (search_line->data[i] != gui->suggestmenu->buf[0]) {
-        continue;
-      }
-      /* When it does match, check the rest of the bytes. */
-      for (j=1; (int)j<gui->suggestmenu->len; ++j) {
-        if (search_line->data[i + j] != gui->suggestmenu->buf[j]) {
-          break;
-        }
-      }
-      /* Continue if all bytes did not match. */
-      if ((int)j < gui->suggestmenu->len) {
-        continue;
-      }
-      /* Or the match is an exact copy of `gui->suggestmenu->buf`. */
-      if (!iswordc(&search_line->data[i + j], FALSE, "_")) {
-        continue;
-      }
-      /* Or the match is not a seperate word. */
-      if (i > 0 && is_word_char(&search_line->data[step_left(search_line->data, i)], FALSE)) {
-        continue;
-      }
-      /* Or the match is the `gui->suggestmenu->buf` itself. */
-      if (search_line == openfile->current && i == (openfile->current_x - gui->suggestmenu->len)) {
-        continue;
-      }
-      completion = gui_suggestmenu_copy_completion(search_line->data + i);
-      /* Look for duplicates in the already found completions. */
-      if (hashmap_get(hash_map, completion)) {
-        free(completion);
-        continue;
-      }
-      /* Add to the hashmap, using the ptr to the word as it will live longer then this hashmap. */
-      hashmap_insert(hash_map, completion, (void *)completion);
-      menu_push_back(gui->suggestmenu->menu, completion);
-      search_x = ++i;
-    }
-    search_line = search_line->next;
-    search_x = 0;
-    if (!search_line && current_file->next != openfile) {
-      current_file = current_file->next;
-      search_line = current_file->filetop;
-    }
-  }
-  hashmap_free(hash_map);
-  menu_qsort(gui->suggestmenu->menu, menu_qsort_cb_strlen);
-  TIMER_END(timer, ms);
-  TIMER_PRINT(ms);
-}
+// void gui_suggestmenu_find(void) {
+//   ASSERT_SUGGEST_MENU;
+//   TIMER_START(timer);
+//   /* We use our hash map for fast lookup. */
+//   HashMap *hash_map;
+//   openfilestruct *current_file;
+//   linestruct *search_line;
+//   int search_x;
+//   long threshhold;
+//   char *completion;
+//   Ulong i, j;
+//   menu_clear_entries(gui->suggestmenu->menu);
+//   if (!gui->suggestmenu->len) {
+//     return;
+//   }
+//   hash_map = hashmap_create_wfreefunc(free);
+//   current_file = openfile;
+//   search_line  = current_file->filetop;
+//   search_x     = 0;
+//   while (search_line) {
+//     threshhold = (strlen(search_line->data) - gui->suggestmenu->len - 1);
+//     /* Go thrue whole line. */
+//     for (i=search_x; (long)i<threshhold; ++i) {
+//       /* If the first byte does not match, move on. */
+//       if (search_line->data[i] != gui->suggestmenu->buf[0]) {
+//         continue;
+//       }
+//       /* When it does match, check the rest of the bytes. */
+//       for (j=1; (int)j<gui->suggestmenu->len; ++j) {
+//         if (search_line->data[i + j] != gui->suggestmenu->buf[j]) {
+//           break;
+//         }
+//       }
+//       /* Continue if all bytes did not match. */
+//       if ((int)j < gui->suggestmenu->len) {
+//         continue;
+//       }
+//       /* Or the match is an exact copy of `gui->suggestmenu->buf`. */
+//       if (!iswordc(&search_line->data[i + j], FALSE, "_")) {
+//         continue;
+//       }
+//       /* Or the match is not a seperate word. */
+//       if (i > 0 && is_word_char(&search_line->data[step_left(search_line->data, i)], FALSE)) {
+//         continue;
+//       }
+//       /* Or the match is the `gui->suggestmenu->buf` itself. */
+//       if (search_line == openfile->current && i == (openfile->current_x - gui->suggestmenu->len)) {
+//         continue;
+//       }
+//       completion = gui_suggestmenu_copy_completion(search_line->data + i);
+//       /* Look for duplicates in the already found completions. */
+//       if (hashmap_get(hash_map, completion)) {
+//         free(completion);
+//         continue;
+//       }
+//       /* Add to the hashmap, using the ptr to the word as it will live longer then this hashmap. */
+//       hashmap_insert(hash_map, completion, (void *)completion);
+//       menu_push_back(gui->suggestmenu->menu, completion);
+//       search_x = ++i;
+//     }
+//     search_line = search_line->next;
+//     search_x = 0;
+//     if (!search_line && current_file->next != openfile) {
+//       current_file = current_file->next;
+//       search_line = current_file->filetop;
+//     }
+//   }
+//   hashmap_free(hash_map);
+//   menu_qsort(gui->suggestmenu->menu, menu_qsort_cb_strlen);
+//   TIMER_END(timer, ms);
+//   TIMER_PRINT(ms);
+// }
 
-void gui_suggestmenu_run(void) {
-  ASSERT_SUGGEST_MENU;
-  gui_suggestmenu_load_str();
-  gui_suggestmenu_find();
-  if (menu_len(gui->suggestmenu->menu)) {
-    menu_show(gui->suggestmenu->menu, TRUE);
-  }
-  else {
-    menu_show(gui->suggestmenu->menu, FALSE);
-  }
-}
+// void gui_suggestmenu_run(void) {
+//   ASSERT_SUGGEST_MENU;
+//   gui_suggestmenu_load_str();
+//   gui_suggestmenu_find();
+//   if (menu_len(gui->suggestmenu->menu)) {
+//     menu_show(gui->suggestmenu->menu, TRUE);
+//   }
+//   else {
+//     menu_show(gui->suggestmenu->menu, FALSE);
+//   }
+// }

@@ -12,7 +12,7 @@
 
 /* To inforce the glfw rules about only performing some things in the main thread,
  * we will store these things and only update them when a rezing chech happens. */
-static bool gl_window_maximized = FALSE;
+static bool gl_win_maximized = FALSE;
 
 static bool gl_win_borderless_fullscreen = FALSE;
 
@@ -169,7 +169,7 @@ bool gl_window_resize_needed(void) {
     if (ATOMIC_FETCH(gl_window_flip_maximized)) {
       ATOMIC_STORE(gl_window_flip_maximized, FALSE);
       /* If we are currently maximized. */
-      if (gl_window_maximized) {
+      if (gl_win_maximized) {
         // glfwRestoreWindow(window);
         SDL_SetWindowFullscreen(gl_win, FALSE);
       }
@@ -178,7 +178,7 @@ bool gl_window_resize_needed(void) {
         // glfwMaximizeWindow(window);
         SDL_SetWindowFullscreen(gl_win, TRUE);
       }
-      gl_window_maximized = !gl_window_maximized;
+      gl_win_maximized = !gl_win_maximized;
     }
     /* When we have a missmatch, we are a bit smart, as only the decorations can be incorrect. */
     // if (!(gl_window_maximized ^ gl_window_decorated)) {
@@ -294,7 +294,7 @@ void gl_window_poll_events(void) {
       }
       case SDL_EVENT_TEXT_INPUT: {
         if (promptmenu_active()) {
-          kb_prompt_char_input(ev.text.text, SDL_GetModState());
+          kb_char_input_prompt(ev.text.text, SDL_GetModState());
         }
         else {
           kb_char_input(ev.text.text, SDL_GetModState());
@@ -303,7 +303,7 @@ void gl_window_poll_events(void) {
       }
       case SDL_EVENT_KEY_DOWN: {
         if (promptmenu_active()) {
-          kb_prompt_key_pressed(ev.key.key, ev.key.scancode, ev.key.mod, ev.key.repeat);
+          kb_key_pressed_prompt(ev.key.key, ev.key.scancode, ev.key.mod, ev.key.repeat);
         }
         else {
           kb_key_pressed(ev.key.key, ev.key.scancode, ev.key.mod, ev.key.repeat);
@@ -319,8 +319,8 @@ void gl_window_poll_events(void) {
         break;
       }
       case SDL_EVENT_WINDOW_MAXIMIZED: {
-        gl_window_maximized = TRUE;
         log_INFO_1("Window maximized");
+        gl_win_maximized = TRUE;
         break;
       }
       case SDL_EVENT_WINDOW_MINIMIZED: {
@@ -328,18 +328,18 @@ void gl_window_poll_events(void) {
         break;
       }
       case SDL_EVENT_WINDOW_RESTORED: {
-        gl_window_maximized = FALSE;
         log_INFO_1("window restored");
+        gl_win_maximized = FALSE;
         break;
       }
       case SDL_EVENT_WINDOW_ENTER_FULLSCREEN: {
-        gl_win_borderless_fullscreen = TRUE;
         log_INFO_1("Window entered fullscreen");
+        gl_win_borderless_fullscreen = TRUE;
         break;
       }
       case SDL_EVENT_WINDOW_LEAVE_FULLSCREEN: {
-        gl_win_borderless_fullscreen = FALSE;
         log_INFO_1("Window left fullscreen");
+        gl_win_borderless_fullscreen = FALSE;
         break;
       }
       case SDL_EVENT_WINDOW_DISPLAY_CHANGED: {
@@ -389,7 +389,7 @@ void gl_window_swap(void) {
 
 /* ----------------------------- Gl window running ----------------------------- */
 
-bool gl_window_running(void) {
+bool gl_window_running(void) { 
   return gl_win_running;
 }
 

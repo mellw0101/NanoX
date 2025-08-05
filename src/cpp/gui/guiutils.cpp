@@ -171,7 +171,7 @@ float cursor_pixel_x_pos(texture_font_t *font) {
 float line_y_pixel_offset(linestruct *line, texture_font_t *font) {
   ASSERT(openeditor->openfile->edittop);
   ASSERT(openeditor->text);
-  ASSERT(gui);
+  // ASSERT(gui);
   ASSERT(line);
   ASSERT(font);
   long relative_row = (line->lineno - openeditor->openfile->edittop->lineno + 1);

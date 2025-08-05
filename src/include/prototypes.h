@@ -189,12 +189,12 @@ extern SyntaxFile *sf;
   // extern vec2 mousepos;
   // extern guieditor *openeditor;
   // extern guieditor *starteditor;
-  extern guistruct *gui;
+  // extern guistruct *gui;
   // extern uigridmapclass gridmap;
   /* guiprompt.cpp */
-  extern Ulong gui_prompt_mark_x;
-  extern bool  gui_prompt_mark;
-  extern int   gui_prompt_type;
+  // extern Ulong gui_prompt_mark_x;
+  // extern bool  gui_prompt_mark;
+  // extern int   gui_prompt_type;
 #endif
 
 /* Asm functions. */
@@ -804,21 +804,21 @@ void        add_rm_color_map(string str, syntax_data_t data);
 
 /* ----------------------------- Gui suggestmenu ----------------------------- */
 
-void gui_suggestmenu_create(void);
-void gui_suggestmenu_free(void);
-void gui_suggestmenu_clear(void);
-void gui_suggestmenu_load_str(void);
-void gui_suggestmenu_find(void);
-void gui_suggestmenu_run(void);
+// void gui_suggestmenu_create(void);
+// void gui_suggestmenu_free(void);
+// void gui_suggestmenu_clear(void);
+// void gui_suggestmenu_load_str(void);
+// void gui_suggestmenu_find(void);
+// void gui_suggestmenu_run(void);
 // void gui_suggestmenu_resize(void);
 // void gui_suggestmenu_draw_selected(void);
 // void gui_suggestmenu_draw_text(void);
 // void gui_suggestmenu_selected_up(void);
 // void gui_suggestmenu_selected_down(void);
 // bool gui_suggestmenu_accept(void);
-void gui_suggestmenu_hover_action(float y_pos);
-void gui_suggestmenu_scroll_action(bool direction, float y_pos);
-void gui_suggestmenu_click_action(float y_pos);
+// void gui_suggestmenu_hover_action(float y_pos);
+// void gui_suggestmenu_scroll_action(bool direction, float y_pos);
+// void gui_suggestmenu_click_action(float y_pos);
 
 
 /* ---------------------------------------------------------- parse.cpp ---------------------------------------------------------- */
@@ -879,15 +879,15 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   /* ---------------------------------------------------------- gui/guicallback.cpp ---------------------------------------------------------- */
   
   
-  void window_resize_callback(GLFWwindow *window, int newwidth, int newheight);
-  void window_maximize_callback(GLFWwindow *window, int maximized);
-  void framebuffer_resize_callback(GLFWwindow *window, int width, int height);
-  void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
-  void char_callback(GLFWwindow *window, Uint ch);
-  void mouse_button_callback(GLFWwindow *window, int button, int action, int mods);
-  void mouse_pos_callback(GLFWwindow *window, double x, double y);
-  void window_enter_callback(GLFWwindow *window, int entered);
-  void scroll_callback(GLFWwindow *window, double x, double y);
+  // void window_resize_callback(GLFWwindow *window, int newwidth, int newheight);
+  // void window_maximize_callback(GLFWwindow *window, int maximized);
+  // void framebuffer_resize_callback(GLFWwindow *window, int width, int height);
+  // void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
+  // void char_callback(GLFWwindow *window, Uint ch);
+  // void mouse_button_callback(GLFWwindow *window, int button, int action, int mods);
+  // void mouse_pos_callback(GLFWwindow *window, double x, double y);
+  // void window_enter_callback(GLFWwindow *window, int entered);
+  // void scroll_callback(GLFWwindow *window, double x, double y);
   
   
   /* ---------------------------------------------------------- gui/guiwinio.cpp ---------------------------------------------------------- */
@@ -899,42 +899,42 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void show_toggle_statusmsg(int flag);
   // void draw_editor(guieditor *editor);
   void draw_editor(Editor *editor);
-  void draw_topbar(void);
-  void draw_suggestmenu(void);
-  void draw_botbar(void);
+  // void draw_topbar(void);
+  // void draw_suggestmenu(void);
+  // void draw_botbar(void);
   // void draw_statusbar(void);
-  void do_fullscreen(GLFWwindow *window);
-  int  glfw_get_framerate(void);
+  // void do_fullscreen(GLFWwindow *window);
+  // int  glfw_get_framerate(void);
   
   
   /* ---------------------------------------------------------- gui/guiprompt.cpp ---------------------------------------------------------- */
   
   
-  void gui_promptmode_enter(void);
-  void gui_promptmode_leave(void);
-  void gui_ask_user(const char *question, guiprompt_type type);
-  long prompt_index_from_mouse(bool allow_outside);
-  void gui_promptmenu_create(void);
-  void gui_promptmenu_free(void);
-  void gui_promptmenu_resize(void);
-  void gui_promptmenu_draw_text(void);
-  void gui_promptmenu_draw_selected(void);
-  void gui_promptmenu_selected_up(void);
-  void gui_promptmenu_selected_down(void);
-  void gui_promptmenu_enter_action(void);
-  void gui_promptmenu_completions_search(void);
-  void gui_promptmenu_hover_action(float y_pos);
-  void gui_promptmenu_scroll_action(bool direction, float y_pos);
-  void gui_promptmenu_click_action(float y_pos);
-  void gui_promptmenu_char_action(char input);
+  // void gui_promptmode_enter(void);
+  // void gui_promptmode_leave(void);
+  // void gui_ask_user(const char *question, guiprompt_type type);
+  // long prompt_index_from_mouse(bool allow_outside);
+  // void gui_promptmenu_create(void);
+  // void gui_promptmenu_free(void);
+  // void gui_promptmenu_resize(void);
+  // void gui_promptmenu_draw_text(void);
+  // void gui_promptmenu_draw_selected(void);
+  // void gui_promptmenu_selected_up(void);
+  // void gui_promptmenu_selected_down(void);
+  // void gui_promptmenu_enter_action(void);
+  // void gui_promptmenu_completions_search(void);
+  // void gui_promptmenu_hover_action(float y_pos);
+  // void gui_promptmenu_scroll_action(bool direction, float y_pos);
+  // void gui_promptmenu_click_action(float y_pos);
+  // void gui_promptmenu_char_action(char input);
   
   /* ----------------------------- Open file ----------------------------- */
   
-  void gui_promptmenu_open_file(void);
+  // void gui_promptmenu_open_file(void);
 
   /* ----------------------------- Set font ----------------------------- */
 
-  void gui_promptmenu_set_font(void);
+  // void gui_promptmenu_set_font(void);
 
   
   /* ---------------------------------------------------------- gui/guifiles.cpp ---------------------------------------------------------- */
@@ -1160,10 +1160,10 @@ long          index_from_scrollbar_pos(float total_pixel_length, Uint startidx, 
 /* ---------------------------------------------------------- gui/context_menu.cpp ---------------------------------------------------------- */
 
 
-ContextMenu *context_menu_create(void);
-void context_menu_free(ContextMenu *const cxm);
-void context_menu_draw(ContextMenu *const cxm);
-void context_menu_show(ContextMenu *const cxm, bool show);
+// ContextMenu *context_menu_create(void);
+// void context_menu_free(ContextMenu *const cxm);
+// void context_menu_draw(ContextMenu *const cxm);
+// void context_menu_show(ContextMenu *const cxm, bool show);
 
 
 #include <Mlib/def.h>

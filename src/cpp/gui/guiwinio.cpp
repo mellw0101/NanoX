@@ -699,7 +699,7 @@ void draw_editor(Editor *editor) {
   ASSERT(editor->buffer);
   ASSERT(editor->gutter);
   ASSERT(font_shader);
-  ASSERT(gui);
+  // ASSERT(gui);
   ASSERT(textfont);
   ASSERT(uifont);
   vec2 pen = 0;
@@ -753,30 +753,30 @@ void draw_editor(Editor *editor) {
 }
 
 /* Draw the top bar of the gui. */
-void draw_topbar(void) {
-  if (gui->flag.is_set<GUI_PROMPT>()) {
-    gui_promptmenu_resize();
-    // gui_element_draw(gui->promptmenu->element);
-    element_draw(gui->promptmenu->element);
-    gui_promptmenu_draw_selected();
-    // gui_scrollbar_draw(gui->promptmenu->sb);
-    scrollbar_draw(gui->promptmenu->sb);
-    gui_promptmenu_draw_text();
-  }
-}
+// void draw_topbar(void) {
+//   if (gui->flag.is_set<GUI_PROMPT>()) {
+//     gui_promptmenu_resize();
+//     // gui_element_draw(gui->promptmenu->element);
+//     element_draw(gui->promptmenu->element);
+//     gui_promptmenu_draw_selected();
+//     // gui_scrollbar_draw(gui->promptmenu->sb);
+//     scrollbar_draw(gui->promptmenu->sb);
+//     gui_promptmenu_draw_text();
+//   }
+// }
 
 /* Draw the gui suggestmenu. */
-void draw_suggestmenu(void) {
-  ASSERT(gui);
-  ASSERT(gui->suggestmenu);
-  ASSERT(gui->suggestmenu->menu);
-  menu_draw(gui->suggestmenu->menu);
-}
+// void draw_suggestmenu(void) {
+//   ASSERT(gui);
+//   ASSERT(gui->suggestmenu);
+//   ASSERT(gui->suggestmenu->menu);
+//   menu_draw(gui->suggestmenu->menu);
+// }
 
 /* Draw the bottom bar of the gui. */
-void draw_botbar(void) {
-  element_draw(gui->botbar);
-}
+// void draw_botbar(void) {
+//   element_draw(gui->botbar);
+// }
 
 /* Draw the status bar for the gui. */
 // void draw_statusbar(void) {
@@ -817,64 +817,64 @@ void draw_botbar(void) {
 //   }
 // }
 
-static inline const GLFWvidmode *glfw_get_primary_monitor_mode(void) {
-  GLFWmonitor *monitor;
-  const GLFWvidmode *mode;
-  /* Get primary monitor. */
-  monitor = glfwGetPrimaryMonitor();
-  if (!monitor) {
-    writeferr("%s: Monitor is invalid.\n", __func__);
-    return NULL;
-  }
-  mode = glfwGetVideoMode(monitor);
-  if (!mode) {
-    writeferr("%s: Mode is invalid.\n", __func__);
-    return NULL;
-  }
-  return mode;
-} 
+// static inline const GLFWvidmode *glfw_get_primary_monitor_mode(void) {
+//   GLFWmonitor *monitor;
+//   const GLFWvidmode *mode;
+//   /* Get primary monitor. */
+//   monitor = glfwGetPrimaryMonitor();
+//   if (!monitor) {
+//     writeferr("%s: Monitor is invalid.\n", __func__);
+//     return NULL;
+//   }
+//   mode = glfwGetVideoMode(monitor);
+//   if (!mode) {
+//     writeferr("%s: Mode is invalid.\n", __func__);
+//     return NULL;
+//   }
+//   return mode;
+// } 
 
 /* Toggle fullscreen state. */
-void do_fullscreen(GLFWwindow *window) {
-  static bool is_fullscreen = FALSE;
-  // static ivec4 rect = 0.0f;
-  // GLFWmonitor *monitor;
-  // const GLFWvidmode *mode;
-  if (!is_fullscreen) {
-    // /* Save the window size and position. */
-    // glfwGetWindowPos(window, &rect.x, &rect.y);
-    // glfwGetWindowSize(window, &rect.width, &rect.height);
-    // /* Get monitor size. */
-    // monitor = glfwGetPrimaryMonitor();
-    // if (!monitor) {
-    //   log_error_gui("%s: Monitor is invalid.\n", __func__);
-    //   return;
-    // }
-    // mode = glfwGetVideoMode(monitor);
-    // if (!mode) {
-    //   log_error_gui("%s: Mode is invalid.\n", __func__);
-    //   return;
-    // }
-    /* Set the window pos and size. */
-    // glfwSetWindowAttrib(window, GLFW_AUTO_ICONIFY, FALSE);
-    glfwMaximizeWindow(window);
-    // glfwSetWindowMonitor(window, NULL, 0, 0, mode->width, mode->height, GLFW_DONT_CARE);
-  }
-  else {
-    // writef("x: %d\n", rect.x);
-    // writef("x: %d\n", rect.y);
-    /* Set the window pos and size. */
-    // glfwSetWindowMonitor(window, NULL, rect.x, rect.y, rect.width, rect.height, GLFW_DONT_CARE);
-    glfwRestoreWindow(window);
-  }
-  /* Toggle the fullscreen flag. */
-  is_fullscreen = !is_fullscreen;
-}
+// void do_fullscreen(GLFWwindow *window) {
+//   static bool is_fullscreen = FALSE;
+//   // static ivec4 rect = 0.0f;
+//   // GLFWmonitor *monitor;
+//   // const GLFWvidmode *mode;
+//   if (!is_fullscreen) {
+//     // /* Save the window size and position. */
+//     // glfwGetWindowPos(window, &rect.x, &rect.y);
+//     // glfwGetWindowSize(window, &rect.width, &rect.height);
+//     // /* Get monitor size. */
+//     // monitor = glfwGetPrimaryMonitor();
+//     // if (!monitor) {
+//     //   log_error_gui("%s: Monitor is invalid.\n", __func__);
+//     //   return;
+//     // }
+//     // mode = glfwGetVideoMode(monitor);
+//     // if (!mode) {
+//     //   log_error_gui("%s: Mode is invalid.\n", __func__);
+//     //   return;
+//     // }
+//     /* Set the window pos and size. */
+//     // glfwSetWindowAttrib(window, GLFW_AUTO_ICONIFY, FALSE);
+//     glfwMaximizeWindow(window);
+//     // glfwSetWindowMonitor(window, NULL, 0, 0, mode->width, mode->height, GLFW_DONT_CARE);
+//   }
+//   else {
+//     // writef("x: %d\n", rect.x);
+//     // writef("x: %d\n", rect.y);
+//     /* Set the window pos and size. */
+//     // glfwSetWindowMonitor(window, NULL, rect.x, rect.y, rect.width, rect.height, GLFW_DONT_CARE);
+//     glfwRestoreWindow(window);
+//   }
+//   /* Toggle the fullscreen flag. */
+//   is_fullscreen = !is_fullscreen;
+// }
 
 /* Get the refreshrate of the current monitor. */
-int glfw_get_framerate(void) {
-  const GLFWvidmode *mode = glfw_get_primary_monitor_mode();
-  return (mode ? mode->refreshRate : -1);
-}
+// int glfw_get_framerate(void) {
+//   const GLFWvidmode *mode = glfw_get_primary_monitor_mode();
+//   return (mode ? mode->refreshRate : -1);
+// }
 
 #endif

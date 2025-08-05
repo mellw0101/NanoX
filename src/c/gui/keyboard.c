@@ -738,7 +738,7 @@ void kb_char_input(const char *const restrict data, Ushort mod) {
 
 /* ----------------------------- Kb prompt key pressed ----------------------------- */
 
-void kb_prompt_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED repeat) {
+void kb_key_pressed_prompt(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED repeat) {
   if (promptmenu_yn_mode()) {
     switch (kb_filter_mod(mod)) {
       case KB_MOD_NONE:
@@ -894,7 +894,7 @@ void kb_prompt_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED
 /* ----------------------------- Kb prompt char input ----------------------------- */
 
 /* Handle char input when the `prompt-menu` is active. */
-void kb_prompt_char_input(const char *const restrict data, Ushort mod) {
+void kb_char_input_prompt(const char *const restrict data, Ushort mod) {
   Ulong len;
   char *burst;
   /* Only ever perform any action when no modifiers (excluding CAPS, SCROLL and NUM).  And when not in Y/N mode. */

@@ -3,21 +3,23 @@
 
 /* ---------------------------------------------------------- Include's ---------------------------------------------------------- */
 
-#include <stdbool.h>
-#include "../../config.h"
+// #include "../../config.h"
 #include "revision.h"
 
 #include "c/ascii_defs.h"
+
+/* ----------------------------- Fcio ----------------------------- */
+
 #include <fcio/proto.h>
 #include <fcio/statics.h>
+
 
 /* NanoX */
 #include "../../config.h"
 #include "render.h"
-// #define ASSERT_DEBUG
-// #include "c/nassert.h"
 
 /* stdlib */
+#include <stdbool.h>
 #include <glob.h>
 #include <pwd.h>
 #include <signal.h>

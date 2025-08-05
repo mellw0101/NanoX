@@ -1800,9 +1800,9 @@ void kb_key_pressed(Uint key, Uint scan, Ushort mod, bool repeat);
 /* ----------------------------- Kb char input ----------------------------- */
 void kb_char_input(const char *const restrict data, Ushort mod);
 /* ----------------------------- Kb prompt key pressed ----------------------------- */
-void kb_prompt_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED repeat);
+void kb_key_pressed_prompt(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED repeat);
 /* ----------------------------- Kb prompt char input ----------------------------- */
-void kb_prompt_char_input(const char *const restrict data, Ushort mod);
+void kb_char_input_prompt(const char *const restrict data, Ushort mod);
 
 
 /* ---------------------------------------------------------- nanox.c ---------------------------------------------------------- */
