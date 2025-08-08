@@ -774,16 +774,16 @@ void element_set_borders(Element *const e, float lsize, float tsize, float rsize
 void element_set_layer(Element *const e, Ushort layer);
 /* ----------------------------- Element set parent ----------------------------- */
 void element_set_parent(Element *const e, Element *const parent);
-/* ----------------------------- Element set raw data ----------------------------- */
-void element_set_raw_data(Element *const e, void *const data);
-/* ----------------------------- Element set sb data ----------------------------- */
-void element_set_sb_data(Element *const e, Scrollbar *const data);
-/* ----------------------------- Element set menu data ----------------------------- */
-void element_set_menu_data(Element *const e, Menu *const data);
-/* ----------------------------- Element set file data ----------------------------- */
-void element_set_file_data(Element *const e, openfilestruct *const data);
-/* ----------------------------- Element set editor data ----------------------------- */
-void element_set_editor_data(Element *const e, Editor *const data);
+/* ----------------------------- Element set data raw ----------------------------- */
+void element_set_data_raw(Element *const e, void *const data);
+/* ----------------------------- Element set data sb ----------------------------- */
+void element_set_data_sb(Element *const e, Scrollbar *const data);
+/* ----------------------------- Element set data menu ----------------------------- */
+void element_set_data_menu(Element *const e, Menu *const data);
+/* ----------------------------- Element set data file ----------------------------- */
+void element_set_data_file(Element *const e, openfilestruct *const data);
+/* ----------------------------- Element set data editor ----------------------------- */
+void element_set_data_editor(Element *const e, Editor *const data);
 /* ----------------------------- Element set rounded apex  ----------------------------- */
 void element_set_rounded_apex_fraction(Element *const e, float t);
 /* ----------------------------- Element set data callback ----------------------------- */
@@ -846,14 +846,14 @@ void menu_selected_down(Menu *const menu);
 void menu_submenu_exit(Menu *const menu);
 /* ----------------------------- Menu submenu enter ----------------------------- */
 void menu_submenu_enter(Menu *const menu);
-/* ----------------------------- Menu action accept ----------------------------- */
-void menu_action_accept(Menu *const menu);
-/* ----------------------------- Menu action hover ----------------------------- */
-void menu_action_hover(Menu *const menu, float x_pos, float y_pos);
-/* ----------------------------- Menu scroll action ----------------------------- */
-void menu_action_scroll(Menu *const menu, bool direction, float x_pos, float y_pos);
-/* ----------------------------- Menu click action ----------------------------- */
-void menu_action_click(Menu *const menu, float x_pos, float y_pos);
+/* ----------------------------- Menu routine accept ----------------------------- */
+void menu_routine_accept(Menu *const menu);
+/* ----------------------------- Menu routine hover ----------------------------- */
+void menu_routine_hover(Menu *const menu, float x_pos, float y_pos);
+/* ----------------------------- Menu routine scroll ----------------------------- */
+void menu_routine_scroll(Menu *const menu, bool direction, float x_pos, float y_pos);
+/* ----------------------------- Menu routine click ----------------------------- */
+void menu_routine_click(Menu *const menu, float x_pos, float y_pos);
 /* ----------------------------- Menu clear entries ----------------------------- */
 void menu_clear_entries(Menu *const menu);
 /* ----------------------------- Menu set static width ----------------------------- */
@@ -955,6 +955,10 @@ void promptmenu_close(void);
 bool promptmenu_active(void);
 /* ----------------------------- Promptmenu yn mode ----------------------------- */
 bool promptmenu_yn_mode(void);
+/* ----------------------------- Promptmenu owns element ----------------------------- */
+bool promptmenu_owns_element(Element *const e);
+/* ----------------------------- Promptmenu element is main ----------------------------- */
+bool promptmenu_element_is_main(Element *const e);
 /* ----------------------------- Promptmenu refresh text ----------------------------- */
 void promptmenu_refresh_text(void);
 /* ----------------------------- Promptmenu routine completions search ----------------------------- */
@@ -967,6 +971,10 @@ void promptmenu_routine_tab(void);
 void promptmenu_routine_yes(void);
 /* ----------------------------- Promptmenu routine no ----------------------------- */
 void promptmenu_routine_no(void);
+/* ----------------------------- Promptmenu routine mouse click left ----------------------------- */
+void promptmenu_routine_mouse_click_left(float x);
+/* ----------------------------- Promptmenu routine mouse button dn ----------------------------- */
+bool promptmenu_routine_mouse_button_dn(Element *const e, Uchar button, float x, float y);
 /* ----------------------------- Promptmenu ask ----------------------------- */
 void promptmenu_ask(PromptMenuType type);
 
@@ -1711,34 +1719,34 @@ void statusbar_draw(void);
 
 
 /* ----------------------------- Mouse gui init ----------------------------- */
-void mouse_gui_init(void);
+void gl_mouse_init(void);
 /* ----------------------------- Mouse gui free ----------------------------- */
-void mouse_gui_free(void);
+void gl_mouse_free(void);
 /* ----------------------------- Update mouse state ----------------------------- */
-void mouse_gui_update_state(bool press, int button);
+void gl_mouse_update_state(bool press, int button);
 /* ----------------------------- Update mouse pos ----------------------------- */
-void mouse_gui_update_pos(float x, float y);
+void gl_mouse_update_pos(float x, float y);
 /* ----------------------------- Mouse gui get x ----------------------------- */
-float mouse_gui_get_x(void);
+float gl_mouse_x(void);
 /* ----------------------------- Mouse gui get y ----------------------------- */
-float mouse_gui_get_y(void);
+float gl_mouse_y(void);
 /* ----------------------------- Mouse gui get pos ----------------------------- */
 void mouse_gui_get_pos(float *const x, float *const y);
-float mouse_gui_get_last_x(void);
-float mouse_gui_get_last_y(void);
+float gl_mouse_last_x(void);
+float gl_mouse_last_y(void);
 /* ----------------------------- Is mouse flag set ----------------------------- */
-bool mouse_gui_is_flag_set(Uint flag);
-void mouse_gui_clear_flags(void);
-/* ----------------------------- Mouse gui button down ----------------------------- */
-void mouse_gui_button_down(Uchar button, Ushort mod, float x, float y);
-/* ----------------------------- Mouse gui button up ----------------------------- */
-void mouse_gui_button_up(Uchar button, Ushort _UNUSED mod, float x, float y);
-/* ----------------------------- Mouse gui position ----------------------------- */
-void mouse_gui_position(float x, float y);
-/* ----------------------------- Mouse gui left ----------------------------- */
-void mouse_gui_left(void);
+bool gl_mouse_flag_is_set(Uint flag);
+void gl_mouse_flag_clear_all(void);
+/* ----------------------------- Gl mouse routine button dn ----------------------------- */
+void gl_mouse_routine_button_dn(Uchar button, Ushort mod, float x, float y);
+/* ----------------------------- Gl mouse routine button up ----------------------------- */
+void gl_mouse_routine_button_up(Uchar button, Ushort _UNUSED mod, float x, float y);
+/* ----------------------------- Gl mouse routine position ----------------------------- */
+void gl_mouse_routine_position(float x, float y);
+/* ----------------------------- Gl mouse routine left window ----------------------------- */
+void gl_mouse_routine_left_window(void);
 /* ----------------------------- Mouse gui scroll ----------------------------- */
-void mouse_gui_scroll(float mx, float my, int _UNUSED ix, int iy, SDL_MouseWheelDirection type);
+void gl_mouse_routine_scroll(float mx, float my, int _UNUSED ix, int iy, SDL_MouseWheelDirection type);
 
 
 /* ---------------------------------------------------------- gui/shader.c ---------------------------------------------------------- */

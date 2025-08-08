@@ -207,7 +207,7 @@ static inline void promptmenu_should_accept_completion(void) {
   ASSERT_PM;
   if (menu_get_active() && menu_len(pm->menu)) {
     ALWAYS_ASSERT(menu_get_active() == pm->menu);
-    menu_action_accept(pm->menu);
+    menu_routine_accept(pm->menu);
   }
 }
 
@@ -226,9 +226,11 @@ void promptmenu_create(void) {
   pm->buf = vertex_buffer_new(FONT_VERTBUF);
   pm->element = element_create(x, 0, width, font_height(uifont), TRUE);
   gl_window_add_root_child(pm->element);
-  pm->element->color   = PACKED_UINT_VS_CODE_RED;
+  pm->element->color = PACKED_UINT_VS_CODE_RED;
   /* Ensure that when the root element is resized, the element keeps in the center. */
-  pm->element->xflags |= (ELEMENT_HIDDEN | ELEMENT_CENTER_X | ELEMENT_CONSTRAIN_WIDTH);
+  pm->element->xflags |= (ELEMENT_HIDDEN | ELEMENT_CENTER_X | ELEMENT_CONSTRAIN_WIDTH | ELEMENT_SET_OWN_LAYER);
+  /* For now just set the prompt-menu element's layer very high, to ensure it's always on top. */
+  pm->element->layer = 1000;
   /* And also ensure that the menu and text of the prompt-menu is fully updated. */
   element_set_data_callback(pm->element, pm);
   element_set_extra_routine_rect(pm->element, promptmenu_extra_routine_rect);
@@ -311,6 +313,23 @@ bool promptmenu_active(void) {
 bool promptmenu_yn_mode(void) {
   ASSERT_PM;
   return !!(pm->xflags & PROMPTMENU_YN_MODE);
+}
+
+/* ----------------------------- Promptmenu owns element ----------------------------- */
+
+bool promptmenu_owns_element(Element *const e) {
+  ASSERT_PM;
+  ASSERT(e);
+  return element_is_ancestor(e, pm->element);
+}
+
+/* ----------------------------- Promptmenu element is main ----------------------------- */
+
+/* Returns `TRUE` when `e` is the main element of the `prompt-menu`. */
+bool promptmenu_element_is_main(Element *const e) {
+  ASSERT_PM;
+  ASSERT(e);
+  return (pm->element == e);
 }
 
 /* ----------------------------- Promptmenu refresh text ----------------------------- */
@@ -473,6 +492,52 @@ void promptmenu_routine_no(void) {
   }
   pm->xflags &= ~PROMPTMENU_YN_MODE;
   promptmenu_close();
+}
+
+/* ----------------------------- Promptmenu routine mouse click left ----------------------------- */
+
+void promptmenu_routine_mouse_click_left(float x) {
+  ASSERT_PM;
+  typing_x = font_index_from_pos(
+    uifont, answer, STRLEN(answer), x,
+    (pm->element->x + font_breadth(uifont, prompt) + font_breadth(uifont, " "))
+  );
+  pm->xflags |= PROMPTMENU_REFRESH_TEXT;
+}
+
+/* ----------------------------- Promptmenu routine mouse button dn ----------------------------- */
+
+bool promptmenu_routine_mouse_button_dn(Element *const e, Uchar button, float x, float y) {
+  ASSERT_PM;
+  ASSERT(e);
+  if (!promptmenu_active()) {
+    return FALSE;
+  }
+  else {
+    if (button == SDL_BUTTON_LEFT) {
+      if (!element_is_ancestor(e, pm->element)) {
+        promptmenu_close();
+        return FALSE;
+      }
+      else {
+        if (e == pm->element) {
+          promptmenu_routine_mouse_click_left(x);
+        }
+        else if (menu_get_active() && e->dt == ELEMENT_DATA_MENU
+        && e->dp_menu == pm->menu && menu_element_is_main(e->dp_menu, e))
+        {
+          menu_routine_click(e->dp_menu, x, y);
+        }
+      }
+    }
+    else if (button == SDL_BUTTON_RIGHT) {
+      if (!element_is_ancestor(e, pm->element)) {
+        promptmenu_close();
+        return FALSE;
+      }
+    }
+    return TRUE;
+  }
 }
 
 /* ----------------------------- Promptmenu ask ----------------------------- */

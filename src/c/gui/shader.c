@@ -153,26 +153,26 @@ static mat4x4 projection;
 
 /* GLSL openGL table:
  *   `GLSL/openGL` --- `Release Year`.
- *    `110 --- 2.0` --- `2004`.
- *    `120 --- 2.1` --- `2006`.
- *    `130 --- 3.0` --- `2008`.
- *    `140 --- 3.1` --- `2009`.
- *    `150 --- 3.2` --- `2009`.
- *    `330 --- 3.3` --- `2010`.
- *    `400 --- 4.0` --- `2010`.
- *    `410 --- 4.1` --- `2010`.
- *    `420 --- 4.2` --- `2011`.
- *    `430 --- 4.3` --- `2012`.
- *    `440 --- 4.4` --- `2013`.
- *    `450 --- 4.5` --- `2014`.
- *    `460 --- 4.6` --- `2017`. */
+ *   `110 --- 2.0` --- `2004`.
+ *   `120 --- 2.1` --- `2006`.
+ *   `130 --- 3.0` --- `2008`.
+ *   `140 --- 3.1` --- `2009`.
+ *   `150 --- 3.2` --- `2009`.
+ *   `330 --- 3.3` --- `2010`.
+ *   `400 --- 4.0` --- `2010`.
+ *   `410 --- 4.1` --- `2010`.
+ *   `420 --- 4.2` --- `2011`.
+ *   `430 --- 4.3` --- `2012`.
+ *   `440 --- 4.4` --- `2013`.
+ *   `450 --- 4.5` --- `2014`.
+ *   `460 --- 4.6` --- `2017`. */
 static bool glsl_ver(int major, int minor) {
   static int glsl_major = -1;
   static int glsl_minor = -1;
   const Uchar *glsl_ver;
   if (glsl_major == -1 || glsl_minor == -1) {
     glsl_ver = glGetString(GL_SHADING_LANGUAGE_VERSION);
-    if (!glsl_ver ||sscanf((const char *)glsl_ver, "%d.%d", &glsl_major, &glsl_minor) != 2) {
+    if (!glsl_ver || sscanf((const char *)glsl_ver, "%d.%d", &glsl_major, &glsl_minor) != 2) {
       die("Could not get the latest supported glsl version.\n");
     }
   }
@@ -301,17 +301,27 @@ static inline void shader_set_openGL_version(int glsl_major, int glsl_minor, boo
 
 /* ----------------------------- Mat4x4 orthographic ----------------------------- */
 
+/* Set the projection matrix `m` to the correct orthographic layout based on the rect of the 2d plane. */
 static inline void mat4x4_orthographic(mat4x4 m, float left, float right, float top, float bot, float znear, float zfar) {
-  if (!(left == right || top == bot || znear == zfar)) {
+  if (left == right) {
+    log_ERR_FA("'left' and `right` cannot be the same value");
+  }
+  else if (top == bot) {
+    log_ERR_FA("'top' and `bot` cannot be the same value");
+  }
+  else if (znear == zfar) {
+    log_ERR_FA("'znear' and `zfar` cannot be the same value");
+  }
+  else {
     /* Clear the matrix. */
     memset(m, 0, sizeof(mat4x4));
-    m[0][0] = (+2.f / (right - left));
+    m[0][0] = (+2.F / (right - left));
     m[3][0] = (-(right + left) / (right - left));
-    m[1][1] = (+2.f / (top - bot));
+    m[1][1] = (+2.F / (top - bot));
     m[3][1] = (-(top + bot) / (top - bot));
-    m[2][2] = (-2.f / (zfar - znear));
+    m[2][2] = (-2.F / (zfar - znear));
     m[3][2] = (-(zfar + znear) / (zfar - znear));
-    m[3][3] = 1.f;
+    m[3][3] = 1.F;
   }
 }
 

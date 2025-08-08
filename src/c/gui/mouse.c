@@ -26,11 +26,7 @@
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
 
 
-/* TODO: Fully move this to use our frametimes to measure time, as we cannot trust glfw timekeeping, as it states it does not atomicly set the time,
- * and also the fact that it uses floating point time, this means it can never be equvilent, or even close to as accurate as our frame pacing.
- * This is now done.*/
-// static double last_mouse_click_time = 0;
-static int    last_mouse_button     = 0;
+static int last_mouse_button = 0;
 /* Flags for the mouse, to indecate the current state of the mouse. */
 static Uint mouse_flags[1];
 /* The current x position of the mouse. */
@@ -46,8 +42,8 @@ static Llong mouse_last_click_time = 0;
 
 static rwlock_t rwlock;
 
-static Element *mouse_gui_clicked_element = NULL;
-static Element *mouse_gui_entered_element = NULL;
+static Element *gl_mouse_element_clicked = NULL;
+static Element *gl_mouse_element_entered = NULL;
 
 static int mouse_gui_current_cursor = SDL_SYSTEM_CURSOR_DEFAULT;
 
@@ -55,7 +51,9 @@ static int mouse_gui_current_cursor = SDL_SYSTEM_CURSOR_DEFAULT;
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
-static SDL_Cursor *mouse_gui_system_cursor_get(SDL_SystemCursor type) {
+/* ----------------------------- Gl mouse system cursor get ----------------------------- */
+
+static SDL_Cursor *gl_mouse_system_cursor_get(SDL_SystemCursor type) {
   static SDL_Cursor *def  = NULL;
   static SDL_Cursor *ptr  = NULL;
   static SDL_Cursor *text = NULL;
@@ -91,8 +89,10 @@ static SDL_Cursor *mouse_gui_system_cursor_get(SDL_SystemCursor type) {
   }
 }
 
-static inline void mouse_gui_set_cursor(SDL_SystemCursor type) {
-  SDL_SetCursor(mouse_gui_system_cursor_get(type));
+/* ----------------------------- Gl mouse set cursor ----------------------------- */
+
+static inline void gl_mouse_set_cursor(SDL_SystemCursor type) {
+  SDL_SetCursor(gl_mouse_system_cursor_get(type));
   mouse_gui_current_cursor = type;
   refresh_needed = TRUE;
 }
@@ -101,22 +101,22 @@ static inline void mouse_gui_set_cursor(SDL_SystemCursor type) {
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
-/* ----------------------------- Mouse gui init ----------------------------- */
+/* ----------------------------- Gl mouse init ----------------------------- */
 
-void mouse_gui_init(void) {
+void gl_mouse_init(void) {
   RWLOCK_INIT(&rwlock, NULL);
 }
 
-/* ----------------------------- Mouse gui free ----------------------------- */
+/* ----------------------------- Gl mouse free ----------------------------- */
 
-void mouse_gui_free(void) {
+void gl_mouse_free(void) {
   RWLOCK_DESTROY(&rwlock);
 }
 
 /* ----------------------------- Mouse gui update state ----------------------------- */
 
 /* Update the mouse click and flag state. */
-void mouse_gui_update_state(bool press, int button) {
+void gl_mouse_update_state(bool press, int button) {
   MOUSE_LOCK_WRITE(
     /* Press */
     if (press) {
@@ -176,7 +176,7 @@ void mouse_gui_update_state(bool press, int button) {
 /* ----------------------------- Mouse gui update pos ----------------------------- */
 
 /* Update the mouse position state, ensuring we save the last position. */
-void mouse_gui_update_pos(float x, float y) {
+void gl_mouse_update_pos(float x, float y) {
   MOUSE_LOCK_WRITE(
     /* Save the current mouse position. */
     last_mouse_xpos = mouse_xpos;
@@ -187,10 +187,10 @@ void mouse_gui_update_pos(float x, float y) {
   );
 }
 
-/* ----------------------------- Mouse gui get x ----------------------------- */
+/* ----------------------------- Gl mouse x ----------------------------- */
 
 /* The only way to get the mouse x position. */
-float mouse_gui_get_x(void) {
+float gl_mouse_x(void) {
   float ret;
   MOUSE_LOCK_READ(
     ret = mouse_xpos;
@@ -198,10 +198,10 @@ float mouse_gui_get_x(void) {
   return ret;
 }
 
-/* ----------------------------- Mouse gui get y ----------------------------- */
+/* ----------------------------- Gl mouse y ----------------------------- */
 
 /* The only way to get the mouse y position. */
-float mouse_gui_get_y(void) {
+float gl_mouse_y(void) {
   float ret;
   MOUSE_LOCK_READ(
     ret = mouse_ypos;
@@ -223,7 +223,7 @@ void mouse_gui_get_pos(float *const x, float *const y) {
 
 /* ----------------------------- Mouse gui get last x ----------------------------- */
 
-float mouse_gui_get_last_x(void) {
+float gl_mouse_last_x(void) {
   float ret;
   MOUSE_LOCK_READ(
     ret = last_mouse_xpos;
@@ -233,7 +233,7 @@ float mouse_gui_get_last_x(void) {
 
 /* ----------------------------- Mouse gui get last y ----------------------------- */
 
-float mouse_gui_get_last_y(void) {
+float gl_mouse_last_y(void) {
   float ret;
   MOUSE_LOCK_READ(
     ret = last_mouse_ypos;
@@ -241,10 +241,10 @@ float mouse_gui_get_last_y(void) {
   return ret;
 }
 
-/* ----------------------------- Mouse gui is flag set ----------------------------- */
+/* ----------------------------- Gl mouse flag is set ----------------------------- */
 
 /* Check if a mouse flag is set. */
-bool mouse_gui_is_flag_set(Uint flag) {
+bool gl_mouse_flag_is_set(Uint flag) {
   bool ret;
   MOUSE_LOCK_READ(
     ret = MOUSE_ISSET(flag);
@@ -252,26 +252,36 @@ bool mouse_gui_is_flag_set(Uint flag) {
   return ret;
 }
 
-/* ----------------------------- Mouse gui clear flags ----------------------------- */
+/* ----------------------------- Gl mouse flag clear all ----------------------------- */
 
-void mouse_gui_clear_flags(void) {
+void gl_mouse_flag_clear_all(void) {
   MOUSE_LOCK_WRITE(
     memset(mouse_flags, 0, sizeof(mouse_flags));
   );
 }
 
-/* ----------------------------- Mouse gui button down ----------------------------- */
+/* ----------------------------- Gl mouse routine button dn ----------------------------- */
 
-void mouse_gui_button_down(Uchar button, Ushort _UNUSED mod, float x, float y) {
+void gl_mouse_routine_button_dn(Uchar button, Ushort _UNUSED mod, float x, float y) {
   Ulong st;
   Ulong end;
-  Element *e = mouse_gui_clicked_element = element_grid_get(x, y);
-  if (e && button == SDL_BUTTON_LEFT) {
+  Element *e = gl_mouse_element_clicked = element_grid_get(x, y);
+  if (!e) {
+    return;
+  }
+  /* Let the prompt-menu handle it's own events when it is active. */
+  else if (promptmenu_routine_mouse_button_dn(e, button, x, y)) {
+    refresh_needed = TRUE;
+    return;
+  }
+  else if (button == SDL_BUTTON_LEFT) {
     if (menu_get_active() && !menu_owns_element(menu_get_active(), e)) {
       menu_show(menu_get_active(), FALSE);
     }
-    else if (menu_get_active() && e->dt == ELEMENT_DATA_MENU && menu_is_ancestor(e->dp_menu, menu_get_active()) && menu_element_is_main(e->dp_menu, e)) {
-      menu_action_click(e->dp_menu, x, y);
+    else if (menu_get_active() && e->dt == ELEMENT_DATA_MENU
+    && menu_is_ancestor(e->dp_menu, menu_get_active()) && menu_element_is_main(e->dp_menu, e))
+    {
+      menu_routine_click(e->dp_menu, x, y);
     }
     else if (e->dt == ELEMENT_DATA_EDITOR && e == e->dp_editor->text) {
       editor_set_open(e->dp_editor);
@@ -282,7 +292,7 @@ void mouse_gui_button_down(Uchar button, Ushort _UNUSED mod, float x, float y) {
       GUI_OF->mark_x   = GUI_OF->current_x;
       GUI_OF->softmark = TRUE;
       SET_PWW(GUI_OF);
-      if (mouse_gui_is_flag_set(MOUSE_PRESS_WAS_DOUBLE)) {
+      if (gl_mouse_flag_is_set(MOUSE_PRESS_WAS_DOUBLE)) {
         st  = wordstartindex(GUI_OF->current->data, GUI_OF->current_x, FALSE);
         end = wordendindex(GUI_OF->current->data, GUI_OF->current_x, FALSE);
         /* Click inside, or at the start of a word. */
@@ -296,7 +306,7 @@ void mouse_gui_button_down(Uchar button, Ushort _UNUSED mod, float x, float y) {
         }
       }
       /* On a tripple click, select the entire line. */
-      else if (mouse_gui_is_flag_set(MOUSE_PRESS_WAS_TRIPPLE)) {
+      else if (gl_mouse_flag_is_set(MOUSE_PRESS_WAS_TRIPPLE)) {
         GUI_OF->mark_x = 0;
         GUI_OF->current_x = strlen(GUI_OF->current->data);
       }
@@ -314,17 +324,15 @@ void mouse_gui_button_down(Uchar button, Ushort _UNUSED mod, float x, float y) {
         refresh_needed = TRUE;
       }
     }
-    /* TODO: Add this when the redisigned prompt-menu is done.
-    else if (e == Prompt-menu main element) {
-      prompt_menu_click_action(y);
-    } */
   }
   else if (button == SDL_BUTTON_RIGHT) {
+    /* Clicked element is a child of an editor-tab-bar. */
     if (e && e->dt == ELEMENT_DATA_FILE && e->parent && e->parent->dt == ELEMENT_DATA_EDITOR
     && etb_element_is_main(e->parent->dp_editor->tb, e->parent))
     {
       etb_show_context_menu(e->parent->dp_editor->tb, e, TRUE);
     }
+    /* Clicked-element is any editor-tab-bar's main element. */
     else if (e && e->dt == ELEMENT_DATA_EDITOR && etb_element_is_main(e->dp_editor->tb, e)) {
       etb_show_context_menu(e->dp_editor->tb, e, TRUE);
     }
@@ -338,8 +346,8 @@ void mouse_gui_button_down(Uchar button, Ushort _UNUSED mod, float x, float y) {
 
 /* ----------------------------- Mouse gui button up ----------------------------- */
 
-void mouse_gui_button_up(Uchar button, Ushort _UNUSED mod, float x, float y) {
-  Element *e = mouse_gui_clicked_element;
+void gl_mouse_routine_button_up(Uchar button, Ushort _UNUSED mod, float x, float y) {
+  Element *e = gl_mouse_element_clicked;
   if (button == SDL_BUTTON_LEFT && e) {
     /* If the clicked element was the editors text element,
      * then remove the mark if there has been no movement. */
@@ -354,18 +362,18 @@ void mouse_gui_button_up(Uchar button, Ushort _UNUSED mod, float x, float y) {
       }
       scrollbar_refresh_needed(e->dp_sb);
     }
-    mouse_gui_clicked_element = NULL;
+    gl_mouse_element_clicked = NULL;
     refresh_needed = TRUE;
   }
 }
 
 /* ----------------------------- Mouse gui position ----------------------------- */
 
-void mouse_gui_position(float x, float y) {
+void gl_mouse_routine_position(float x, float y) {
   Ulong st;
   Ulong end;
-  Element *clicked = mouse_gui_clicked_element;
-  Element *entered = mouse_gui_entered_element; 
+  Element *clicked = gl_mouse_element_clicked;
+  Element *entered = gl_mouse_element_entered; 
   Element *hovered;
   if (MOUSE_ISSET(MOUSE_BUTTON_HELD_LEFT)) {
     if (clicked) {
@@ -427,12 +435,12 @@ void mouse_gui_position(float x, float y) {
     if (hovered) {
       /* When the hovered elements cursor differs, change the current one. */
       if (hovered->cursor != mouse_gui_current_cursor) {
-        mouse_gui_set_cursor(hovered->cursor);
+        gl_mouse_set_cursor(hovered->cursor);
       }
       if (menu_get_active() && hovered->dt == ELEMENT_DATA_MENU
       && menu_is_ancestor(hovered->dp_menu, menu_get_active()) && menu_element_is_main(hovered->dp_menu, hovered))
       {
-        menu_action_hover(hovered->dp_menu, x, y);
+        menu_routine_hover(hovered->dp_menu, x, y);
         refresh_needed = TRUE;
       }
       else if (!entered || hovered != entered) {
@@ -443,20 +451,20 @@ void mouse_gui_position(float x, float y) {
         if (entered && entered->dt == ELEMENT_DATA_SB && scrollbar_element_is_thumb(entered->dp_sb, entered)) {
           scrollbar_set_thumb_color(entered->dp_sb, FALSE);
         }
-        mouse_gui_entered_element = hovered;
+        gl_mouse_element_entered = hovered;
       }
     }
     else if (mouse_gui_current_cursor != SDL_SYSTEM_CURSOR_DEFAULT) {
-      mouse_gui_set_cursor(SDL_SYSTEM_CURSOR_DEFAULT);
+      gl_mouse_set_cursor(SDL_SYSTEM_CURSOR_DEFAULT);
     }
   }
 }
 
 /* ----------------------------- Mouse gui left ----------------------------- */
 
-void mouse_gui_left(void) {
-  Element *entered = mouse_gui_entered_element;
-  Element *clicked = mouse_gui_clicked_element;
+void gl_mouse_routine_left_window(void) {
+  Element *entered = gl_mouse_element_entered;
+  Element *clicked = gl_mouse_element_clicked;
   float x = mouse_xpos;
   float y = mouse_ypos;
   if (x <= (gl_window_width() / 2.F)) {
@@ -471,19 +479,19 @@ void mouse_gui_left(void) {
   else if (y >= (gl_window_height() / 2.F)) {
     y = (gl_window_height() + 30);
   }
-  mouse_gui_update_pos(x, y);
+  gl_mouse_update_pos(x, y);
   /* If there is a last entered element set, clear it. */
   if (entered) {
     if (!clicked && entered->dt == ELEMENT_DATA_SB && scrollbar_element_is_thumb(entered->dp_sb, entered)) {
       scrollbar_set_thumb_color(entered->dp_sb, FALSE);
     }
-    mouse_gui_entered_element = NULL;
+    gl_mouse_element_entered = NULL;
   }
 }
 
 /* ----------------------------- Mouse gui scroll ----------------------------- */
 
-void mouse_gui_scroll(float mx, float my, int _UNUSED ix, int iy, SDL_MouseWheelDirection type) {
+void gl_mouse_routine_scroll(float mx, float my, int _UNUSED ix, int iy, SDL_MouseWheelDirection type) {
   Element *hovered;
   bool direction;
   if (iy) {
@@ -495,9 +503,7 @@ void mouse_gui_scroll(float mx, float my, int _UNUSED ix, int iy, SDL_MouseWheel
         edit_scroll_for(hovered->dp_editor->openfile, direction);
         if (MOUSE_ISSET(MOUSE_BUTTON_HELD_LEFT)) {
           editor_get_text_line_index(
-            hovered->dp_editor,
-            mx,
-            my,
+            hovered->dp_editor, mx, my,
             &hovered->dp_editor->openfile->current,
             &hovered->dp_editor->openfile->current_x
           );
@@ -509,9 +515,8 @@ void mouse_gui_scroll(float mx, float my, int _UNUSED ix, int iy, SDL_MouseWheel
       else if (hovered->dt == ELEMENT_DATA_MENU && menu_get_active()
       && menu_is_ancestor(hovered->dp_menu, menu_get_active()) && menu_element_is_main(hovered->dp_menu, hovered))
       {
-        menu_action_scroll(hovered->dp_menu, direction, mx, my);
+        menu_routine_scroll(hovered->dp_menu, direction, mx, my);
       }
-      /* TODO: Add the promptmenu here when it has been rebuilt. */
     }
   }
 }

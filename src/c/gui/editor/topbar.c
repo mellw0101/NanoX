@@ -131,7 +131,7 @@ static void etb_create_button(EditorTb *const etb, openfilestruct *const f, floa
   button->cursor  = SDL_SYSTEM_CURSOR_POINTER;
   // button->cursor  = GLFW_HAND_CURSOR;
   element_set_lable(button, lable, strlen(lable));
-  element_set_file_data(button, f);
+  element_set_data_file(button, f);
   /* Set the correct color for the button based on if it's the currently open file in the editor. */
   button->color = ((f == etb->editor->openfile) ? ETB_ACTIVE_COLOR : ETB_BUTTON_COLOR);
   button->text_color = PACKED_UINT(255, 255, 255, 255);
@@ -176,8 +176,8 @@ static void etb_button_context_menu_pos(void *arg, float _UNUSED width, float _U
   ASSERT(arg);
   ASSERT(x);
   ASSERT(y);
-  (*x) = mouse_gui_get_x();
-  (*y) = mouse_gui_get_y();
+  (*x) = gl_mouse_x();
+  (*y) = gl_mouse_y();
 }
 
 /* The accept routine for the button context menu of the editor topbar. */
@@ -216,8 +216,8 @@ static void etb_context_menu_pos(void *arg, float _UNUSED width, float _UNUSED h
   ASSERT(arg);
   ASSERT(x);
   ASSERT(y);
-  (*x) = mouse_gui_get_x();
-  (*y) = mouse_gui_get_y();
+  (*x) = gl_mouse_x();
+  (*y) = gl_mouse_y();
 }
 
 /* The accept routine for the context menu of the editor topbar. */
@@ -279,7 +279,7 @@ EditorTb *etb_create(Editor *const editor) {
   element_set_parent(etb->element, etb->editor->main);
   etb->element->color   = PACKED_UINT_EDIT_BACKGROUND;
   etb->element->xflags |= (ELEMENT_REL_POS | ELEMENT_REL_WIDTH);
-  element_set_editor_data(etb->element, etb->editor);
+  element_set_data_editor(etb->element, etb->editor);
   etb_context_menu_create(etb);
   return etb;
 }

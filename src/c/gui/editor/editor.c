@@ -111,18 +111,18 @@ void editor_create(bool new_buffer) {
   openeditor = node;
   /* Main element. */
   openeditor->main = element_create(0, 0, gl_window_width(), gl_window_height(), FALSE);
-  element_set_editor_data(openeditor->main, openeditor);
+  element_set_data_editor(openeditor->main, openeditor);
   /* Gutter element. */
   openeditor->gutter = element_create(openeditor->main->x, (openeditor->main->y + font_height(uifont)), editor_get_gutter_width(openeditor), (openeditor->main->height - font_height(uifont)), TRUE);
   element_set_parent(openeditor->gutter, openeditor->main);
-  element_set_editor_data(openeditor->gutter, openeditor);
+  element_set_data_editor(openeditor->gutter, openeditor);
   openeditor->gutter->color = PACKED_UINT_EDIT_BACKGROUND;
   openeditor->gutter->xflags |= (ELEMENT_REL_POS | ELEMENT_REL_HEIGHT);
   openeditor->gutter->rel_y = font_height(uifont);
   /* Text element. */
   openeditor->text = element_create((openeditor->main->x + openeditor->gutter->width), (openeditor->main->y + font_height(uifont)), (openeditor->main->width - openeditor->gutter->width), (openeditor->main->height - font_height(uifont)), TRUE);
   element_set_parent(openeditor->text, openeditor->main);
-  element_set_editor_data(openeditor->text, openeditor);
+  element_set_data_editor(openeditor->text, openeditor);
   openeditor->text->color = PACKED_UINT_EDIT_BACKGROUND;
   openeditor->text->xflags |= (ELEMENT_REL_POS | ELEMENT_REL_SIZE /* | ELEMENT_ROUNDED_RECT */);
   openeditor->text->rel_x = openeditor->gutter->width;

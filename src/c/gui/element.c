@@ -416,14 +416,14 @@ void element_set_borders(Element *const e, float lsize, float tsize, float rsize
 /* Set the event layer of `e`.  Note that this does not change drawing layer as that depends on the order of drawing. */
 void element_set_layer(Element *const e, Ushort layer) {
   ASSERT(e);
-  if (e->parent) {
-    e->layer = (e->parent->layer + 1);
-  }
-  else {
-    e->layer = layer;
-  }
+  e->layer = layer;
   ELEMENT_CHILDREN_ITER(e, i, child,
-    element_set_layer(child, 0);
+    if (child->xflags & ELEMENT_SET_OWN_LAYER) {
+      element_set_layer(child, child->layer);
+    }
+    else {
+      element_set_layer(child, (layer + 1));
+    }
   );
 }
 
@@ -435,14 +435,14 @@ void element_set_parent(Element *const e, Element *const p) {
   ASSERT(p);
   e->parent = p;
   cvec_push(p->children, e);
-  element_set_layer(p, 0);
+  element_set_layer(p, p->layer);
 }
 
 /* ----------------------------- Element set raw data ----------------------------- */
 
 /* Set the internal data ptr of `e` to `void *` data.  Note that this
  * should be the only way of setting the internal data of a element. */
-void element_set_raw_data(Element *const e, void *const data) {
+void element_set_data_raw(Element *const e, void *const data) {
   ASSERT(e);
   ASSERT(data);
   e->dt = ELEMENT_DATA_RAW;
@@ -453,7 +453,7 @@ void element_set_raw_data(Element *const e, void *const data) {
 
 /* Set the internal data ptr of `e` to `Scrollbar *` data.  Note that
  * this should be the only way of setting the internal data of a element. */
-void element_set_sb_data(Element *const e, Scrollbar *const data) {
+void element_set_data_sb(Element *const e, Scrollbar *const data) {
   ASSERT(e);
   ASSERT(data);
   e->dt = ELEMENT_DATA_SB;
@@ -464,7 +464,7 @@ void element_set_sb_data(Element *const e, Scrollbar *const data) {
 
 /* Set the internal data ptr of `e` to `Menu *` data.  Note that this
  * should be the only way of setting the internal data of a element. */
-void element_set_menu_data(Element *const e, Menu *const data) {
+void element_set_data_menu(Element *const e, Menu *const data) {
   ASSERT(e);
   ASSERT(data);
   e->dt = ELEMENT_DATA_MENU;
@@ -475,7 +475,7 @@ void element_set_menu_data(Element *const e, Menu *const data) {
 
 /* Set the internal data ptr of `e` to `openfilestruct *` data.  Note that
  * this should be the only way of setting the internal data of a element. */
-void element_set_file_data(Element *const e, openfilestruct *const data) {
+void element_set_data_file(Element *const e, openfilestruct *const data) {
   ASSERT(e);
   ASSERT(data);
   e->dt = ELEMENT_DATA_FILE;
@@ -486,7 +486,7 @@ void element_set_file_data(Element *const e, openfilestruct *const data) {
 
 /* Set the internal data ptr of `e` to `Editor *` data.  Note that this
  * should be the only way of setting the internal data of a element. */
-void element_set_editor_data(Element *const e, Editor *const data) {
+void element_set_data_editor(Element *const e, Editor *const data) {
   ASSERT(e);
   ASSERT(data);
   e->dt = ELEMENT_DATA_EDITOR;

@@ -40,7 +40,7 @@ static void gl_loop_init(void) {
   element_grid_create(ELEMENT_GRID_CELL_SIZE);
   gl_window_init();
   gl_loop_init_glew();
-  mouse_gui_init();
+  gl_mouse_init();
   shader_compile();
   suggestmenu_create();
   promptmenu_create();
@@ -66,7 +66,7 @@ static void gl_loop_clean(void) {
   promptmenu_free();
   suggestmenu_free();
   element_grid_free();
-  mouse_gui_free(); 
+  gl_mouse_free(); 
   close_and_go();
 }
 

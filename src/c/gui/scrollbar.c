@@ -191,8 +191,8 @@ Scrollbar *scrollbar_create(Element *const parent, void *const data, ScrollbarUp
   sb->thumb = element_create(sb->base->x, sb->base->y, SB_WIDTH, 10, TRUE);
   element_set_parent(sb->base, parent);
   element_set_parent(sb->thumb, sb->base);
-  element_set_sb_data(sb->base, sb);
-  element_set_sb_data(sb->thumb, sb);
+  element_set_data_sb(sb->base, sb);
+  element_set_data_sb(sb->thumb, sb);
   sb->base->color  = PACKED_UINT_FLOAT(0.05f, 0.05f, 0.05f, 0.3f);
   sb->thumb->color = PACKED_UINT_FLOAT(1.0f, 1.0f, 1.0f, 0.3f);
   /* Base. */

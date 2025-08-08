@@ -572,7 +572,7 @@ Menu *menu_create(Element *const parent, Font *const font, void *data,
   menu->element->xflags |= ELEMENT_HIDDEN;
   /* As default all menus should have borders, to create a uniform look.  Note that this can be configured.  TODO: Implement the config of borders. */
   element_set_borders(menu->element, menu->border_size, menu->border_size, menu->border_size, menu->border_size, PACKED_UINT_DEFAULT_BORDERS);
-  element_set_menu_data(menu->element, menu);
+  element_set_data_menu(menu->element, menu);
   /* Create the selected rect element. */
   menu->selelem = element_create(100, 100, 100, font_height(font), FALSE);
   menu->selelem->color = MENU_DEFAULT_SELECTED_COLOR;
@@ -761,12 +761,12 @@ void menu_submenu_enter(Menu *const menu) {
   }
 }
 
-/* ----------------------------- Menu action accept ----------------------------- */
+/* ----------------------------- Menu routine accept ----------------------------- */
 
 /* This is used to perform the accept action of the depest opened menu's currently selected entry,
  * or if that selected entry has a submenu and its not open, then it will open it.  This is used
  * for both clicking and kb related execution of the accept routine for that menu. */
-void menu_action_accept(Menu *const menu) {
+void menu_routine_accept(Menu *const menu) {
   ASSERT_MENU;
   /* As a sanity check only perform any action when the menu is not empty. */
   if (cvec_len(menu->entries)) {
@@ -783,14 +783,14 @@ void menu_action_accept(Menu *const menu) {
     }
     /* And if that menu is currently active, recursivly call this function on that menu. */
     else {
-      menu_action_accept(menu->active_submenu);
+      menu_routine_accept(menu->active_submenu);
     }
   }
 }
 
-/* ----------------------------- Menu action hover ----------------------------- */
+/* ----------------------------- Menu routine hover ----------------------------- */
 
-void menu_action_hover(Menu *const menu, float x_pos, float y_pos) {
+void menu_routine_hover(Menu *const menu, float x_pos, float y_pos) {
   ASSERT_MENU;
   long row;
   float top;
@@ -808,9 +808,9 @@ void menu_action_hover(Menu *const menu, float x_pos, float y_pos) {
   }
 }
 
-/* ----------------------------- Menu scroll action ----------------------------- */
+/* ----------------------------- Menu routine scroll ----------------------------- */
 
-void menu_action_scroll(Menu *const menu, bool direction, float x_pos, float y_pos) {
+void menu_routine_scroll(Menu *const menu, bool direction, float x_pos, float y_pos) {
   ASSERT_MENU;
   float top;
   float bot;
@@ -825,16 +825,16 @@ void menu_action_scroll(Menu *const menu, bool direction, float x_pos, float y_p
       menu->viewtop += (!direction ? -1 : 1);
       menu->xflags |= MENU_REFRESH_TEXT;
       /* Ensure that the currently selected entry gets correctly set based on where the mouse is. */
-      menu_action_hover(menu, x_pos, y_pos);
+      menu_routine_hover(menu, x_pos, y_pos);
       scrollbar_refresh_needed(menu->sb);
       refresh_needed = TRUE;
     }
   }
 }
 
-/* ----------------------------- Menu click action ----------------------------- */
+/* ----------------------------- Menu routine click ----------------------------- */
 
-void menu_action_click(Menu *const menu, float x_pos, float y_pos) {
+void menu_routine_click(Menu *const menu, float x_pos, float y_pos) {
   ASSERT_MENU;
   float top;
   float bot;
@@ -844,10 +844,10 @@ void menu_action_click(Menu *const menu, float x_pos, float y_pos) {
     /* Get the absolute values where events are allowed. */
     menu_event_bounds(menu, &top, &bot, &right);
     if (y_pos >= top && y_pos <= bot && x_pos < right) {
-      menu_action_hover(menu, x_pos, y_pos);
+      menu_routine_hover(menu, x_pos, y_pos);
       /* Only allow clickes on non submenu entries. */
       if (!menu_get_entry_menu(menu, menu->selected)) {
-        menu_action_accept(menu);
+        menu_routine_accept(menu);
       }
     }
   }

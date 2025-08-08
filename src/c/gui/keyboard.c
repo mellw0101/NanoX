@@ -191,7 +191,7 @@ void kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
   VoidFuncPtr func = NULL;
   linestruct *was_current;
   Ulong was_x;
-  mouse_gui_clear_flags();
+  gl_mouse_flag_clear_all();
   /* Reset shift. */
   SHIFT_HELD(FALSE);
   switch (kb_filter_mod(mod)) {
@@ -256,7 +256,7 @@ void kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
         }
         case KC(ENTER): {
           if (menu_get_active()) {
-            menu_action_accept(menu_get_active());
+            menu_routine_accept(menu_get_active());
             return;
           }
           else {
@@ -266,7 +266,7 @@ void kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
         }
         case KC(TAB): {
           if (menu_get_active() && menu_allows_accept_on_tab(menu_get_active())) {
-            menu_action_accept(menu_get_active());
+            menu_routine_accept(menu_get_active());
             return;
           }
           else {

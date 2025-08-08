@@ -97,23 +97,6 @@ static void gl_window_SDL_free(void) {
   SDL_Quit();
 }
 
-/* ----------------------------- Gl window callback maximize ----------------------------- */
-
-_UNUSED
-static void gl_win_cb_maximize(GLFWwindow *_UNUSED win, int _UNUSED maximized) {
-  ATOMIC_STORE(fetch_needed, TRUE);
-}
-
-/* ----------------------------- Gl window callback framebuffer ----------------------------- */
-
-_UNUSED
-static void gl_win_cb_framebuffer(GLFWwindow *_UNUSED win, int w, int h) {
-  if (!(w == ATOMIC_FETCH(width) && h == ATOMIC_FETCH(height))) {
-    ATOMIC_STORE(width,  w);
-    ATOMIC_STORE(height, h);
-    ATOMIC_STORE(resize_needed, TRUE);
-  }
-}
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
@@ -212,15 +195,6 @@ bool gl_window_resize_needed(void) {
 
 void gl_window_init(void) {
   gl_window_SDL_init();
-  // window = glfwCreateWindow(width, height, PROJECT_NAME, NULL, NULL);
-  // if (!window) {
-  //   glfwTerminate();
-  //   log_ERR_FA("Failed to create the main glfw window");
-  // }
-  // glfwMakeContextCurrent(window);
-  // glfwSetWindowSizeCallback(window,      gl_window_callback_resize);
-  // glfwSetWindowMaximizeCallback(window,  gl_window_callback_maximize);
-  // glfwSetFramebufferSizeCallback(window, gl_window_callback_framebuffer);
   root = element_create(0, 0, width, height, FALSE);
 }
 
@@ -278,18 +252,18 @@ void gl_window_poll_events(void) {
         break;
       }
       case SDL_EVENT_MOUSE_BUTTON_DOWN: {
-        mouse_gui_update_state(TRUE, ev.button.button);
-        mouse_gui_button_down(ev.button.button, SDL_GetModState(), ev.button.x, ev.button.y);
+        gl_mouse_update_state(TRUE, ev.button.button);
+        gl_mouse_routine_button_dn(ev.button.button, SDL_GetModState(), ev.button.x, ev.button.y);
         break;
       }
       case SDL_EVENT_MOUSE_BUTTON_UP: {
-        mouse_gui_update_state(FALSE, ev.button.button);
-        mouse_gui_button_up(ev.button.button, SDL_GetModState(), ev.button.x, ev.button.y);
+        gl_mouse_update_state(FALSE, ev.button.button);
+        gl_mouse_routine_button_up(ev.button.button, SDL_GetModState(), ev.button.x, ev.button.y);
         break;
       }
       case SDL_EVENT_MOUSE_MOTION: {
-        mouse_gui_update_pos(ev.motion.x, ev.motion.y);
-        mouse_gui_position(ev.button.x, ev.button.y);
+        gl_mouse_update_pos(ev.motion.x, ev.motion.y);
+        gl_mouse_routine_position(ev.button.x, ev.button.y);
         break;
       }
       case SDL_EVENT_TEXT_INPUT: {
@@ -370,11 +344,11 @@ void gl_window_poll_events(void) {
         break;
       }
       case SDL_EVENT_WINDOW_MOUSE_LEAVE: {
-        mouse_gui_left();
+        gl_mouse_routine_left_window();
         break;
       }
       case SDL_EVENT_MOUSE_WHEEL: {
-        mouse_gui_scroll(ev.wheel.mouse_x, ev.wheel.mouse_y, ev.wheel.integer_x, ev.wheel.integer_y, ev.wheel.direction);
+        gl_mouse_routine_scroll(ev.wheel.mouse_x, ev.wheel.mouse_y, ev.wheel.integer_x, ev.wheel.integer_y, ev.wheel.direction);
         break;
       }
     }

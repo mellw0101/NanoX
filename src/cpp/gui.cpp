@@ -61,7 +61,7 @@ static void init_guistruct(void) {
   // make_guistruct();
   /* Then create the glfw window. */
   gl_window_init();
-  mouse_gui_init();
+  gl_mouse_init();
   /* Create and start the event handler. */
   // gui->handler = nevhandler_create();
   // nevhandler_start(gui->handler, TRUE);
@@ -104,7 +104,7 @@ static void cleanup(void) {
   statusbar_free();
   delete_guistruct();
   element_grid_free();
-  mouse_gui_free();
+  gl_mouse_free();
 }
 
 /* Init glew and check for errors.  Terminates on fail to init glew. */
