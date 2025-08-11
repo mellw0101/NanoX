@@ -42,11 +42,11 @@
 
 
 /* The PID of a forked process -- needed when wanting to abort it. */
-/* static */ pid_t pid_of_command = -1;
+static pid_t pid_of_command = -1;
 /* The PID of the process that pipes data to the above process. */
-/* static */ pid_t pid_of_sender = -1;
+static pid_t pid_of_sender = -1;
 /* Whether we are pipeing data to the external command. */
-/* static */ bool should_pipe = FALSE;
+static bool should_pipe = FALSE;
 
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
@@ -54,9 +54,10 @@
 
 /* ----------------------------- Do lockfile ----------------------------- */
 
-/* First check if a lock file already exists.  If so, and ask_the_user is TRUE, then ask whether to open the corresponding file
- * anyway.  Return SKIPTHISFILE when the user answers "No", return the name of the lock file on success, and return NULL on failure. */
-/* static */ char *do_lockfile(const char *const restrict filename, bool ask_the_user) {
+/* First check if a lock file already exists.  If so, and ask_the_user is TRUE, then ask
+ * whether to open the corresponding file anyway.  Return SKIPTHISFILE when the user
+ * answers "No", return the name of the lock file on success, and return NULL on failure. */
+static char *do_lockfile(const char *const restrict filename, bool ask_the_user) {
   char *namecopy     = copy_of(filename);
   char *secondcopy   = copy_of(filename);
   Ulong locknamelen  = (strlen(filename) + SLTLEN(LOCKING_PREFIX) + SLTLEN(LOCKING_SUFFIX));
@@ -143,7 +144,7 @@
 /* ----------------------------- Filename completion ----------------------------- */
 
 /* Try to complete the given fragment to an existing filename.  Note remember to set `present_path` for relative paths. */
-/* static */ char **filename_completion(const char *const restrict morsel, Ulong *const num_matches) {
+static char **filename_completion(const char *const restrict morsel, Ulong *const num_matches) {
   ASSERT(morsel);
   char *dirname = copy_of(morsel);
   char *slash   = strrchr(dirname, '/');
@@ -215,7 +216,7 @@
 /* Create a backup of an existing file.  If the user did not request backups,
  * make a temporary one.  (trying first in the directory of the original file,
  * then in the user's home directory).  Return 'TRUE' if the save can proceed. */
-/* static */ bool make_backup_of_for(openfilestruct *const file, char *realname) {
+static bool make_backup_of_for(openfilestruct *const file, char *realname) {
   ASSERT(file);
   ASSERT(realname);
   struct timespec filetime[2];
@@ -377,14 +378,15 @@
 /* Create a backup of an existing file.  If the user did not request backups,
  * make a temporary one.  (trying first in the directory of the original file,
  * then in the user's home directory).  Return 'TRUE' if the save can proceed. */
-/* static */ bool make_backup_of(char *realname) {
+_UNUSED
+static bool make_backup_of(char *realname) {
   return make_backup_of_for(CTX_OF, realname);
 }
 
 /* ----------------------------- Cancel the command ----------------------------- */
 
 /* Send an unconditional kill signal to the running external command. */
-/* static */ void cancel_the_command(int _UNUSED signal) {
+static void cancel_the_command(int _UNUSED signal) {
   if (pid_of_command > 0) {
     kill(pid_of_command, SIGKILL);
   }
@@ -396,7 +398,7 @@
 /* ----------------------------- Send data ----------------------------- */
 
 /* Send the text that starts at `head` to the file-desctiptor `fd`.  TODO: Make this fully fd based. */
-/* static */ void send_data(const linestruct *head, int fd) {
+static void send_data(const linestruct *head, int fd) {
   ASSERT(head);
   ASSERT(fd >= 0);
   FILE *pipe = fdopen(fd, "w");
@@ -421,7 +423,7 @@
 /* ----------------------------- Execute command ----------------------------- */
 
 /* Execute the given command in a shell. */
-/* static */ void execute_command_for(CTX_ARGS_REF_OF, const char *const restrict command) {
+static void execute_command_for(CTX_ARGS_REF_OF, const char *const restrict command) {
   ASSERT(file);
   ASSERT(*file);
   ASSERT(command);
@@ -581,7 +583,8 @@
 }
 
 /* Execute the given command in a shell.  Note that this is `context-safe`. */
-/* static */ void execute_command(const char *const restrict command) {
+_UNUSED
+static void execute_command(const char *const restrict command) {
   if (IN_GUI_CTX) {
     execute_command_for(&GUI_OF, GUI_RC, command);
   }
@@ -594,7 +597,7 @@
 
 /* Insert a file into `*open` (or into a `new buffer`).  But when `execute` is `TRUE`, run a command in
  * the shell and insert it's output into the buffer, or just run one or the tools listed in the help lines. */
-/* static */ void insert_a_file_or_for(FULL_CTX_ARGS, bool execute) {
+static void insert_a_file_or_for(FULL_CTX_ARGS, bool execute) {
   ASSERT(start);
   ASSERT(open);
   ASSERT(*start);
@@ -752,7 +755,8 @@
 
 /* Insert a file into the `currently open buffer` (or into a `new buffer`).  But when `execute` is `TRUE`, run a
  * command in the shell and insert it's output into the buffer, or just run one or the tools listed in the help lines. */
-/* static */ void insert_a_file_or(bool execute) {
+_UNUSED
+static void insert_a_file_or(bool execute) {
   FULL_CTX_CALL_WARGS(insert_a_file_or_for, execute);
 }
 

@@ -256,7 +256,7 @@ static void menu_reset(Menu *const menu) {
   menu->viewtop  = 0;
   menu->selected = 0;
   /* And tell the scrollbar it needs to be updated. */
-  scrollbar_refresh_needed(menu->sb);
+  scrollbar_refresh(menu->sb);
 }
 
 /* ----------------------------- Menu show internal ----------------------------- */
@@ -472,7 +472,7 @@ static void menu_selected_up_internal(Menu *const menu) {
       if (len > menu->maxrows) {
         menu->viewtop = (len - menu->maxrows);
         /* Only update the scrollbar when the viewtop has changed. */
-        scrollbar_refresh_needed(menu->sb);
+        scrollbar_refresh(menu->sb);
       }
     }
     /* Otherwise, we are anywhere below that. */
@@ -481,12 +481,12 @@ static void menu_selected_up_internal(Menu *const menu) {
       if (menu->viewtop == menu->selected) {
         --menu->viewtop;
         /* Only update the scrollbar when the viewtop has changed. */
-        scrollbar_refresh_needed(menu->sb);
+        scrollbar_refresh(menu->sb);
       }
       else if (menu_selected_is_off_screen(menu)) {
         menu->viewtop = (menu->selected - 1);
         /* Only update the scrollbar when the viewtop has changed. */
-        scrollbar_refresh_needed(menu->sb);
+        scrollbar_refresh(menu->sb);
       }
       --menu->selected;
     }
@@ -506,20 +506,20 @@ static void menu_selected_down_internal(Menu *const menu) {
       menu->selected = 0;
       menu->viewtop  = 0;
       /* Only update the scrollbar when the viewtop has changed. */
-      scrollbar_refresh_needed(menu->sb);
+      scrollbar_refresh(menu->sb);
     }
     else {
       /* If the currently selected entry is the last visible entry, move the viewtop down by one. */
       if (menu->selected == (menu->viewtop + menu->maxrows - 1)) {
         ++menu->viewtop;
         /* Only update the scrollbar when the viewtop has changed. */
-        scrollbar_refresh_needed(menu->sb);
+        scrollbar_refresh(menu->sb);
       }
       /* Otherwise, if the currently selected entry if fully off screen, adjust the viewtop so that the selected is the last visible entry. */
       else if (menu_selected_is_off_screen(menu)) {
         menu->viewtop = fclamp(((menu->selected + 1) - menu->rows + 1), 0, (cvec_len(menu->entries) - menu->rows));
         /* Only update the scrollbar when the viewtop has changed. */
-        scrollbar_refresh_needed(menu->sb);
+        scrollbar_refresh(menu->sb);
       }
       ++menu->selected;
     }
@@ -682,7 +682,7 @@ void menu_refresh_text(Menu *const menu) {
 
 void menu_refresh_scrollbar(Menu *const menu) {
   ASSERT_MENU;
-  scrollbar_refresh_needed(menu->sb);
+  scrollbar_refresh(menu->sb);
 }
 
 /* ----------------------------- Menu show ----------------------------- */
@@ -826,7 +826,7 @@ void menu_routine_scroll(Menu *const menu, bool direction, float x_pos, float y_
       menu->xflags |= MENU_REFRESH_TEXT;
       /* Ensure that the currently selected entry gets correctly set based on where the mouse is. */
       menu_routine_hover(menu, x_pos, y_pos);
-      scrollbar_refresh_needed(menu->sb);
+      scrollbar_refresh(menu->sb);
       refresh_needed = TRUE;
     }
   }

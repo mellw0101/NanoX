@@ -21,17 +21,27 @@
 #define SCROLLBAR_LENGTH(total_length, start, end, visible) \
   (fclamp((((float)(visible) / (((Uint)(end) - (Uint)(start)) + (Uint)(visible))) * (float)(total_length)), 0, (float)(total_length)))
 
-#define SB_WIDTH  (10.0f)
+#define SB_WIDTH  (10.F)
 
 #define SB_THUMB_COLOR          PACKED_UINT_FLOAT(1.0f, 1.0f, 1.0f, 0.3f)
 #define SB_ACTIVE_THUMB_COLOR   PACKED_UINT_FLOAT(1.0f, 1.0f, 1.0f, 0.7f)
+
+
+/* ---------------------------------------------------------- Enum's ---------------------------------------------------------- */
+
+
+typedef enum {
+  SCROLLBAR_REFRESH = (1 << 0),
+# define SCROLLBAR_REFRESH  SCROLLBAR_REFRESH
+} ScrollbarStateType;
 
 
 /* ---------------------------------------------------------- Struct's ---------------------------------------------------------- */
 
 
 struct Scrollbar {
-  bool refresh_needed : 1;
+  /* The current state of the scrollbar. */
+  Uint xflags;
 
   Element *base;
   Element *thumb;
@@ -62,7 +72,9 @@ static inline float scrollbar_step_value_for(Uint idx, float total_length, float
 
 /* Return's a allocated `float *` containing the preceding index position, the current index position and
  * the following index position, and when either at the first or last index just return 2 positions. */
-static float *scrollbar_closest_step_values(Uint idx, float total_length, Uint startidx, Uint endidx, Uint visible_idxno, Ulong *const arraylen) {
+static float *scrollbar_closest_step_values(Uint idx, float total_length,
+  Uint startidx, Uint endidx, Uint visible_idxno, Ulong *const arraylen)
+{
   ASSERT(arraylen);
   float *array = xmalloc(sizeof(float) * 3);
   float length = scrollbar_length(total_length, startidx, endidx, visible_idxno);
@@ -80,6 +92,8 @@ static float *scrollbar_closest_step_values(Uint idx, float total_length, Uint s
   *arraylen = i;
   return array;
 }
+
+/* ----------------------------- Scrollbar closest step index ----------------------------- */
 
 /* Return's the true index based on the inaccuret index and current raw position of the scrollbar. */
 static Ulong scrollbar_closest_step_index(Uint idx, float rawpos, float *const array, Ulong arraylen) {
@@ -105,13 +119,19 @@ static Ulong scrollbar_closest_step_index(Uint idx, float rawpos, float *const a
   return (idx - 1 + index);
 }
 
+/* ----------------------------- Scrollbar calculate ----------------------------- */
+
 /* Calculate the height and the top y position relative to `total_pixel_length` of a scrollbar. */
-static void scrollbar_calculate(float total_length, Uint start, Uint end, Uint visible, Uint current, float *const length, float *const relative_pos) {
+static void scrollbar_calculate(float total_length, Uint start, Uint end,
+  Uint visible, Uint current, float *const length, float *const relative_pos)
+{
   ASSERT(length);
   ASSERT(relative_pos);
   *length       = scrollbar_length(total_length, start, end, visible);
   *relative_pos = scrollbar_step_value_for(current, total_length, *length, start, end);
 }
+
+/* ----------------------------- Scrollbar index ----------------------------- */
 
 /* Return's the index based on a scrollbar's top `ypos` relative to `total_length`. */
 static long scrollbar_index(float total_length, Uint start, Uint end, Uint visible, float y_pos) {
@@ -135,6 +155,8 @@ static long scrollbar_index(float total_length, Uint start, Uint end, Uint visib
   free(array);
   return (index + start);
 }
+
+/* ----------------------------- Scrollbar calc routine ----------------------------- */
 
 static void scrollbar_calc_routine(Scrollbar *const sb) {
   ASSERT_SCROLLBAR;
@@ -172,6 +194,8 @@ static void scrollbar_calc_routine(Scrollbar *const sb) {
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
+/* ----------------------------- Scrollbar create ----------------------------- */
+
 Scrollbar *scrollbar_create(Element *const parent, void *const data, ScrollbarUpdateFunc update, ScrollbarMovingFunc moving) {
   ASSERT(parent);
   ASSERT(data);
@@ -184,8 +208,8 @@ Scrollbar *scrollbar_create(Element *const parent, void *const data, ScrollbarUp
   update(data, NULL, NULL, NULL, NULL, NULL, &t_offset, &r_offset);
   /* Create the scrollbar. */
   Scrollbar *sb = xmalloc(sizeof(*sb));
-  /* Boolian flag's. */
-  sb->refresh_needed = TRUE;
+  /* Init the state flag. */
+  sb->xflags = 0;
   /* Element's. */
   sb->base  = element_create((parent->x + parent->width - (SB_WIDTH + r_offset)), (parent->y + t_offset), SB_WIDTH, (parent->height - t_offset), TRUE);
   sb->thumb = element_create(sb->base->x, sb->base->y, SB_WIDTH, 10, TRUE);
@@ -197,12 +221,9 @@ Scrollbar *scrollbar_create(Element *const parent, void *const data, ScrollbarUp
   sb->thumb->color = PACKED_UINT_FLOAT(1.0f, 1.0f, 1.0f, 0.3f);
   /* Base. */
   sb->base->xflags |= (ELEMENT_REVREL_X | ELEMENT_REL_Y);
-  // sb->base->has_reverse_relative_x_pos = TRUE;
-  // sb->base->has_relative_y_pos         = TRUE;
-  sb->base->rel_x                 = (SB_WIDTH + r_offset);
-  sb->base->rel_y                 = t_offset;
+  sb->base->rel_x = (SB_WIDTH + r_offset);
+  sb->base->rel_y = t_offset;
   /* Thumb. */
-  // sb->thumb->has_relative_pos = TRUE;
   sb->thumb->xflags |= (ELEMENT_REL_POS | ELEMENT_ROUNDED_RECT);
   /* Data ptr. */
   sb->data = data;
@@ -212,6 +233,8 @@ Scrollbar *scrollbar_create(Element *const parent, void *const data, ScrollbarUp
   sb->moving = moving;
   return sb;
 }
+
+/* ----------------------------- Scrollbar move ----------------------------- */
 
 void scrollbar_move(Scrollbar *const sb, float change) {
   ASSERT_SCROLLBAR;
@@ -224,11 +247,13 @@ void scrollbar_move(Scrollbar *const sb, float change) {
   sb->moving(sb->data, scrollbar_index(total_length, start, end, visible, (sb->thumb->y - sb->base->y)));
 }
 
+/* ----------------------------- Scrollbar draw ----------------------------- */
+
 void scrollbar_draw(Scrollbar *const sb) {
   ASSERT_SCROLLBAR;
-  if (sb->refresh_needed) {
+  if (sb->xflags & SCROLLBAR_REFRESH) {
     scrollbar_calc_routine(sb);
-    sb->refresh_needed = FALSE;
+    sb->xflags &= ~SCROLLBAR_REFRESH;
     if (sb->base->xflags & ELEMENT_HIDDEN) {
       return;
     }
@@ -237,10 +262,14 @@ void scrollbar_draw(Scrollbar *const sb) {
   element_draw(sb->thumb);
 }
 
-void scrollbar_refresh_needed(Scrollbar *const sb) {
+/* ----------------------------- Scrollbar refresh ----------------------------- */
+
+void scrollbar_refresh(Scrollbar *const sb) {
   ASSERT_SCROLLBAR;
-  sb->refresh_needed = TRUE;
+  sb->xflags |= SCROLLBAR_REFRESH;
 }
+
+/* ----------------------------- Scrollbar element is base ----------------------------- */
 
 /* Return's `TRUE` when `e` is the `base` element of `sb`. */
 bool scrollbar_element_is_base(Scrollbar *const sb, Element *const e) {
@@ -249,12 +278,16 @@ bool scrollbar_element_is_base(Scrollbar *const sb, Element *const e) {
   return (e == sb->base);
 }
 
+/* ----------------------------- Scrollbar element is thumb ----------------------------- */
+
 /* Return's `TRUE` when `e` is the `thumb` element of `sb`. */
 bool scrollbar_element_is_thumb(Scrollbar *const sb, Element *const e) {
   ASSERT_SCROLLBAR;
   ASSERT(e);
   return (e == sb->thumb);
 }
+
+/* ----------------------------- Scrollbar mouse pos routine ----------------------------- */
 
 void scrollbar_mouse_pos_routine(Scrollbar *const sb, Element *const e, float was_y_pos, float y_pos) {
   ASSERT_SCROLLBAR;
@@ -264,10 +297,14 @@ void scrollbar_mouse_pos_routine(Scrollbar *const sb, Element *const e, float wa
   }
 }
 
+/* ----------------------------- Scrollbar width ----------------------------- */
+
 float scrollbar_width(Scrollbar *const sb) {
   ASSERT_SCROLLBAR;
   return sb->base->width;
 }
+
+/* ----------------------------- Scrollbar show ----------------------------- */
 
 void scrollbar_show(Scrollbar *const sb, bool show) {
   ASSERT_SCROLLBAR;
@@ -279,7 +316,10 @@ void scrollbar_show(Scrollbar *const sb, bool show) {
     sb->base->xflags  |= ELEMENT_HIDDEN;
     sb->thumb->xflags |= ELEMENT_HIDDEN;
   }
+  scrollbar_refresh(sb);
 }
+
+/* ----------------------------- Scrollbar set thumb color ----------------------------- */
 
 void scrollbar_set_thumb_color(Scrollbar *const sb, bool active) {
   ASSERT_SCROLLBAR;
@@ -289,4 +329,19 @@ void scrollbar_set_thumb_color(Scrollbar *const sb, bool active) {
   else {
     element_set_color(sb->thumb, SB_ACTIVE_THUMB_COLOR);
   }
+}
+
+/* ----------------------------- Scrollbar routine click base ----------------------------- */
+
+void scrollbar_routine_click_base(Scrollbar *const sb, Element *const e, float x, float y) {
+  ASSERT_SCROLLBAR;
+  ASSERT(e);
+  /* Never accept faulty input.  The caller must ensure this.  ALWAYS... */
+  ALWAYS_ASSERT(e == sb->base);
+  /* Move the thumb element to the correct position.  And set the thumb color to active. */
+  scrollbar_move(sb, ((y - sb->thumb->y) - (sb->thumb->height / 2)));
+  scrollbar_set_thumb_color(sb, TRUE);
+  sb->xflags |= SCROLLBAR_REFRESH;
+  /* Then call our mouse button click routine, and it will handle itself. */
+  gl_mouse_routine_button_dn(SDL_BUTTON_LEFT, SDL_GetModState(), x, y);
 }

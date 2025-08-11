@@ -66,7 +66,7 @@ static void gl_loop_clean(void) {
   promptmenu_free();
   suggestmenu_free();
   element_grid_free();
-  gl_mouse_free(); 
+  gl_mouse_free();
   close_and_go();
 }
 
@@ -90,6 +90,7 @@ void gl_loop(void) {
         editor_confirm_margin(editor);
         draw_editor(editor);
       );
+      suggestmenu_draw();
       promptmenu_draw();
       statusbar_draw();
       gl_window_swap();

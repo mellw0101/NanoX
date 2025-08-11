@@ -325,7 +325,9 @@ void suggestmenu_free(void) {
 /* Fully clear the suggestions and reset the `suggest-menu` buffer. */
 void suggestmenu_clear(void) {
   ASSERT_SM;
-  *suggest->buffer = NUL;
+  if (suggest->buffer) {
+    *suggest->buffer = NUL;
+  }
   suggest->length = 0;
   menu_clear_entries(suggest->menu);
   menu_show(suggest->menu, FALSE);
@@ -436,5 +438,6 @@ void suggestmenu_draw(void) {
 
 /* Returns the internal menu of the suggest structure. */
 Menu *suggestmenu(void) {
+  ASSERT_SM;
   return suggest->menu;
 }

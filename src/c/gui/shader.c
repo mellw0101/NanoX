@@ -372,8 +372,7 @@ void shader_compile(void) {
   /* If we fail to compile the font-shader, we must terminate. */
   if (!font_shader) {
     gl_window_free();
-    glfwTerminate();
-    die("Failed to compile the font shader, this is fatal.\n");
+    log_ERR_FA("Failed to compile the font shader, this is fatal.");
   }
   /* Create both fonts. */
   textfont = font_create();
@@ -391,7 +390,7 @@ void shader_compile(void) {
     shader_load(GL_FRAGMENT_SHADER, rect_frag)
   });
   if (!rect_shader) {
-    writeferr("Failed to comile the rect shader.  We can continue without this, but we only have text.\n");
+    log_ERR_NF("Failed to comile the rect shader.  We can continue without this, but we only have text.");
   }
   else {
     glUseProgram(rect_shader); {

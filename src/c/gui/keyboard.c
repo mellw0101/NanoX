@@ -608,9 +608,13 @@ void kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
   else if (GUI_OF->current != was_current) {
     also_the_last = FALSE;
   }
+  /* Currently just shoe-horn in this right here. */
+  if (func == do_enter && current_is_offscreen_for(GUI_CTX)) {
+    adjust_viewport_for(GUI_CTX, CENTERING);
+  }
   /* When we have moved or changed something, tell the open-editor it needs to update the scrollbar. */
   if (wanted_to_move(func) || changes_something(func) || func == do_undo || func == do_redo) {
-    scrollbar_refresh_needed(openeditor->sb);
+    scrollbar_refresh(openeditor->sb);
   }
   /* If the suggest-menu has entries in it, we should update it. */
   if (menu_len(suggestmenu())) {

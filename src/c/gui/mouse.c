@@ -278,11 +278,17 @@ void gl_mouse_routine_button_dn(Uchar button, Ushort _UNUSED mod, float x, float
     if (menu_get_active() && !menu_owns_element(menu_get_active(), e)) {
       menu_show(menu_get_active(), FALSE);
     }
+    /* Menu-Main */
     else if (menu_get_active() && e->dt == ELEMENT_DATA_MENU
     && menu_is_ancestor(e->dp_menu, menu_get_active()) && menu_element_is_main(e->dp_menu, e))
     {
       menu_routine_click(e->dp_menu, x, y);
     }
+    /* Scrollbar-Base */
+    else if (e->dt == ELEMENT_DATA_SB && scrollbar_element_is_base(e->dp_sb, e)) {
+      scrollbar_routine_click_base(e->dp_sb, e, x, y);
+    }
+    /* Editor-Text */
     else if (e->dt == ELEMENT_DATA_EDITOR && e == e->dp_editor->text) {
       editor_set_open(e->dp_editor);
       editor_get_text_line_index(e->dp_editor, x, y, &GUI_OF->current, &GUI_OF->current_x);
@@ -312,6 +318,7 @@ void gl_mouse_routine_button_dn(Uchar button, Ushort _UNUSED mod, float x, float
       }
       refresh_needed = TRUE;
     }
+    /* Editor-Topbar-Tab */
     else if (e->dt == ELEMENT_DATA_FILE && e->parent && e->parent->dt == ELEMENT_DATA_EDITOR
     && etb_element_is_main(e->parent->dp_editor->tb, e->parent) /* && Gui not in prompt-mode. */)
     {
@@ -360,7 +367,7 @@ void gl_mouse_routine_button_up(Uchar button, Ushort _UNUSED mod, float x, float
       if (scrollbar_element_is_thumb(e->dp_sb, e) && e != element_grid_get(x, y)) {
         scrollbar_set_thumb_color(e->dp_sb, FALSE);
       }
-      scrollbar_refresh_needed(e->dp_sb);
+      scrollbar_refresh(e->dp_sb);
     }
     gl_mouse_element_clicked = NULL;
     refresh_needed = TRUE;
@@ -373,7 +380,7 @@ void gl_mouse_routine_position(float x, float y) {
   Ulong st;
   Ulong end;
   Element *clicked = gl_mouse_element_clicked;
-  Element *entered = gl_mouse_element_entered; 
+  Element *entered = gl_mouse_element_entered;
   Element *hovered;
   if (MOUSE_ISSET(MOUSE_BUTTON_HELD_LEFT)) {
     if (clicked) {
@@ -509,7 +516,7 @@ void gl_mouse_routine_scroll(float mx, float my, int _UNUSED ix, int iy, SDL_Mou
           );
         }
         /* TODO: Add the suggest-menu refreshing here once its done. */
-        scrollbar_refresh_needed(hovered->dp_editor->sb);
+        scrollbar_refresh(hovered->dp_editor->sb);
         refresh_needed = TRUE;
       }
       else if (hovered->dt == ELEMENT_DATA_MENU && menu_get_active()

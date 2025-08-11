@@ -204,9 +204,9 @@ extern syntaxtype *syntaxes;
 
 /* ----------------------------- files.c ----------------------------- */
 
-/* static */ extern pid_t pid_of_command;
-/* static */ extern pid_t pid_of_sender;
-/* static */ extern bool should_pipe;
+// /* static */ extern pid_t pid_of_command;
+// /* static */ extern pid_t pid_of_sender;
+// /* static */ extern bool should_pipe;
 
 /* ----------------------------- winio.c ----------------------------- */
 
@@ -795,16 +795,28 @@ void element_set_extra_routine_rect(Element *const e, ElementExtraCallback callb
 /* ---------------------------------------------------------- gui/scrollbar.c ---------------------------------------------------------- */
 
 
+/* ----------------------------- Scrollbar create ----------------------------- */
 Scrollbar *scrollbar_create(Element *const parent, void *const data, ScrollbarUpdateFunc update, ScrollbarMovingFunc moving);
-void       scrollbar_move(Scrollbar *const sb, float change);
-void       scrollbar_draw(Scrollbar *const sb);
-void       scrollbar_refresh_needed(Scrollbar *const sb);
-bool       scrollbar_element_is_base(Scrollbar *const sb, Element *const e);
-bool       scrollbar_element_is_thumb(Scrollbar *const sb, Element *const e);
-void       scrollbar_mouse_pos_routine(Scrollbar *const sb, Element *const e, float was_y_pos, float y_pos);
-float      scrollbar_width(Scrollbar *const sb);
-void       scrollbar_show(Scrollbar *const sb, bool show);
-void       scrollbar_set_thumb_color(Scrollbar *const sb, bool active);
+/* ----------------------------- Scrollbar move ----------------------------- */
+void scrollbar_move(Scrollbar *const sb, float change);
+/* ----------------------------- Scrollbar draw ----------------------------- */
+void scrollbar_draw(Scrollbar *const sb);
+/* ----------------------------- Scrollbar refresh ----------------------------- */
+void scrollbar_refresh(Scrollbar *const sb);
+/* ----------------------------- Scrollbar element is base ----------------------------- */
+bool scrollbar_element_is_base(Scrollbar *const sb, Element *const e);
+/* ----------------------------- Scrollbar element is thumb ----------------------------- */
+bool scrollbar_element_is_thumb(Scrollbar *const sb, Element *const e);
+/* ----------------------------- Scrollbar mouse pos routine ----------------------------- */
+void scrollbar_mouse_pos_routine(Scrollbar *const sb, Element *const e, float was_y_pos, float y_pos);
+/* ----------------------------- Scrollbar width ----------------------------- */
+float scrollbar_width(Scrollbar *const sb);
+/* ----------------------------- Scrollbar show ----------------------------- */
+void scrollbar_show(Scrollbar *const sb, bool show);
+/* ----------------------------- Scrollbar set thumb color ----------------------------- */
+void scrollbar_set_thumb_color(Scrollbar *const sb, bool active);
+/* ----------------------------- Scrollbar routine click base ----------------------------- */
+void scrollbar_routine_click_base(Scrollbar *const sb, Element *const e, float x, float y);
 
 
 /* ---------------------------------------------------------- gui/utils.c ---------------------------------------------------------- */
@@ -819,7 +831,8 @@ vertex_buffer_t *vertbuf_create(void);
 
 
 /* ----------------------------- Menu create ----------------------------- */
-Menu *menu_create(Element *const parent, Font *const font, void *data, MenuPositionFunc position_routine, MenuAcceptFunc accept_routine);
+Menu *menu_create(Element *const parent, Font *const font, void *data,
+  MenuPositionFunc position_routine, MenuAcceptFunc accept_routine);
 /* ----------------------------- Menuu create submenu ----------------------------- */
 Menu *menu_create_submenu(Menu *const parent, const char *const restrict lable, void *data, MenuAcceptFunc accept_routine);
 /* ----------------------------- Menu free ----------------------------- */
@@ -980,21 +993,6 @@ void promptmenu_ask(PromptMenuType type);
 
 
 /* ---------------------------------------------------------- files.c ---------------------------------------------------------- */
-
-
-/* static */ char *do_lockfile(const char *const restrict filename, bool ask_the_user);
-/* static */ char **filename_completion(const char *const restrict morsel, Ulong *const num_matches) ;
-/* static */ bool make_backup_of_for(openfilestruct *const file, char *realname);
-/* static */ bool make_backup_of(char *realname);
-
-/* static */ void cancel_the_command(int _UNUSED signal);
-/* static */ void send_data(const linestruct *head, int fd);
-
-/* static */ void execute_command_for(CTX_ARGS_REF_OF, const char *const restrict command);
-/* static */ void execute_command(const char *const restrict command);
-
-/* static */ void insert_a_file_or_for(FULL_CTX_ARGS, bool execute);
-/* static */ void insert_a_file_or(bool execute);
 
 
 /* ----------------------------- Make new buffer ----------------------------- */

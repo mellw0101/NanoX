@@ -242,7 +242,7 @@ void editor_resize(Editor *const editor) {
   element_move_resize(editor->main, 0, 0, gl_window_width(), (gl_window_height() - font_height(uifont)));
   editor_set_rows_cols(editor, editor->text->width, editor->text->height);
   etb_text_refresh_needed(editor->tb);
-  scrollbar_refresh_needed(editor->sb);
+  scrollbar_refresh(editor->sb);
 }
 
 /* Used to ensure the correct state of an editor after we have switched to a new one or changed the currently open file. */
@@ -259,7 +259,7 @@ void editor_redecorate(Editor *const editor) {
   currmenu       = MMOST;
   shift_held     = TRUE;
   refresh_needed = TRUE;
-  scrollbar_refresh_needed(editor->sb);
+  scrollbar_refresh(editor->sb);
 }
 
 /* Switch to the previous editor.  */

@@ -244,6 +244,7 @@ void gl_window_borderless_fullscreen(void) {
 
 /* ----------------------------- Gl window poll events ----------------------------- */
 
+/* TODO: Maybe make a event.c file that handles all events, as this will be easier later if we have more windows. */
 void gl_window_poll_events(void) {
   while (SDL_PollEvent(&ev)) {
     switch (ev.type) {

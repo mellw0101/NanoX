@@ -162,14 +162,19 @@ static void promptmenu_open_file_search(void) {
     if (dir_exists(answer)) {
       directory_get(answer, &dir);
     }
-    else {
-      last_slash = STRRCHR(answer, '/');
-      if (last_slash && last_slash != answer) {
-        dirpath = measured_copy(answer, (last_slash - answer));
-        directory_get(dirpath, &dir);
-        free(dirpath);
-      }
+    /* Otherwise, try the parent directory when there is a preceding slash. */
+    else if ((last_slash = STRRCHR(answer, '/'))) {
+      dirpath = measured_copy(answer, ((last_slash - answer) + 1));
+      directory_get(dirpath, &dir);
+      FREE(dirpath);
     }
+    /* Otherwise, when non absolute path is used, try pwd. */
+    /* else {
+      dirpath = getpwd();
+      directory_get(dirpath, &dir);
+      FREE(dirpath);
+    }
+     * TODO: This needs some attention, as we need to add the non absolute paths to the completions. */
     if (dir.len) {
       DIRECTORY_ITER(dir, i, entry,
         cvec_push(pm->completions, copy_of(entry->path));
@@ -302,6 +307,7 @@ void promptmenu_close(void) {
 
 /* ----------------------------- Promptmenu active ----------------------------- */
 
+/* Returns `TRUE` when the prompt-menu is currently active. */
 bool promptmenu_active(void) {
   ASSERT_PM;
   return !!(pm->xflags & PROMPTMENU_ACTIVE);
@@ -389,11 +395,11 @@ void promptmenu_routine_enter(void) {
       if (*answer) {
         /* The answer is a directory. */
         if (dir_exists(answer)) {
-          typing_x = strlen(answer);
+          typing_x = STRLEN(answer);
           if (answer[typing_x - 1] != '/') {
             answer = xnstrncat(answer, typing_x++, S__LEN("/"));
           }
-          promptmenu_open_file_search();
+          promptmenu_routine_completions_search();
           return;
         }
         else if (blkdev_exists(answer)) {
@@ -404,7 +410,7 @@ void promptmenu_routine_enter(void) {
         }
         else {
           pwd    = getpwd();
-          pwdlen = strlen(pwd);
+          pwdlen = STRLEN(pwd);
           if (STRNCMP(answer, pwd, pwdlen) && file_exists(answer + pwdlen + 1)) {
             editor_open_buffer(answer + pwdlen + 1);
           }
@@ -527,6 +533,11 @@ bool promptmenu_routine_mouse_button_dn(Element *const e, Uchar button, float x,
         && e->dp_menu == pm->menu && menu_element_is_main(e->dp_menu, e))
         {
           menu_routine_click(e->dp_menu, x, y);
+          promptmenu_routine_enter();
+        }
+        /* Scrollbar base click. */
+        else if (e->dt == ELEMENT_DATA_SB && scrollbar_element_is_base(e->dp_sb, e)) {
+          scrollbar_routine_click_base(e->dp_sb, e, x, y);
         }
       }
     }

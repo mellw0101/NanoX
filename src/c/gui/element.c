@@ -10,6 +10,8 @@
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
+/* ----------------------------- Element create internal ----------------------------- */
+
 static Element *element_create_internal(void) {
   Element *e = xmalloc(sizeof *e);
   /* State flags. */
@@ -51,6 +53,9 @@ static Element *element_create_internal(void) {
   return e;
 }
 
+/* ----------------------------- Element children relative pos ----------------------------- */
+
+/* TODO: Rename. */
 static void element_children_relative_pos(Element *const e) {
   ASSERT(e);
   float x;
@@ -110,7 +115,8 @@ static void element_children_relative_pos(Element *const e) {
   );
 }
 
-_UNUSED
+/* ----------------------------- Bazier indices create ----------------------------- */
+
 static Uint *bazier_indices_create(Ulong n, Ulong *const len) {
   ASSERT(len);
   *len = ((n - 1) * 3);
@@ -123,8 +129,11 @@ static Uint *bazier_indices_create(Ulong n, Ulong *const len) {
   return ret;
 }
 
-_UNUSED
-static void bazier_corner_arc(float corner_x, float corner_y, float center_x, float center_y, float t, float *const arcx, float *const arcy, Ulong n) {
+/* ----------------------------- Bazier corner arc ----------------------------- */
+
+static void bazier_corner_arc(float corner_x, float corner_y, float center_x,
+  float center_y, float t, float *const arcx, float *const arcy, Ulong n)
+{
   ASSERT(arcx);
   ASSERT(arcy);
   float ax;
@@ -133,12 +142,14 @@ static void bazier_corner_arc(float corner_x, float corner_y, float center_x, fl
   bazier_arc(corner_x, center_y, center_x, corner_y, ax, ay, arcx, arcy, n);
 }
 
-_UNUSED
+/* ----------------------------- Bazier vertex create ----------------------------- */
+
 static RectVertex *bazier_vertex_create(Ulong n) {
   return xmalloc(sizeof(RectVertex) * (n + 1));
 }
 
-_UNUSED
+/* ----------------------------- Bazier vertex insert ----------------------------- */
+
 static void bazier_vertex_insert(RectVertex *vert, Ulong n, float cx, float cy, float *const arcx, float *const arcy, Uint color) {
   UNPACK_FUINT_VARS(color, r,g,b,a);
   vert[0] = (RectVertex){ cx,cy, r,g,b,a };
@@ -147,7 +158,8 @@ static void bazier_vertex_insert(RectVertex *vert, Ulong n, float cx, float cy, 
   }
 }
 
-_UNUSED
+/* ----------------------------- Element add rounded center rect ----------------------------- */
+
 static void element_add_rounded_center_rect(Element *const e, float offset) {
   ASSERT(e);
   RectVertex vert[4];
@@ -161,7 +173,8 @@ static void element_add_rounded_center_rect(Element *const e, float offset) {
   vertex_buffer_push_back(e->rect_buffer, ARRAY__LEN(vert), ARRAY__LEN(RECT_INDICES));
 }
 
-_UNUSED
+/* ----------------------------- Element instert bazier arc corner ----------------------------- */
+
 static void element_insert_bazier_arc_corner(Element *const e, RectVertex *vert, Uint *indi,
   Ulong indi_len, Ulong n, float corner_x, float corner_y, float center_x, float center_y)
 {
@@ -307,7 +320,7 @@ void element_move(Element *const e, float x, float y) {
 void element_resize(Element *const e, float width, float height) {
   ASSERT(e);
   element_grid_remove(e);
-  if (!(e->width == width && e->height == height)) {
+  if (e->width != width || e->height != height) {
     e->xflags |= ELEMENT_RECT_REFRESH;
   }
   e->width  = width;
