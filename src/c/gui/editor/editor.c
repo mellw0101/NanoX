@@ -11,6 +11,8 @@
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
+/* ----------------------------- Editor create internal ----------------------------- */
+
 static Editor *editor_create_internal(void) {
   Editor *editor = xmalloc(sizeof(*editor));
   /* Boolian flags. */
@@ -41,6 +43,8 @@ static Editor *editor_create_internal(void) {
   return editor;
 }
 
+/* ----------------------------- Editor get gutter width ----------------------------- */
+
 static float editor_get_gutter_width(Editor *const editor) {
   ASSERT_EDITOR(editor);
   char *linenostr;
@@ -54,8 +58,12 @@ static float editor_get_gutter_width(Editor *const editor) {
   return ret;
 }
 
+/* ----------------------------- Editor scrollbar update routine ----------------------------- */
+
 /* The editor's routine to fetch the data the scrollbar need's. */
-static void editor_scrollbar_update_routine(void *arg, float *total_length, Uint *start, Uint *end, Uint *visible, Uint *current, float *t_offset, float *r_offset) {
+static void editor_scrollbar_update_routine(void *arg, float *total_length,
+  Uint *start, Uint *end, Uint *visible, Uint *current, float *t_offset, float *r_offset)
+{
   ASSERT(arg);
   Editor *editor = arg;
   ASSIGN_IF_VALID(total_length, editor->text->height);
@@ -67,6 +75,8 @@ static void editor_scrollbar_update_routine(void *arg, float *total_length, Uint
   ASSIGN_IF_VALID(r_offset, 0);
 }
 
+/* ----------------------------- Editor scrollbar moving routine ----------------------------- */
+
 /* The editor's routine to respond to a calculated index based on the scrollbars's current position. */
 static void editor_scrollbar_moving_routine(void *arg, long index) {
   ASSERT(arg);
@@ -75,6 +85,8 @@ static void editor_scrollbar_moving_routine(void *arg, long index) {
   ASSERT(editor->openfile->edittop);
   editor->openfile->edittop = line_from_number_for(editor->openfile, index);
 }
+
+/* ----------------------------- Editor scrollbar create ----------------------------- */
 
 /* Create the editor scrollbar. */
 static void editor_scrollbar_create(Editor *const editor) {
@@ -86,6 +98,8 @@ static void editor_scrollbar_create(Editor *const editor) {
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
+
+/* ----------------------------- Editor create ----------------------------- */
 
 void editor_create(bool new_buffer) {
   Editor *node = editor_create_internal();
@@ -135,6 +149,8 @@ void editor_create(bool new_buffer) {
   openeditor->tb = etb_create(openeditor);
 }
 
+/* ----------------------------- Editor free ----------------------------- */
+
 void editor_free(Editor *const editor) {
   /* Make this function `NO-OP`. */
   if (!editor) {
@@ -147,6 +163,8 @@ void editor_free(Editor *const editor) {
   free(editor->sb);
   free(editor);
 }
+
+/* ----------------------------- Editor confirm margin ----------------------------- */
 
 void editor_confirm_margin(Editor *const editor) {
   ASSERT_EDITOR(editor);
@@ -165,6 +183,8 @@ void editor_confirm_margin(Editor *const editor) {
   }
 }
 
+/* ----------------------------- Editor set rows cols ----------------------------- */
+
 /* Calculate the row's and column's of a `editor` based on the size of it's text element. */
 void editor_set_rows_cols(Editor *const editor, float width, float height) {
   ASSERT(editor);
@@ -174,6 +194,8 @@ void editor_set_rows_cols(Editor *const editor, float width, float height) {
   editor->rows = rows;
   editor->cols = cols;
 }
+
+/* ----------------------------- Editor from file ----------------------------- */
 
 /* Get the editor that `file` belongs to. */
 Editor *editor_from_file(openfilestruct *const file) {
@@ -185,6 +207,8 @@ Editor *editor_from_file(openfilestruct *const file) {
   ););
   log_ERR_FA("This should never happen, every openfile must be linked to a editor.");
 }
+
+/* ----------------------------- Editor hide ----------------------------- */
 
 void editor_hide(Editor *const editor, bool hide) {
   ASSERT(editor);
@@ -201,6 +225,8 @@ void editor_hide(Editor *const editor, bool hide) {
   }
   etb_show_context_menu(editor->tb, NULL, FALSE);
 }
+
+/* ----------------------------- Editor close ----------------------------- */
 
 void editor_close(Editor *const editor) {
   ASSERT_EDITOR(editor);
@@ -226,6 +252,8 @@ void editor_close(Editor *const editor) {
   editor_free(editor);
 }
 
+/* ----------------------------- Editor resize ----------------------------- */
+
 void editor_resize(Editor *const editor) {
   ASSERT(editor);
   ASSERT(editor->text);
@@ -245,6 +273,8 @@ void editor_resize(Editor *const editor) {
   scrollbar_refresh(editor->sb);
 }
 
+/* ----------------------------- Editor redecorate ----------------------------- */
+
 /* Used to ensure the correct state of an editor after we have switched to a new one or changed the currently open file. */
 void editor_redecorate(Editor *const editor) {
   ASSERT_EDITOR(editor);
@@ -261,6 +291,8 @@ void editor_redecorate(Editor *const editor) {
   refresh_needed = TRUE;
   scrollbar_refresh(editor->sb);
 }
+
+/* ----------------------------- Editor switch to prev ----------------------------- */
 
 /* Switch to the previous editor.  */
 void editor_switch_to_prev(void) {
@@ -280,6 +312,8 @@ void editor_switch_to_prev(void) {
   editwinrows = openeditor->rows;
 }
 
+/* ----------------------------- Editor switch to next ----------------------------- */
+
 /* Switch to the next editor. */
 void editor_switch_to_next(void) {
   ASSERT_EDITOR(openeditor);
@@ -298,6 +332,8 @@ void editor_switch_to_next(void) {
   editwinrows = openeditor->rows;
 }
 
+/* ----------------------------- Editor switch openfile to prev ----------------------------- */
+
 /* Within the currently open editor, switch to the prev buffer. */
 void editor_switch_openfile_to_prev(void) {
   ASSERT_EDITOR(openeditor);
@@ -313,6 +349,8 @@ void editor_switch_openfile_to_prev(void) {
   editor_resize(openeditor);
   etb_active_refresh_needed(openeditor->tb);
 }
+
+/* ----------------------------- Editor switch openfile to next ----------------------------- */
 
 /* Within the currently open editor, switch to the prev buffer. */
 void editor_switch_openfile_to_next(void) {
@@ -330,6 +368,8 @@ void editor_switch_openfile_to_next(void) {
   etb_active_refresh_needed(openeditor->tb);
 }
 
+/* ----------------------------- Editor set open ----------------------------- */
+
 /* Set `openedit` to editor, if its not already. */
 void editor_set_open(Editor *const editor) {
   ASSERT_EDITOR(openeditor);
@@ -345,6 +385,8 @@ void editor_set_open(Editor *const editor) {
   editor_redecorate(editor);
   editor_resize(editor);
 }
+
+/* ----------------------------- Editor check should close ----------------------------- */
 
 /* Check if any editor's has it's `should_close` flag set, and if so close them. */
 void editor_check_should_close(void) {
@@ -365,6 +407,8 @@ void editor_check_should_close(void) {
   }
 }
 
+/* ----------------------------- Editor close open buffer ----------------------------- */
+
 /* Close the currently open editor's currently open buffer. */
 void editor_close_open_buffer(void) {
   ASSERT_EDITOR(openeditor);
@@ -374,6 +418,8 @@ void editor_close_open_buffer(void) {
   // openeditor->startfile = startfile;
   etb_entries_refresh_needed(openeditor->tb);
 }
+
+/* ----------------------------- Editor open new empty buffer ----------------------------- */
 
 /* Open a new empty `openfilestruct *` in the currently open editor. */
 void editor_open_new_empty_buffer(void) {
@@ -385,6 +431,8 @@ void editor_open_new_empty_buffer(void) {
   etb_entries_refresh_needed(openeditor->tb);
 }
 
+/* ----------------------------- Editor update all ----------------------------- */
+
 void editor_update_all(void) {
   ASSERT(starteditor);
   ASSERT(openeditor);
@@ -393,6 +441,8 @@ void editor_update_all(void) {
     editor_resize(editor);
   );
 }
+
+/* ----------------------------- Editor get page start ----------------------------- */
 
 Ulong editor_get_page_start(Editor *const editor, const Ulong column) {
   ASSERT(editor);
@@ -407,6 +457,8 @@ Ulong editor_get_page_start(Editor *const editor, const Ulong column) {
   }
 }
 
+/* ----------------------------- Editor cursor x pos ----------------------------- */
+
 float editor_cursor_x_pos(Editor *const editor, linestruct *const line, Ulong index) {
   ASSERT(editor);
   ASSERT(line);
@@ -418,6 +470,8 @@ float editor_cursor_x_pos(Editor *const editor, linestruct *const line, Ulong in
   return ret;
 }
 
+/* ----------------------------- Editor get text line ----------------------------- */
+
 linestruct *editor_get_text_line(Editor *const editor, float y_pos) {
   ASSERT(editor);
   ASSERT(editor->text);
@@ -428,19 +482,27 @@ linestruct *editor_get_text_line(Editor *const editor, float y_pos) {
   return line_from_number_for(editor->openfile, lclamp((editor->openfile->edittop->lineno + row), editor->openfile->edittop->lineno, editor->openfile->filebot->lineno));
 }
 
+/* ----------------------------- Editor get text index ----------------------------- */
+
 Ulong editor_get_text_index(Editor *const editor, linestruct *const line, float x_pos) {
   ASSERT(editor);
   ASSERT(line);
   return font_index_from_pos(textfont, line->data, strlen(line->data), x_pos, editor->text->x);
 }
 
-void editor_get_text_line_index(Editor *const editor, float x_pos, float y_pos, linestruct **const outline, Ulong *const outindex) {
+/* ----------------------------- Editor get text line index ----------------------------- */
+
+void editor_get_text_line_index(Editor *const editor, float x_pos,
+  float y_pos, linestruct **const outline, Ulong *const outindex)
+{
   ASSERT(editor);
   ASSERT(outline);
   ASSERT(outindex);
   (*outline)  = editor_get_text_line(editor, y_pos);
   (*outindex) = editor_get_text_index(editor, (*outline), x_pos);
 }
+
+/* ----------------------------- Editor open buffer ----------------------------- */
 
 /* Open a new buffer in the currently open editor using `path`. */
 void editor_open_buffer(const char *const restrict path) {
@@ -462,6 +524,8 @@ void editor_open_buffer(const char *const restrict path) {
   editor_resize(openeditor);
   etb_entries_refresh_needed(openeditor->tb);
 }
+
+/* ----------------------------- Editor close a open buffer ----------------------------- */
 
 void editor_close_a_open_buffer(openfilestruct *const file) {
   ASSERT(file);

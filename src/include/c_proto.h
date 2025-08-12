@@ -1672,31 +1672,58 @@ bool etb_owns_element(EditorTb *const etb, Element *const e);
 /* ---------------------------------------------------------- gui/editor/editor.c ---------------------------------------------------------- */
 
 
+/* ----------------------------- Editor create ----------------------------- */
 void editor_create(bool new_buffer);
+/* ----------------------------- Editor free ----------------------------- */
 void editor_free(Editor *const editor);
+/* ----------------------------- Editor confirm margin ----------------------------- */
 void editor_confirm_margin(Editor *const editor);
+/* ----------------------------- Editor set rows cols ----------------------------- */
 void editor_set_rows_cols(Editor *const editor, float width, float height);
+/* ----------------------------- Editor from file ----------------------------- */
 Editor *editor_from_file(openfilestruct *const file);
+/* ----------------------------- Editor hide ----------------------------- */
 void editor_hide(Editor *const editor, bool hide);
+/* ----------------------------- Editor close ----------------------------- */
 void editor_close(Editor *const editor);
+/* ----------------------------- Editor resize ----------------------------- */
 void editor_resize(Editor *const editor);
+/* ----------------------------- Editor redecorate ----------------------------- */
 void editor_redecorate(Editor *const editor);
+/* ----------------------------- Editor switch to prev ----------------------------- */
 void editor_switch_to_prev(void);
+/* ----------------------------- Editor switch to next ----------------------------- */
 void editor_switch_to_next(void);
+/* ----------------------------- Editor switch openfile to prev ----------------------------- */
 void editor_switch_openfile_to_prev(void);
+/* ----------------------------- Editor switch openfile to next ----------------------------- */
 void editor_switch_openfile_to_next(void);
+/* ----------------------------- Editor set open ----------------------------- */
 void editor_set_open(Editor *const editor);
+/* ----------------------------- Editor check should close ----------------------------- */
 void editor_check_should_close(void);
+/* ----------------------------- Editor close open buffer ----------------------------- */
 void editor_close_open_buffer(void);
+/* ----------------------------- Editor open new empty buffer ----------------------------- */
 void editor_open_new_empty_buffer(void);
+/* ----------------------------- Editor update all ----------------------------- */
 void editor_update_all(void);
+/* ----------------------------- Editor get page start ----------------------------- */
 Ulong editor_get_page_start(Editor *const editor, const Ulong column);
+/* ----------------------------- Editor cursor x pos ----------------------------- */
 float editor_cursor_x_pos(Editor *const editor, linestruct *const line, Ulong index);
+/* ----------------------------- Editor get text line ----------------------------- */
 linestruct *editor_get_text_line(Editor *const editor, float y_pos);
+/* ----------------------------- Editor get text index ----------------------------- */
 Ulong editor_get_text_index(Editor *const editor, linestruct *const line, float x_pos);
-void editor_get_text_line_index(Editor *const editor, float x_pos, float y_pos, linestruct **const outline, Ulong *const outindex);
+/* ----------------------------- Editor get text line index ----------------------------- */
+void editor_get_text_line_index(Editor *const editor, float x_pos,
+  float y_pos, linestruct **const outline, Ulong *const outindex);
+/* ----------------------------- Editor open buffer ----------------------------- */
 void editor_open_buffer(const char *const restrict path);
+/* ----------------------------- Editor close a open buffer ----------------------------- */
 void editor_close_a_open_buffer(openfilestruct *const file);
+/* ----------------------------- Editor buffer save ----------------------------- */
 void editor_buffer_save(openfilestruct *const file);
 
 

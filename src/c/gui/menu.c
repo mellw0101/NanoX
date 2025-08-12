@@ -264,14 +264,12 @@ static void menu_reset(Menu *const menu) {
 static void menu_show_internal(Menu *const menu, bool show) {
   ASSERT_MENU;
   if (show) {
-    // menu->element->hidden = FALSE;
     menu->element->xflags &= ~ELEMENT_HIDDEN;
     /* TODO: Figure out if only resetting when hiding works for all things. */
     // menu_reset(menu);
   }
   else {
     menu->element->xflags |= ELEMENT_HIDDEN;
-    // menu->element->hidden = TRUE;
     if (menu->active_submenu) {
       menu_show_internal(menu->active_submenu, FALSE);
       menu->active_submenu = NULL;
