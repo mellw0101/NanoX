@@ -88,7 +88,7 @@ void gl_loop(void) {
       editor_check_should_close();
       CLIST_ITER(starteditor, editor,
         editor_confirm_margin(editor);
-        draw_editor(editor);
+        editor_draw(editor);
       );
       suggestmenu_draw();
       promptmenu_draw();

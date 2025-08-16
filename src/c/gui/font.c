@@ -447,7 +447,9 @@ float font_wideness(Font *const f, const char *const restrict string, Ulong to_i
 /* ----------------------------- Font add glyph ----------------------------- */
 
 /* Add one glyph to 'buffer' to be rendered.  At position pen. */
-void font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const restrict current, const char *const restrict prev, Uint color, float *const pen_x, float *const pen_y) {
+void font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const restrict current,
+  const char *const restrict prev, Uint color, float *const pen_x, float *const pen_y)
+{
   ASSERT_FONT;
   ASSERT(current);
   ASSERT(buf);
@@ -472,7 +474,9 @@ void font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const
 
 /* ----------------------------- Font vertbuf add mbstr ----------------------------- */
 
-void font_vertbuf_add_mbstr(Font *const f, vertex_buffer_t *buf, const char *string, Ulong len, const char *previous, Uint color, float *const pen_x, float *const pen_y) {
+void font_vertbuf_add_mbstr(Font *const f, vertex_buffer_t *buf, const char *string,
+  Ulong len, const char *previous, Uint color, float *const pen_x, float *const pen_y)
+{
   ASSERT_FONT;
   ASSERT(buf);
   ASSERT(string);

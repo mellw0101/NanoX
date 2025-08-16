@@ -7,7 +7,6 @@
 #include "../../../include/c_proto.h"
 
 
-
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
@@ -670,4 +669,45 @@ void editor_text_line(Editor *const editor, linestruct *const line) {
       free(data);
     }
   }
+}
+
+/* ----------------------------- Editor draw ----------------------------- */
+
+void editor_draw(Editor *const editor) {
+  ASSERT_EDITOR(editor);
+  int row = 0;
+  linestruct *line;
+  if (editor->hidden) {
+    return;
+  }
+  line = editor->openfile->edittop;
+  /* Draw the editor elements. */
+  element_draw(editor->gutter);
+  element_draw(editor->text);
+  if (refresh_needed) {
+    vertex_buffer_clear(editor->buffer);
+    vertex_buffer_clear(editor->marked_region_buf);
+    while (line && row++ < editor->rows) {
+      editor_text_line(editor, line);
+      DLIST_ADV_NEXT(line);
+    }
+    /* If the prompt-menu is not active, and the current line is on screen, then add the cursor. */
+    if (!promptmenu_active() && editor->openfile->current->lineno >= editor->openfile->edittop->lineno
+    && editor->openfile->current->lineno < (editor->openfile->edittop->lineno + editor->rows))
+    {
+      font_add_cursor(
+        textfont,
+        editor->buffer,
+        (editor->openfile->current->lineno - editor->openfile->edittop->lineno),
+        PACKED_UINT_WHITE,
+        editor_cursor_x_pos(editor, editor->openfile->current, editor->openfile->current_x),
+        editor->text->y
+      );
+    }
+  }
+  vertex_buffer_render(editor->marked_region_buf, GL_TRIANGLES);
+  render_vertbuf(textfont, editor->buffer);
+  /* Draw the top-bar of the editor. */
+  etb_draw(editor->tb);
+  scrollbar_draw(editor->sb);
 }
