@@ -577,7 +577,7 @@ void editor_buffer_save(openfilestruct *const file) {
 
 /* ----------------------------- Editor text line marked region ----------------------------- */
 
-/* TODO: Here we really need to ensure that we make `from_x` and `till_x` non globals as this will be bad later. */
+/* TODO: Here we really need to ensure that we make `from_x` and `till_x` non globals, as this will be bad later. */
 void editor_text_line_marked_region(Editor *const editor,
   linestruct *const line, const char *const restrict data, Ulong from_col)
 {
@@ -634,6 +634,40 @@ void editor_text_line_marked_region(Editor *const editor,
       /* Create the rect vertex entries, then add then to the marked region buffer. */
       shader_rect_vertex_load(vert, x, y, width, height, PACKED_UINT_FLOAT(.2F, .2F, .5F, .45F));
       vertex_buffer_push_back(editor->marked_region_buf, vert, 4, ARRAY__LEN(RECT_INDICES));
+    }
+  }
+}
+
+/* ----------------------------- Editor text line ----------------------------- */
+
+/* TODO: Change the name of this later. */
+void editor_text_line(Editor *const editor, linestruct *const line) {
+  ASSERT_EDITOR(editor);
+  ASSERT(line);
+  float x;
+  float y;
+  char *data;
+  Ulong from_col;
+  if (refresh_needed) {
+    if (ISSET(LINE_NUMBERS)) {
+      x = editor->gutter->x;
+      y = (font_row_baseline(textfont, (line->lineno - editor->openfile->edittop->lineno)) + editor->gutter->y);
+      data = fmtstr("%*lu ", (editor->margin - 1), line->lineno);
+      font_vertbuf_add_mbstr(textfont, editor->buffer, data, editor->margin, NULL, PACKED_UINT_WHITE, &x, &y);
+      free(data);
+    }
+    /* If the line has any text on it. */
+    if (*line->data) {
+      from_col = get_page_start(
+        wideness(line->data, ((line == editor->openfile->current) ? editor->openfile->current_x : 0)),
+        editor->cols
+      );
+      data = display_string(line->data, from_col, editor->cols, TRUE, FALSE);
+      x = editor->text->x;
+      y = (font_row_baseline(textfont, (line->lineno - editor->openfile->edittop->lineno)) + editor->text->y);
+      font_vertbuf_add_mbstr(textfont, editor->buffer, data, STRLEN(data), NULL, PACKED_UINT_WHITE, &x, &y);
+      editor_text_line_marked_region(editor, line, data, from_col);
+      free(data);
     }
   }
 }

@@ -1726,6 +1726,8 @@ void editor_buffer_save(openfilestruct *const file);
 /* ----------------------------- Editor text line marked region ----------------------------- */
 void editor_text_line_marked_region(Editor *const editor,
   linestruct *const line, const char *const restrict data, Ulong from_col);
+/* ----------------------------- Editor text line ----------------------------- */
+void editor_text_line(Editor *const editor, linestruct *const line);
 
 
 /* ---------------------------------------------------------- gui/statusbar.c ---------------------------------------------------------- */

@@ -73,70 +73,70 @@
 //   }
 // }
 
-_UNUSED
-static void draw_marked(Editor *const editor, linestruct *const line, const char *const restrict convert, Ulong fromcol) {
-  RectVertex rectvert[4];
-  /* The top and bottom line where the marked region begins and ends. */
-  linestruct *top, *bot;
-  /* The start position in the top line and the end position in the bottom line. */
-  Ulong xtop, xbot;
-  /* Start index for where to draw in this line. */
-  int startcol;
-  /* End index for where to draw in this line. */
-  Ulong endcol;
-  /* Where in convert the marked region begins. */
-  const char *thetext;
-  /* The number of columns the marked region covers in this line. */
-  int paintlen = -1;
-  /* The rect we will draw, and the color of it. */
-  vec4 rect;
-  /* The top and bottom pixels for the line. */
-  float pixtop, pixbot;
-  /* If the line is at least partially selected, paint the marked part. */
-  if (line_in_marked_region(line)) {
-    get_region(&top, &xtop, &bot, &xbot);
-    /* Set xtop and xbot to reflect the start and end on this line. */
-    if ((top->lineno < line->lineno) || (xtop < from_x)) {
-      xtop = from_x;
-    }
-    if ((bot->lineno > line->lineno) || (xbot > till_x)) {
-      xbot = till_x;
-    }
-    /* Only paint if the marked part of the line is on this page. */
-    if (xtop < till_x && xbot > from_x) {
-      /* Compute the start column. */
-      startcol = (wideness(line->data, xtop) - fromcol);
-      CLAMP_MIN(startcol, 0);
-      thetext = (convert + actual_x(convert, startcol));
-      /* If the end mark is onscreen, compute how meny columns to paint. */
-      if (xbot < till_x) {
-        endcol = (wideness(line->data, xbot) - fromcol);
-        paintlen = actual_x(thetext, (endcol - startcol));
-      }
-      /* Otherwise, calculate the end index of the text on screen. */
-      if (paintlen == -1) {
-        paintlen = strlen(thetext);
-      }
-      // rect.x = (string_pixel_offset(line->data, NULL, startcol, gui_font_get_font(textfont)) + (ISSET(LINE_NUMBERS) ? get_line_number_pixel_offset(line, gui_font_get_font(textfont)) : 0));
-      rect.x = (string_pixel_offset(line->data, NULL, startcol, font_get_font(textfont)) + editor->text->x);
-      /* Calculate the width of the marked region in pixels. */
-      rect.width = string_pixel_offset(thetext, ((convert == thetext) ? NULL : &convert[(thetext - convert) - 1]), paintlen, font_get_font(textfont));
-      /* Get the y offset for the given line. */
-      font_row_top_bot(textfont, (line->lineno - editor->openfile->edittop->lineno), &pixtop, NULL);
-      // row_top_bot_pixel((line->lineno - editor->openfile->edittop->lineno), gui_font_get_font(textfont), &pixtop, NULL);
-      rect.y = (pixtop + editor->text->y);
-      /* To ensure that there is no overlap and no space between lines by calculating
-       * the height of the marked box based on the top of the next line. */
-      font_row_top_bot(textfont, (line->lineno - editor->openfile->edittop->lineno + 1), &pixbot, NULL);
-      // row_top_bot_pixel((line->lineno - editor->openfile->edittop->lineno + 1), gui_font_get_font(textfont), &pixbot, NULL);
-      rect.height = (pixbot - pixtop);
-      shader_rect_vertex_load(rectvert, rect.x, rect.y, rect.width, rect.height, PACKED_UINT_FLOAT(0.2f, 0.2f, 0.5f, 0.45f));
-      vertex_buffer_push_back(editor->marked_region_buf, rectvert, 4, RECT_INDICES, RECT_INDICES_LEN);
-      /* Draw the rect to the screen. */
-      // draw_rect(rect.xy(), rect.zw(), GUI_MARKED_REGION_COLOR);
-    }
-  }
-}
+// _UNUSED
+// static void draw_marked(Editor *const editor, linestruct *const line, const char *const restrict convert, Ulong fromcol) {
+//   RectVertex rectvert[4];
+//   /* The top and bottom line where the marked region begins and ends. */
+//   linestruct *top, *bot;
+//   /* The start position in the top line and the end position in the bottom line. */
+//   Ulong xtop, xbot;
+//   /* Start index for where to draw in this line. */
+//   int startcol;
+//   /* End index for where to draw in this line. */
+//   Ulong endcol;
+//   /* Where in convert the marked region begins. */
+//   const char *thetext;
+//   /* The number of columns the marked region covers in this line. */
+//   int paintlen = -1;
+//   /* The rect we will draw, and the color of it. */
+//   vec4 rect;
+//   /* The top and bottom pixels for the line. */
+//   float pixtop, pixbot;
+//   /* If the line is at least partially selected, paint the marked part. */
+//   if (line_in_marked_region(line)) {
+//     get_region(&top, &xtop, &bot, &xbot);
+//     /* Set xtop and xbot to reflect the start and end on this line. */
+//     if ((top->lineno < line->lineno) || (xtop < from_x)) {
+//       xtop = from_x;
+//     }
+//     if ((bot->lineno > line->lineno) || (xbot > till_x)) {
+//       xbot = till_x;
+//     }
+//     /* Only paint if the marked part of the line is on this page. */
+//     if (xtop < till_x && xbot > from_x) {
+//       /* Compute the start column. */
+//       startcol = (wideness(line->data, xtop) - fromcol);
+//       CLAMP_MIN(startcol, 0);
+//       thetext = (convert + actual_x(convert, startcol));
+//       /* If the end mark is onscreen, compute how meny columns to paint. */
+//       if (xbot < till_x) {
+//         endcol = (wideness(line->data, xbot) - fromcol);
+//         paintlen = actual_x(thetext, (endcol - startcol));
+//       }
+//       /* Otherwise, calculate the end index of the text on screen. */
+//       if (paintlen == -1) {
+//         paintlen = strlen(thetext);
+//       }
+//       // rect.x = (string_pixel_offset(line->data, NULL, startcol, gui_font_get_font(textfont)) + (ISSET(LINE_NUMBERS) ? get_line_number_pixel_offset(line, gui_font_get_font(textfont)) : 0));
+//       rect.x = (string_pixel_offset(line->data, NULL, startcol, font_get_font(textfont)) + editor->text->x);
+//       /* Calculate the width of the marked region in pixels. */
+//       rect.width = string_pixel_offset(thetext, ((convert == thetext) ? NULL : &convert[(thetext - convert) - 1]), paintlen, font_get_font(textfont));
+//       /* Get the y offset for the given line. */
+//       font_row_top_bot(textfont, (line->lineno - editor->openfile->edittop->lineno), &pixtop, NULL);
+//       // row_top_bot_pixel((line->lineno - editor->openfile->edittop->lineno), gui_font_get_font(textfont), &pixtop, NULL);
+//       rect.y = (pixtop + editor->text->y);
+//       /* To ensure that there is no overlap and no space between lines by calculating
+//        * the height of the marked box based on the top of the next line. */
+//       font_row_top_bot(textfont, (line->lineno - editor->openfile->edittop->lineno + 1), &pixbot, NULL);
+//       // row_top_bot_pixel((line->lineno - editor->openfile->edittop->lineno + 1), gui_font_get_font(textfont), &pixbot, NULL);
+//       rect.height = (pixbot - pixtop);
+//       shader_rect_vertex_load(rectvert, rect.x, rect.y, rect.width, rect.height, PACKED_UINT_FLOAT(0.2f, 0.2f, 0.5f, 0.45f));
+//       vertex_buffer_push_back(editor->marked_region_buf, rectvert, 4, RECT_INDICES, RECT_INDICES_LEN);
+//       /* Draw the rect to the screen. */
+//       // draw_rect(rect.xy(), rect.zw(), GUI_MARKED_REGION_COLOR);
+//     }
+//   }
+// }
 
 /* Draw rect to the window. */
 // void draw_rect(vec2 pos, vec2 size, vec4 color) {
@@ -153,15 +153,15 @@ static void draw_marked(Editor *const editor, linestruct *const line, const char
 //   }
 // }
 
-void render_vertex_buffer(Uint shader, vertex_buffer_t *buf) {
-  ASSERT(shader);
-  ASSERT(buf);
-  glEnable(GL_TEXTURE_2D);
-  glUseProgram(shader); {
-    glUniform1i(glGetUniformLocation(shader, "tex"), 0);
-    vertex_buffer_render(buf, GL_TRIANGLES);
-  }
-}
+// void render_vertex_buffer(Uint shader, vertex_buffer_t *buf) {
+//   ASSERT(shader);
+//   ASSERT(buf);
+//   glEnable(GL_TEXTURE_2D);
+//   glUseProgram(shader); {
+//     glUniform1i(glGetUniformLocation(shader, "tex"), 0);
+//     vertex_buffer_render(buf, GL_TRIANGLES);
+//   }
+// }
 
 // static void gui_draw_row_linenum(linestruct *const line, guieditor *const editor) {
 //   char linenobuffer[margin + 1];
@@ -389,6 +389,7 @@ static void gui_draw_row_linenum(linestruct *const line, Editor *const editor) {
 //   free(converted);
 // }
 
+_UNUSED
 static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
   /* When debugging is enabled, assert everything we will use. */
   ASSERT(line);
@@ -704,7 +705,7 @@ void draw_editor(Editor *editor) {
   // ASSERT(gui);
   ASSERT(textfont);
   ASSERT(uifont);
-  vec2 pen = 0;
+  // vec2 pen = 0;
   int row = 0;
   /* Start at the top of the text window. */
   linestruct *line = editor->openfile->edittop;
@@ -722,9 +723,10 @@ void draw_editor(Editor *editor) {
     vertex_buffer_clear(editor->buffer);
     vertex_buffer_clear(editor->marked_region_buf);
     while (line && row++ < editor->rows) {
-      pen.x = editor->text->x;
-      pen.y = (font_row_baseline(textfont, (line->lineno - editor->openfile->edittop->lineno)) + editor->text->y);
-      gui_draw_row(line, editor, &pen);
+      // pen.x = editor->text->x;
+      // pen.y = (font_row_baseline(textfont, (line->lineno - editor->openfile->edittop->lineno)) + editor->text->y);
+      // gui_draw_row(line, editor, &pen);
+      editor_text_line(editor, line);
       line = line->next;
     }
     if (/* !gui->flag.is_set<GUI_PROMPT>() */ !promptmenu_active() && ((editor->openfile->current->lineno - editor->openfile->edittop->lineno) >= 0)) {
