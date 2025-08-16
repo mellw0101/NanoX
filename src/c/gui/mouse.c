@@ -269,12 +269,23 @@ void gl_mouse_routine_button_dn(Uchar button, Ushort _UNUSED mod, float x, float
   if (!e) {
     return;
   }
-  /* Let the prompt-menu handle it's own events when it is active. */
-  else if (promptmenu_routine_mouse_button_dn(e, button, x, y)) {
-    refresh_needed = TRUE;
-    return;
-  }
   else if (button == SDL_BUTTON_LEFT) {
+    /* Prompt-Menu */
+    if (promptmenu_active()) {
+      if (!promptmenu_owns_element(e)) {
+        promptmenu_close();
+      }
+      else if (promptmenu_element_is_main(e)) {
+        promptmenu_routine_mouse_click_left(x);
+        refresh_needed = TRUE;
+        return;
+      }
+      else if (e->dt == ELEMENT_DATA_MENU && menu_get_active() && menu_get_active() == e->dp_menu) {
+        menu_routine_click(e->dp_menu, x, y);
+        promptmenu_routine_enter();
+        return;
+      }
+    }
     if (menu_get_active() && !menu_owns_element(menu_get_active(), e)) {
       menu_show(menu_get_active(), FALSE);
     }
@@ -286,7 +297,7 @@ void gl_mouse_routine_button_dn(Uchar button, Ushort _UNUSED mod, float x, float
     }
     /* Scrollbar-Base */
     else if (e->dt == ELEMENT_DATA_SB && scrollbar_element_is_base(e->dp_sb, e)) {
-      scrollbar_routine_click_base(e->dp_sb, e, x, y);
+      scrollbar_base_routine_mouse_button_dn(e->dp_sb, e, x, y);
     }
     /* Editor-Text */
     else if (e->dt == ELEMENT_DATA_EDITOR && e == e->dp_editor->text) {
@@ -300,7 +311,7 @@ void gl_mouse_routine_button_dn(Uchar button, Ushort _UNUSED mod, float x, float
       SET_PWW(GUI_OF);
       if (gl_mouse_flag_is_set(MOUSE_PRESS_WAS_DOUBLE)) {
         st  = wordstartindex(GUI_OF->current->data, GUI_OF->current_x, FALSE);
-        end = wordendindex(GUI_OF->current->data, GUI_OF->current_x, FALSE);
+        end = wordendindex(  GUI_OF->current->data, GUI_OF->current_x, FALSE);
         /* Click inside, or at the start of a word. */
         if (end != GUI_OF->current_x) {
           GUI_OF->mark_x    = st;
@@ -314,7 +325,7 @@ void gl_mouse_routine_button_dn(Uchar button, Ushort _UNUSED mod, float x, float
       /* On a tripple click, select the entire line. */
       else if (gl_mouse_flag_is_set(MOUSE_PRESS_WAS_TRIPPLE)) {
         GUI_OF->mark_x = 0;
-        GUI_OF->current_x = strlen(GUI_OF->current->data);
+        GUI_OF->current_x = STRLEN(GUI_OF->current->data);
       }
       refresh_needed = TRUE;
     }
@@ -333,6 +344,17 @@ void gl_mouse_routine_button_dn(Uchar button, Ushort _UNUSED mod, float x, float
     }
   }
   else if (button == SDL_BUTTON_RIGHT) {
+    /* Prompt-Menu */
+    if (promptmenu_active()) {
+      /* When the prompt-menu owns the clicked element, do no further processing. */
+      if (promptmenu_owns_element(e)) {
+        return;
+      }
+      /* Otherwise, close the prompt-menu, and let the event get processed normally. */
+      else {
+        promptmenu_close();
+      }
+    }
     /* Clicked element is a child of an editor-tab-bar. */
     if (e && e->dt == ELEMENT_DATA_FILE && e->parent && e->parent->dt == ELEMENT_DATA_EDITOR
     && etb_element_is_main(e->parent->dp_editor->tb, e->parent))
@@ -396,7 +418,7 @@ void gl_mouse_routine_position(float x, float y) {
         editor_get_text_line_index(clicked->dp_editor, x, y, &GUI_OF->current, &GUI_OF->current_x);
         if (MOUSE_ISSET(MOUSE_PRESS_WAS_TRIPPLE)) {
           st  = 0;
-          end = strlen(GUI_OF->mark->data);
+          end = STRLEN(GUI_OF->mark->data);
           if (GUI_OF->mark == GUI_OF->current) {
             GUI_OF->mark_x    = st;
             GUI_OF->current_x = end;
@@ -410,7 +432,7 @@ void gl_mouse_routine_position(float x, float y) {
         }
         else if (MOUSE_ISSET(MOUSE_PRESS_WAS_DOUBLE)) {
           st  = wordstartindex(GUI_OF->mark->data, GUI_OF->mark_x, TRUE);
-          end = wordendindex(GUI_OF->mark->data, GUI_OF->mark_x, TRUE);
+          end = wordendindex  (GUI_OF->mark->data, GUI_OF->mark_x, TRUE);
           if (GUI_OF->current == GUI_OF->mark) {
             /* Cursor is inside the word, mark the entire word. */
             if (GUI_OF->current_x >= st && GUI_OF->current_x <= end) {
@@ -432,6 +454,10 @@ void gl_mouse_routine_position(float x, float y) {
           }
         }
         SET_PWW(GUI_OF);
+        refresh_needed = TRUE;
+      }
+      else if (promptmenu_active() && promptmenu_element_is_main(clicked)) {
+        promptmenu_routine_mouse_click_left(x);
         refresh_needed = TRUE;
       }
     }
@@ -467,9 +493,9 @@ void gl_mouse_routine_position(float x, float y) {
   }
 }
 
-/* ----------------------------- Mouse gui left ----------------------------- */
+/* ----------------------------- Gl mouse routine window left ----------------------------- */
 
-void gl_mouse_routine_left_window(void) {
+void gl_mouse_routine_window_left(void) {
   Element *entered = gl_mouse_element_entered;
   Element *clicked = gl_mouse_element_clicked;
   float x = mouse_xpos;

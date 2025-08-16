@@ -511,46 +511,6 @@ void promptmenu_routine_mouse_click_left(float x) {
   pm->xflags |= PROMPTMENU_REFRESH_TEXT;
 }
 
-/* ----------------------------- Promptmenu routine mouse button dn ----------------------------- */
-
-bool promptmenu_routine_mouse_button_dn(Element *const e, Uchar button, float x, float y) {
-  ASSERT_PM;
-  ASSERT(e);
-  if (!promptmenu_active()) {
-    return FALSE;
-  }
-  else {
-    if (button == SDL_BUTTON_LEFT) {
-      if (!element_is_ancestor(e, pm->element)) {
-        promptmenu_close();
-        return FALSE;
-      }
-      else {
-        if (e == pm->element) {
-          promptmenu_routine_mouse_click_left(x);
-        }
-        else if (menu_get_active() && e->dt == ELEMENT_DATA_MENU
-        && e->dp_menu == pm->menu && menu_element_is_main(e->dp_menu, e))
-        {
-          menu_routine_click(e->dp_menu, x, y);
-          promptmenu_routine_enter();
-        }
-        /* Scrollbar base click. */
-        else if (e->dt == ELEMENT_DATA_SB && scrollbar_element_is_base(e->dp_sb, e)) {
-          scrollbar_routine_click_base(e->dp_sb, e, x, y);
-        }
-      }
-    }
-    else if (button == SDL_BUTTON_RIGHT) {
-      if (!element_is_ancestor(e, pm->element)) {
-        promptmenu_close();
-        return FALSE;
-      }
-    }
-    return TRUE;
-  }
-}
-
 /* ----------------------------- Promptmenu ask ----------------------------- */
 
 void promptmenu_ask(PromptMenuType type) {

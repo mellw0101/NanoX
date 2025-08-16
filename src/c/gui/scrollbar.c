@@ -18,8 +18,12 @@
   ASSERT(sb->update);     \
   ASSERT(sb->moving)
 
-#define SCROLLBAR_LENGTH(total_length, start, end, visible) \
-  (fclamp((((float)(visible) / (((Uint)(end) - (Uint)(start)) + (Uint)(visible))) * (float)(total_length)), 0, (float)(total_length)))
+#define SCROLLBAR_LENGTH(total_length, start, end, visible)                                            \
+  (fclamp(                                                                                             \
+    (((float)(visible) / (((Uint)(end) - (Uint)(start)) + (Uint)(visible))) * (float)(total_length)),  \
+    0,                                                                                                 \
+    (float)(total_length))                                                                             \
+  )
 
 #define SB_WIDTH  (10.F)
 
@@ -191,6 +195,7 @@ static void scrollbar_calc_routine(Scrollbar *const sb) {
 }
 
 
+
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
@@ -331,9 +336,9 @@ void scrollbar_set_thumb_color(Scrollbar *const sb, bool active) {
   }
 }
 
-/* ----------------------------- Scrollbar routine click base ----------------------------- */
+/* ----------------------------- Scrollbar base routine mouse button dn ----------------------------- */
 
-void scrollbar_routine_click_base(Scrollbar *const sb, Element *const e, float x, float y) {
+void scrollbar_base_routine_mouse_button_dn(Scrollbar *const sb, Element *const e, float x, float y) {
   ASSERT_SCROLLBAR;
   ASSERT(e);
   /* Never accept faulty input.  The caller must ensure this.  ALWAYS... */

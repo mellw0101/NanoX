@@ -48,7 +48,6 @@
 #define IG_6(i0, i1, i2, i3, i4, i5)  (M(i0) | M(i1) | M(i2) | M(i3) | M(i4) | M(i5))
 
 #define IG(...)  VA_MACRO(IG_, __VA_ARGS__)
-#define IG_DEF   IG(CAPS, SCROLL, NUM)
 
 /* ----------------------------- Check N modifiers active ----------------------------- */
 
@@ -87,7 +86,7 @@
   (((x) & (m0)) && ((x) & (m1)) && ((x) & (m2)) && ((x) & (m3)) && !((x) & ~((m0) | (m1) | (m2) | (m3) | (i))))
 
 #define MOD_IG(x, i, ...)   VA_MACRO_2ARG(MOD_IG_, x, i, __VA_ARGS__)
-#define MOD_IG_DEF(x, ...)  MOD_IG(x, IG_DEF, __VA_ARGS__)
+#define MOD_IG_DEF(x, ...)  MOD_IG(x, IG(CAPS, SCROLL, NUM), __VA_ARGS__)
 
 /* ----------------------------- Check no modifiers set ----------------------------- */
 
@@ -156,7 +155,9 @@ static inline void get_enclose_chars(const char ch, const char **const s1, const
   }
 }
 
-_UNUSED
+/* ----------------------------- Kb filter mod ----------------------------- */
+
+/* Returns a exclusive modifier type, so that we can switch case correctly on any combination, regardless of order. */
 static inline KbModType kb_filter_mod(Ushort mod) {
   if (MOD_NONE_IG_DEF(mod)) {
     return KB_MOD_NONE;

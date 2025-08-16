@@ -574,3 +574,66 @@ void editor_buffer_save(openfilestruct *const file) {
     do_savefile_for(&editor->startfile, &editor->openfile, editor->cols);
   }
 }
+
+/* ----------------------------- Editor text line marked region ----------------------------- */
+
+/* TODO: Here we really need to ensure that we make `from_x` and `till_x` non globals as this will be bad later. */
+void editor_text_line_marked_region(Editor *const editor,
+  linestruct *const line, const char *const restrict data, Ulong from_col)
+{
+  ASSERT_EDITOR(editor);
+  ASSERT(line);
+  ASSERT(data);
+  RectVertex vert[4];
+  linestruct *top;
+  linestruct *bot;
+  Ulong xtop;
+  Ulong xbot;
+  int startcol;
+  int endcol;
+  int paintlen = -1;
+  const char *thetext;
+  float x;
+  float y;
+  float width;
+  float height;
+  float pix_top;
+  float pix_bot;
+  /* We only perform any action when the line is part of the marked region. */
+  if (line_in_marked_region_for(editor->openfile, line)) {
+    get_region_for(editor->openfile, &top, &xtop, &bot, &xbot);
+    if (top->lineno < line->lineno || xtop < from_x) {
+      xtop = from_x; 
+    }
+    if (bot->lineno > line->lineno || xbot > till_x) {
+      xbot = till_x;
+    }
+    /* Only paint if the marked part of the line is on this page. */
+    if (xtop < till_x && xbot > from_x) {
+      startcol = (wideness(line->data, xtop) - from_col);
+      if (startcol < 0) {
+        startcol = 0;
+      }
+      thetext = (data + actual_x(data, startcol));
+      /* If the end mark is onscreen, compute the number of columns we will mark. */
+      if (xbot < till_x) {
+        endcol   = (wideness(line->data, xbot) - from_col);
+        paintlen = actual_x(thetext, (endcol - startcol));
+      }
+      if (paintlen == -1) {
+        paintlen = STRLEN(thetext);
+      }
+      font_row_top_bot(textfont, (line->lineno - editor->openfile->edittop->lineno),     &pix_top, NULL);
+      font_row_top_bot(textfont, (line->lineno - editor->openfile->edittop->lineno + 1), &pix_bot, NULL);
+      /* Position */
+      x = (font_wideness(textfont, line->data, startcol) + editor->text->x);
+      y = (pix_top + editor->text->y);
+      /* Size */
+      width  = font_wideness(textfont, thetext, paintlen);
+      height = (pix_bot - pix_top);
+      /* Create the rect vertex entries, then add then to the marked region buffer. */
+      shader_rect_vertex_load(vert, x, y, width, height, PACKED_UINT_FLOAT(.2F, .2F, .5F, .45F));
+      vertex_buffer_push_back(editor->marked_region_buf, vert, 4, ARRAY__LEN(RECT_INDICES));
+    }
+  }
+}

@@ -816,7 +816,7 @@ void scrollbar_show(Scrollbar *const sb, bool show);
 /* ----------------------------- Scrollbar set thumb color ----------------------------- */
 void scrollbar_set_thumb_color(Scrollbar *const sb, bool active);
 /* ----------------------------- Scrollbar routine click base ----------------------------- */
-void scrollbar_routine_click_base(Scrollbar *const sb, Element *const e, float x, float y);
+void scrollbar_base_routine_mouse_button_dn(Scrollbar *const sb, Element *const e, float x, float y);
 
 
 /* ---------------------------------------------------------- gui/utils.c ---------------------------------------------------------- */
@@ -986,8 +986,6 @@ void promptmenu_routine_yes(void);
 void promptmenu_routine_no(void);
 /* ----------------------------- Promptmenu routine mouse click left ----------------------------- */
 void promptmenu_routine_mouse_click_left(float x);
-/* ----------------------------- Promptmenu routine mouse button dn ----------------------------- */
-bool promptmenu_routine_mouse_button_dn(Element *const e, Uchar button, float x, float y);
 /* ----------------------------- Promptmenu ask ----------------------------- */
 void promptmenu_ask(PromptMenuType type);
 
@@ -1725,6 +1723,9 @@ void editor_open_buffer(const char *const restrict path);
 void editor_close_a_open_buffer(openfilestruct *const file);
 /* ----------------------------- Editor buffer save ----------------------------- */
 void editor_buffer_save(openfilestruct *const file);
+/* ----------------------------- Editor text line marked region ----------------------------- */
+void editor_text_line_marked_region(Editor *const editor,
+  linestruct *const line, const char *const restrict data, Ulong from_col);
 
 
 /* ---------------------------------------------------------- gui/statusbar.c ---------------------------------------------------------- */
@@ -1769,7 +1770,7 @@ void gl_mouse_routine_button_up(Uchar button, Ushort _UNUSED mod, float x, float
 /* ----------------------------- Gl mouse routine position ----------------------------- */
 void gl_mouse_routine_position(float x, float y);
 /* ----------------------------- Gl mouse routine left window ----------------------------- */
-void gl_mouse_routine_left_window(void);
+void gl_mouse_routine_window_left(void);
 /* ----------------------------- Mouse gui scroll ----------------------------- */
 void gl_mouse_routine_scroll(float mx, float my, int _UNUSED ix, int iy, SDL_MouseWheelDirection type);
 

@@ -73,6 +73,7 @@
 //   }
 // }
 
+_UNUSED
 static void draw_marked(Editor *const editor, linestruct *const line, const char *const restrict convert, Ulong fromcol) {
   RectVertex rectvert[4];
   /* The top and bottom line where the marked region begins and ends. */
@@ -598,7 +599,8 @@ static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
     else {
       vertex_buffer_add_string(editor->buffer, converted, converted_len, prev_char, font_get_font(textfont), vec4(1.0f), drawpos);
     }
-    draw_marked(editor, line, converted, from_col);
+    // draw_marked(editor, line, converted, from_col);
+    editor_text_line_marked_region(editor, line, converted, from_col);
   }
   free(converted);
 }

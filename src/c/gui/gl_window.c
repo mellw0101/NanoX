@@ -345,7 +345,7 @@ void gl_window_poll_events(void) {
         break;
       }
       case SDL_EVENT_WINDOW_MOUSE_LEAVE: {
-        gl_mouse_routine_left_window();
+        gl_mouse_routine_window_left();
         break;
       }
       case SDL_EVENT_MOUSE_WHEEL: {
