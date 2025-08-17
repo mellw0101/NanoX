@@ -201,7 +201,7 @@ void glfw_loop(void) {
       /* Draw the editors. */
       CLIST_ITER(starteditor, editor,
         editor_confirm_margin(editor);
-        draw_editor(editor);
+        // draw_editor(editor);
       );
       /* Draw the top menu bar. */
       // draw_topbar();

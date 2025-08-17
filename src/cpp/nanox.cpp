@@ -1744,7 +1744,8 @@ int main(int argc, char **argv) {
       if (has_colors()) {
         start_color();
       }
-      /* Set up the function and shortcut lists.  This needs to be done before reading the rcfile, to be able to rebind/unbind keys. */
+      /* Set up the function and shortcut lists.  This needs to be done
+       * before reading the rcfile, to be able to rebind/unbind keys. */
       shortcut_init();
       if (!ignore_rcfiles) {
         /* Back up the command-line options that take an argument. */

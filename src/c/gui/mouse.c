@@ -277,6 +277,7 @@ void gl_mouse_routine_button_dn(Uchar button, Ushort _UNUSED mod, float x, float
       }
       else if (promptmenu_element_is_main(e)) {
         promptmenu_routine_mouse_click_left(x);
+        promptmenu_routine_marked_set();
         refresh_needed = TRUE;
         return;
       }
@@ -331,16 +332,9 @@ void gl_mouse_routine_button_dn(Uchar button, Ushort _UNUSED mod, float x, float
     }
     /* Editor-Topbar-Tab */
     else if (e->dt == ELEMENT_DATA_FILE && e->parent && e->parent->dt == ELEMENT_DATA_EDITOR
-    && etb_element_is_main(e->parent->dp_editor->tb, e->parent) /* && Gui not in prompt-mode. */)
+    && etb_element_is_main(e->parent->dp_editor->tb, e->parent))
     {
-      /* The file of e is not the currently open buffer of the related editor, change that. */
-      if (e->dp_file && e->dp_file != e->parent->dp_editor->openfile) {
-        e->parent->dp_editor->openfile = e->dp_file;
-        editor_redecorate(e->parent->dp_editor);
-        editor_resize(e->parent->dp_editor);
-        etb_active_refresh_needed(e->parent->dp_editor->tb);
-        refresh_needed = TRUE;
-      }
+      etb_tab_routine_mouse_button_left_dn(e->parent->dp_editor->tb, e);
     }
   }
   else if (button == SDL_BUTTON_RIGHT) {

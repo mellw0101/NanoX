@@ -16,11 +16,6 @@
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
 
 
-/* The prompt string used for status-bar questions. */
-char *prompt = NULL;
-/* The cursor position in answer. */
-Ulong typing_x = HIGHEST_POSITIVE;
-
 static statusbar_undostruct *statusbar_undotop      = NULL;
 static statusbar_undostruct *statusbar_current_undo = NULL;
 static statusbar_undo_type   statusbar_last_action  = STATUSBAR_OTHER;
@@ -28,6 +23,8 @@ static statusbar_undo_type   statusbar_last_action  = STATUSBAR_OTHER;
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
+
+/* ----------------------------- Statusbar discard until ----------------------------- */
 
 /* Discard the current redo stack to make the undo-redo path a singular path. */
 static void statusbar_discard_until(const statusbar_undostruct *item) {
@@ -41,6 +38,8 @@ static void statusbar_discard_until(const statusbar_undostruct *item) {
   statusbar_current_undo = (statusbar_undostruct *)item;
   statusbar_last_action  = STATUSBAR_OTHER; 
 }
+
+/* ----------------------------- Statusbar add undo ----------------------------- */
 
 /* Init a new 'statusbar_undostruct *' and add to the stack.  Then based on action perform nessesary actions. */
 static void statusbar_add_undo(statusbar_undo_type action, const char *message) {
@@ -96,6 +95,8 @@ static void statusbar_add_undo(statusbar_undo_type action, const char *message) 
   statusbar_last_action = action;
 }
 
+/* ----------------------------- Statusbar update undo ----------------------------- */
+
 /* Update a undo of the same type as the current undo-stack top. */
 static void statusbar_update_undo(statusbar_undo_type action) {
   statusbar_undostruct *u = statusbar_undotop;
@@ -138,6 +139,8 @@ static void statusbar_update_undo(statusbar_undo_type action) {
   }
 }
 
+/* ----------------------------- Statusbar delete ----------------------------- */
+
 static void statusbar_delete(void) {
   int charlen;
   if (answer[typing_x]) {
@@ -149,8 +152,10 @@ static void statusbar_delete(void) {
   }
 }
 
+/* ----------------------------- Do statusbar mouse ----------------------------- */
+
 /* Handle a mouse click on the status-bar prompt or the shortcut list. */
-/* static */ int do_statusbar_mouse(void) {
+static int do_statusbar_mouse(void) {
   int row;
   int col;
   int ret;
@@ -1084,7 +1089,8 @@ int do_prompt(int menu, const char *const provided, linestruct **const histlist,
     /* Restore a possible previous prompt and maybe the typing position. */
     prompt = was_prompt;
     if (function == do_cancel    || function == do_enter      || function == to_first_file
-    ||  function == to_last_file || function == to_first_line || function == to_last_line) {
+    ||  function == to_last_file || function == to_first_line || function == to_last_line)
+    {
       typing_x = was_x;
     }
     /* Set the proper return value for <Cancel> and <Enter>. */

@@ -42,7 +42,10 @@ typedef enum {
 typedef struct {
   Uint xflags;
   vertex_buffer_t *buf;
+  
   Element *element;
+  Element *marked;
+
   Menu *menu;
   CVec *completions;
 
@@ -216,6 +219,45 @@ static inline void promptmenu_should_accept_completion(void) {
   }
 }
 
+/* ----------------------------- Promptmenu routine marked update ----------------------------- */
+
+_UNUSED
+static void promptmenu_routine_marked_update(void) {
+  ASSERT_PM;
+  float x;
+  Ulong len = STRLEN(answer);
+  if (st_marked && st_marked_x != typing_x && st_marked_x <= len) {
+    pm->marked->xflags &= ~ELEMENT_HIDDEN;
+    /* Mark before cursor. */
+    if (st_marked_x < typing_x) {
+      x = (font_breadth(uifont, prompt) + font_breadth(uifont, " ") + font_wideness(uifont, answer, st_marked_x));
+      pm->marked->rel_x = x;
+      element_move_resize(
+        pm->marked,
+        (pm->element->x + x),
+        pm->marked->y,
+        font_wideness(uifont, (answer + st_marked_x), (typing_x - st_marked_x)),
+        pm->marked->height
+      );
+    }
+    /* Mark after cursor. */
+    else {
+      x = (font_breadth(uifont, prompt) + font_breadth(uifont, " ") + font_wideness(uifont, answer, typing_x));
+      pm->marked->rel_x = x;
+      element_move_resize(
+        pm->marked,
+        (pm->element->x + x),
+        pm->marked->y,
+        font_wideness(uifont, (answer + typing_x), (st_marked_x - typing_x)),
+        pm->marked->height
+      );
+    }
+  }
+  else {
+    pm->marked->xflags |= ELEMENT_HIDDEN;
+  }
+}
+
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
@@ -239,6 +281,13 @@ void promptmenu_create(void) {
   /* And also ensure that the menu and text of the prompt-menu is fully updated. */
   element_set_data_callback(pm->element, pm);
   element_set_extra_routine_rect(pm->element, promptmenu_extra_routine_rect);
+  pm->marked = element_create(-100, -100, 10, 10, FALSE);
+  pm->marked->xflags |= (ELEMENT_HIDDEN | ELEMENT_REL_POS | ELEMENT_REL_HEIGHT);
+  /* Set the top and bottom spacer of the marked element. */
+  pm->marked->rel_y      = 2;
+  pm->marked->rel_height = 2;
+  pm->marked->color = PACKED_UINT_MARKED;
+  element_set_parent(pm->marked, pm->element);
   pm->completions = cvec_create_setfree(free);
   pm->menu = menu_create(pm->element, uifont, pm, promptmenu_pos, promptmenu_accept);
   menu_set_lable_offset(pm->menu, font_breadth(uifont, " "));
@@ -270,6 +319,10 @@ void promptmenu_draw(void) {
     menu_set_static_width(pm->menu, pm->element->width);
     /* Resize/Reposition */
     element_draw(pm->element);
+    /* Marked */
+    promptmenu_routine_marked_update();
+    element_draw(pm->marked);
+    /* Text */
     if (pm->xflags & PROMPTMENU_REFRESH_TEXT) {
       vertex_buffer_clear(pm->buf);
       promptmenu_add_prompt_text();
@@ -300,6 +353,7 @@ void promptmenu_close(void) {
   pm->xflags &= ~PROMPTMENU_ACTIVE;
   pm->element->xflags |= ELEMENT_HIDDEN;
   menu_clear_entries(pm->menu);
+  menu_show(pm->menu, FALSE);
   cvec_clear(pm->completions);
   pm->data = NULL;
   refresh_needed = TRUE;
@@ -502,13 +556,25 @@ void promptmenu_routine_no(void) {
 
 /* ----------------------------- Promptmenu routine mouse click left ----------------------------- */
 
+/* TODO: Rename to something better, as this is simply the routine to set typing_x based on a raw x position. */
 void promptmenu_routine_mouse_click_left(float x) {
   ASSERT_PM;
   typing_x = font_index_from_pos(
-    uifont, answer, STRLEN(answer), x,
+    uifont,
+    answer,
+    STRLEN(answer),
+    x,
     (pm->element->x + font_breadth(uifont, prompt) + font_breadth(uifont, " "))
   );
   pm->xflags |= PROMPTMENU_REFRESH_TEXT;
+}
+
+/* ----------------------------- Promptmenu routine marked set ----------------------------- */
+
+void promptmenu_routine_marked_set(void) {
+  ASSERT_PM;
+  st_marked_x = typing_x;
+  st_marked = TRUE;
 }
 
 /* ----------------------------- Promptmenu ask ----------------------------- */

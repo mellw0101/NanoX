@@ -76,6 +76,8 @@ bool last_key_was_bracket = FALSE;
 bool ignore_rcfiles = FALSE;
 /* Was the fill option used on the command line? */
 bool fill_used = FALSE;
+/* Whether or not the `(status/prompt)-bar` is currently marked. */
+bool st_marked = FALSE;
 
 /* ----------------------------- char ----------------------------- */
 
@@ -125,6 +127,8 @@ char *last_search = NULL;
 char *title = NULL;
 /* The name (of a function) between braces in a string bind. */
 char *commandname = NULL;
+/* The prompt string used for status-bar questions. */
+char *prompt = NULL;
 
 /* ----------------------------- char [] ----------------------------- */
 
@@ -337,6 +341,10 @@ Ulong nanox_rc_lineno = 0;
 Ulong light_from_col = 0;
 /* Where the spotlighted text ends. */
 Ulong light_to_col = 0;
+/* The cursor position in answer. */
+Ulong typing_x = HIGHEST_POSITIVE;
+/* When the `(status/prompt)-bar` is marked, then this is the index in `answer` of that mark. */
+Ulong st_marked_x = 0;
 
 /* ----------------------------- Ulong [] ----------------------------- */
 

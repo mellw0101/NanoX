@@ -232,4 +232,3 @@ Llong frame_elapsed_time(void) {
   return ATOMIC_FETCH(elapsed_time);
 }
 
-/* -----------------------------  ----------------------------- */

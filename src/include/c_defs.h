@@ -498,7 +498,8 @@
 /* ----------------------------- color.c ----------------------------- */
 
 /* Some basic-ass colors. */
-#define PACKED_UINT_WHITE  PACKED_UINT(255,255,255,255)
+#define PACKED_UINT_WHITE   PACKED_UINT(255,255,255,255)
+#define PACKED_UINT_MARKED  PACKED_UINT_FLOAT(.2F, .2F, .5F, .45F)
 
 /* Vs-Code colors in packed unsigned integer format. */
 #define PACKED_UINT_VS_CODE_RED             PACKED_UINT(205,  49,  49, 255)

@@ -49,6 +49,7 @@ extern bool ran_a_tool;
 extern bool last_key_was_bracket;
 extern bool ignore_rcfiles;
 extern bool fill_used;
+extern bool st_marked;
 
 extern char last_bracket_char;
 
@@ -73,6 +74,7 @@ extern char *present_path;
 extern char *last_search;
 extern char *title;
 extern char *commandname;
+extern char *prompt;
 
 extern char suggest_buf[1024];
 
@@ -147,6 +149,8 @@ extern Ulong wrap_at;
 extern Ulong nanox_rc_lineno;
 extern Ulong light_from_col;
 extern Ulong light_to_col;
+extern Ulong typing_x;
+extern Ulong st_marked_x;
 
 extern Ulong flags[1];
 
@@ -218,11 +222,6 @@ extern Ulong till_x;
 extern bool  recording;
 extern int   countdown;
 extern Ulong waiting_codes;
-
-/* ----------------------------- prompt.c ----------------------------- */
-
-extern char *prompt;
-extern Ulong typing_x;
 
 /* ----------------------------- General ----------------------------- */
 
@@ -986,6 +985,8 @@ void promptmenu_routine_yes(void);
 void promptmenu_routine_no(void);
 /* ----------------------------- Promptmenu routine mouse click left ----------------------------- */
 void promptmenu_routine_mouse_click_left(float x);
+/* ----------------------------- Promptmenu routine marked set ----------------------------- */
+void promptmenu_routine_marked_set(void);
 /* ----------------------------- Promptmenu ask ----------------------------- */
 void promptmenu_ask(PromptMenuType type);
 
@@ -1519,8 +1520,6 @@ void precalc_multicolorinfo(void);
 /* ---------------------------------------------------------- prompt.c ---------------------------------------------------------- */
 
 
-/* static */ int do_statusbar_mouse(void);
-
 /* ----------------------------- Lop the answer ----------------------------- */
 void lop_the_answer(void);
 /* ----------------------------- Copy the answer ----------------------------- */
@@ -1656,15 +1655,26 @@ void chop_next_word(void);
 /* ---------------------------------------------------------- gui/editor/topbar.c ---------------------------------------------------------- */
 
 
+/* ----------------------------- Etb create ----------------------------- */
 EditorTb *etb_create(Editor *const editor);
+/* ----------------------------- Etb free ----------------------------- */
 void etb_free(EditorTb *const etb);
+/* ----------------------------- Etb draw ----------------------------- */
 void etb_draw(EditorTb *const etb);
+/* ----------------------------- Etb active refresh needed ----------------------------- */
 void etb_active_refresh_needed(EditorTb *const etb);
+/* ----------------------------- Etb text refresh needed ----------------------------- */
 void etb_text_refresh_needed(EditorTb *const etb);
+/* ----------------------------- Etb entries refresh needed ----------------------------- */
 void etb_entries_refresh_needed(EditorTb *const etb);
+/* ----------------------------- Etb show context menu ----------------------------- */
 void etb_show_context_menu(EditorTb *const etb, Element *const from_element, bool show);
+/* ----------------------------- Etb element is main ----------------------------- */
 bool etb_element_is_main(EditorTb *const etb, Element *const e);
+/* ----------------------------- Etb owns element ----------------------------- */
 bool etb_owns_element(EditorTb *const etb, Element *const e);
+/* ----------------------------- Etb tab routine set active ----------------------------- */
+void etb_tab_routine_mouse_button_left_dn(EditorTb *const etb, Element *const e);
 
 
 /* ---------------------------------------------------------- gui/editor/editor.c ---------------------------------------------------------- */
@@ -1965,8 +1975,6 @@ void syntax_check_file(openfilestruct *file);
 bool wanted_to_move(functionptrtype f);
 bool changes_something(functionptrtype f);
 void do_exit(void);
-
-void draw_editor(Editor *editor);
 
 
 _END_C_LINKAGE

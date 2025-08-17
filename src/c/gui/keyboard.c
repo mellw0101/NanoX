@@ -781,6 +781,7 @@ void kb_key_pressed_prompt(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED
     } 
   }
   else {
+    SHIFT_HELD(FALSE);
     switch (kb_filter_mod(mod)) {
       case KB_MOD_NOT_SUPPORTED: {
         break;
@@ -804,10 +805,12 @@ void kb_key_pressed_prompt(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED
             break;
           }
           case KC(RIGHT): {
+            st_marked = FALSE;
             do_statusbar_right();
             break;
           }
           case KC(LEFT): {
+            st_marked = FALSE;
             do_statusbar_left();
             break;
           }
