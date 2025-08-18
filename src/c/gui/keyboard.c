@@ -753,14 +753,6 @@ void kb_key_pressed_prompt(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED
             promptmenu_close();
             break;
           }
-          case KC(N): {
-            promptmenu_routine_no();
-            break;
-          }
-          case KC(Y): {
-            promptmenu_routine_yes();
-            break;
-          }
         }
         break;
       }
@@ -905,12 +897,26 @@ void kb_key_pressed_prompt(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED
 void kb_char_input_prompt(const char *const restrict data, Ushort mod) {
   Ulong len;
   char *burst;
-  /* Only ever perform any action when no modifiers (excluding CAPS, SCROLL and NUM).  And when not in Y/N mode. */
-  if (!promptmenu_yn_mode() && MOD_NONE_IG(mod, CAPS, NUM, SCROLL, SHIFT) && (len = STRLEN(data))) {
-    burst = measured_copy(data, len);
-    inject_into_answer(burst, len);
-    free(burst);
-    promptmenu_refresh_text();
-    promptmenu_routine_completions_search();
+  /* Only ever perform any action when no modifiers (excluding CAPS, SCROLL and NUM). */
+  if ((len = STRLEN(data)) && MOD_NONE_IG(mod, CAPS, NUM, SCROLL, SHIFT)) {
+    if (promptmenu_yn_mode()) {
+      if (len == 1) {
+        /* Yes */
+        if (*data == 'y' || *data == 'Y') {
+          promptmenu_routine_yes();
+        }
+        /* No */
+        else if (*data == 'n' || *data == 'N') {
+          promptmenu_routine_no();
+        }
+      }
+    }
+    else {
+      burst = measured_copy(data, len);
+      inject_into_answer(burst, len);
+      free(burst);
+      promptmenu_refresh_text();
+      promptmenu_routine_completions_search();
+    }
   }
 }

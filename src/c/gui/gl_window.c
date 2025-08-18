@@ -294,54 +294,55 @@ void gl_window_poll_events(void) {
         break;
       }
       case SDL_EVENT_WINDOW_MAXIMIZED: {
-        log_INFO_1("Window maximized");
+        /* log_INFO_1("Window maximized"); */
         gl_win_maximized = TRUE;
         break;
       }
       case SDL_EVENT_WINDOW_MINIMIZED: {
-        log_INFO_1("Window minimized");
+        /* log_INFO_1("Window minimized"); */
         break;
       }
       case SDL_EVENT_WINDOW_RESTORED: {
-        log_INFO_1("window restored");
+        /* log_INFO_1("window restored"); */
         gl_win_maximized = FALSE;
         break;
       }
       case SDL_EVENT_WINDOW_ENTER_FULLSCREEN: {
-        log_INFO_1("Window entered fullscreen");
+        /* log_INFO_1("Window entered fullscreen"); */
         gl_win_borderless_fullscreen = TRUE;
         break;
       }
       case SDL_EVENT_WINDOW_LEAVE_FULLSCREEN: {
-        log_INFO_1("Window left fullscreen");
+        /* log_INFO_1("Window left fullscreen"); */
         gl_win_borderless_fullscreen = FALSE;
         break;
       }
       case SDL_EVENT_WINDOW_DISPLAY_CHANGED: {
-        log_INFO_1("Window display changed");
+        /* log_INFO_1("Window display changed"); */
         frame_set_poll();
         break;
       }
+      /* TODO: Here we should gracefully exit. */
       case SDL_EVENT_WINDOW_CLOSE_REQUESTED: {
-        log_INFO_1("Window close requested");
+        /* log_INFO_1("Window close requested"); */
         break;
       }
       case SDL_EVENT_WINDOW_SAFE_AREA_CHANGED: {
-        log_INFO_1("Window Safe area changed");
+        /* log_INFO_1("Window Safe area changed"); */
         break;
       }
       /* TODO: For these two FOCUS_(GAINED/LOST) we should have a efficent mode, to
        * regulate frame-pacing and, either half, or a quarter of the set frame rate. */
       case SDL_EVENT_WINDOW_FOCUS_GAINED: {
-        log_INFO_1("Gained focus");
+        /* log_INFO_1("Gained focus"); */
         break;
       }
       case SDL_EVENT_WINDOW_FOCUS_LOST: {
-        log_INFO_1("Lost focus");
+        /* log_INFO_1("Lost focus"); */
         break;
       }
       case SDL_EVENT_WINDOW_MOUSE_ENTER: {
-        log_INFO_1("Entered window");
+        /* log_INFO_1("Entered window"); */
         break;
       }
       case SDL_EVENT_WINDOW_MOUSE_LEAVE: {

@@ -57,17 +57,19 @@ _NODISCARD
 static inline bool frame_samples_within_tolerance(void) {
   int count;
   int *rates;
-  if (LLABS(frame_sample_0 - frame_sample_1) > FRAME_SAMPLE_TOLERANCE) {
-    return FALSE;
-  }
-  rates = monitor_refresh_rate_array(&count);
-  for (int i=0; i<count; ++i) {
-    if (LLABS(frame_sample_0 - FRAME_SWAP_RATE_TIME_NS_INT(rates[i])) < FRAME_SAMPLE_TOLERANCE
-    &&  LLABS(frame_sample_1 - FRAME_SWAP_RATE_TIME_NS_INT(rates[i])) < FRAME_SAMPLE_TOLERANCE)
-    {
-      return TRUE;
+  if (LLABS(frame_sample_0 - frame_sample_1) < FRAME_SAMPLE_TOLERANCE) {
+    rates = monitor_refresh_rate_array(&count);
+    for (int i=0; i<count; ++i) {
+      /* Ensure the values are at least within our toleranse of any actual monitor's rate. */
+      if (LLABS(frame_sample_0 - FRAME_SWAP_RATE_TIME_NS_INT(rates[i])) < FRAME_SAMPLE_TOLERANCE
+      &&  LLABS(frame_sample_1 - FRAME_SWAP_RATE_TIME_NS_INT(rates[i])) < FRAME_SAMPLE_TOLERANCE)
+      {
+        return TRUE;
+      }
     }
   }
+  frame_sample_0 = -1;
+  frame_sample_1 = -1;
   return FALSE;
 }
 
@@ -95,7 +97,6 @@ static inline void frame_stop_poll(void) {
   last_poll   = elapsed_frames;
   frame_set_rate(monitor_closest_refresh_rate(FRAME_SWAP_RATE_TIME_NS_INT((frame_sample_0 + frame_sample_1) / 2.0)));
   frame_log_poll(TRUE);
-  // glfwSwapInterval(0);
   SDL_GL_SetSwapInterval(0);
 }
 
@@ -173,11 +174,7 @@ bool frame_should_poll(void) {
     else if (frame_sample_1 < 0) {
       frame_sample_1 = frametime;
     }
-    else if (!frame_samples_within_tolerance()) {
-      frame_sample_0 = -1;
-      frame_sample_1 = -1;
-    }
-    else {
+    else if (frame_samples_within_tolerance()) {
       frame_stop_poll();
       return FALSE;
     }
@@ -208,7 +205,6 @@ void frame_set_poll(void) {
     frame_sample_1 = -1;
     /* Set the frame rate to 4 times the fastest monitor, so we know for a fact vsync will kick in. */
     frame_set_rate(monitor_fastest_refresh_rate() * 4);
-    // glfwSwapInterval(1);
     SDL_GL_SetSwapInterval(1);
   }
 }

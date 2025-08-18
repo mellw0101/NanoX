@@ -35,6 +35,11 @@ typedef enum {
 # define PROMPTMENU_DEFAULT_XFLAGS  (0U)
 } PromptMenuState;
 
+typedef enum {
+  PROMPTMENU_DATA_RAW,
+  PROMPTMENU_DATA_FILE,
+} PromptMenuDataType;
+
 
 /* ---------------------------------------------------------- Struct's ---------------------------------------------------------- */
 
@@ -53,7 +58,10 @@ typedef struct {
   PromptMenuType mode;
 
   /* Data used for actions. */
-  void *data;
+  union {
+    void *raw;
+    openfilestruct *file;
+  } data;
 } PromptMenu;
 
 
@@ -292,7 +300,7 @@ void promptmenu_create(void) {
   pm->menu = menu_create(pm->element, uifont, pm, promptmenu_pos, promptmenu_accept);
   menu_set_lable_offset(pm->menu, font_breadth(uifont, " "));
   pm->mode = PROMPTMENU_TYPE_NONE;
-  pm->data = NULL;
+  pm->data.raw = NULL;
   if (!prompt) {
     prompt = COPY_OF("");
   }
@@ -355,7 +363,7 @@ void promptmenu_close(void) {
   menu_clear_entries(pm->menu);
   menu_show(pm->menu, FALSE);
   cvec_clear(pm->completions);
-  pm->data = NULL;
+  pm->data.raw = NULL;
   refresh_needed = TRUE;
 }
 
@@ -429,6 +437,7 @@ void promptmenu_routine_enter(void) {
     case PROMPTMENU_TYPE_FILE_SAVE: {
       if (*answer) {
         full_path = get_full_path(answer);
+        /* Write-out with diffrent name? */
         if (*GUI_OF->filename && STRCMP(answer, GUI_OF->filename) != 0) {
           /* TODO: Add the [Y/N] prompt type. */
         }
@@ -477,6 +486,20 @@ void promptmenu_routine_enter(void) {
       }
       break;
     }
+    case PROMPTMENU_TYPE_FILE_SAVE_BEFORE_CLOSE: {
+      // full_path = get_full_path(answer);
+      if (!file_exists(answer)) {
+        log_INFO_0("Writing out name-less file as %s before closing", answer);
+        pm->data.file->filename = xstrcpy(pm->data.file->filename, answer);
+        if (write_it_out_for(pm->data.file, FALSE, FALSE) == 2) {
+          log_ERR_FA("Failed to write file %s to disk", answer);
+        }
+        editor_close_a_open_buffer(pm->data.file);
+        pm->data.raw = NULL;
+        promptmenu_close();
+      }
+      break;
+    }
     default: {
       if (STRCASECMP(answer, "open file") == 0) {
         promptmenu_ask(PROMPTMENU_TYPE_FILE_OPEN);
@@ -517,14 +540,16 @@ void promptmenu_routine_yes(void) {
   ASSERT_PM;
   switch (pm->mode) {
     case PROMPTMENU_TYPE_FILE_SAVE_MODIFIED: {
-      /* TODO: Fix this.  Extend/Modify do_savefile_for() to save any file in the given context. */
-      ALWAYS_ASSERT(pm->data);
-      /* TODO: Here we need to prompt for a name.
-      if (!*((openfilestruct *)pm->data)->filename) {
-
-      } */
-      editor_buffer_save(pm->data);
-      editor_close_a_open_buffer(pm->data);
+      /* TODO: Fix this.  Extend/Modify `do_savefile_for()` to save any file in the given context. */
+      ALWAYS_ASSERT(pm->data.file);
+      /* TODO: Here we need to prompt for a name. */
+      if (!*pm->data.file->filename) {
+        pm->xflags &= ~PROMPTMENU_YN_MODE;
+        promptmenu_ask(PROMPTMENU_TYPE_FILE_SAVE_BEFORE_CLOSE);
+        return;
+      }
+      editor_buffer_save(pm->data.file);
+      editor_close_a_open_buffer(pm->data.file);
       break;
     }
     default: {
@@ -542,8 +567,8 @@ void promptmenu_routine_no(void) {
   ASSERT_PM;
   switch (pm->mode) {
     case PROMPTMENU_TYPE_FILE_SAVE_MODIFIED: {
-      ALWAYS_ASSERT(pm->data);
-      editor_close_a_open_buffer(pm->data);
+      ALWAYS_ASSERT(pm->data.file);
+      editor_close_a_open_buffer(pm->data.file);
       break;
     }
     default: {
@@ -609,9 +634,20 @@ void promptmenu_ask(PromptMenuType type) {
       break;
     }
     case PROMPTMENU_TYPE_FILE_SAVE_MODIFIED: {
-      prompt   = free_and_assign(prompt, fmtstr("Save modified buffer [%s] before closing?: ", GUI_OF->filename));
-      pm->data = GUI_OF;
+      /* TODO: We should be able to take any file, also we should implement a union to hold the data. */
+      if (*GUI_OF->filename) {
+        prompt = fmtstrcpy(prompt, "Save modified buffer: [%s]? [Y/N]: ", GUI_OF->filename);
+      }
+      else {
+        prompt = xstrcpy(prompt, "Save [Nameless] buffer? [Y/N]: ");
+      }
+      pm->data.file = GUI_OF;
       pm->xflags |= PROMPTMENU_YN_MODE;
+      break;
+    }
+    case PROMPTMENU_TYPE_FILE_SAVE_BEFORE_CLOSE: {
+      ASSERT(pm->data.file);
+      prompt = xstrncpy(prompt, S__LEN("Save as: "));
       break;
     }
   }

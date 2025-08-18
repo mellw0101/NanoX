@@ -82,7 +82,6 @@ void gl_loop(void) {
     frame_start();
     statusbar_count_frame();
     if (frame_should_poll() || refresh_needed) {
-      log_INFO_0("Swapping buffer");
       place_the_cursor();
       glClear(GL_COLOR_BUFFER_BIT);
       editor_check_should_close();
