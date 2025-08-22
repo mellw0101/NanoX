@@ -308,6 +308,7 @@ int interface_color_pair[NUMBER_OF_ELEMENTS] = {0};
 
 /* ----------------------------- Uint ----------------------------- */
 
+/* TODO: Explain something here... */
 Uint font_shader = 0;
 Uint rect_shader = 0;
 

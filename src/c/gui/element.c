@@ -71,7 +71,7 @@ static void element_children_relative_pos(Element *const e) {
     height = child->height;
     /* If the element whishes to be placed in the absolute center of its parent, we oblige. */
     if (child->xflags & ELEMENT_CENTER_X) {
-      x = ((e->width / 2) - (child->width / 2));
+      x = (e->x + ((e->width / 2) - (child->width / 2)));
       /* We should constrain the width of the element to the parent when the width would be smaller then the prefered width. */
       if ((child->xflags & ELEMENT_CONSTRAIN_WIDTH)) {
         if (x < e->x || child->prefered_width > e->width) {

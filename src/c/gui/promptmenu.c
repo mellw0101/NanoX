@@ -161,7 +161,7 @@ static void promptmenu_find_completions(void) {
 
 /* ----------------------------- Promptmenu open file search ----------------------------- */
 
-static void promptmenu_open_file_search(void) {
+static void promptmenu_dir_search(void) {
   ASSERT_PM;
   directory_t dir;
   char *last_slash;
@@ -229,7 +229,6 @@ static inline void promptmenu_should_accept_completion(void) {
 
 /* ----------------------------- Promptmenu routine marked update ----------------------------- */
 
-_UNUSED
 static void promptmenu_routine_marked_update(void) {
   ASSERT_PM;
   float x;
@@ -349,7 +348,6 @@ void promptmenu_open(void) {
   statusbar_discard_all_undo_redo();
   pm->xflags |= (PROMPTMENU_ACTIVE | PROMPTMENU_REFRESH_POS | PROMPTMENU_REFRESH_TEXT);
   pm->element->xflags &= ~ELEMENT_HIDDEN;
-  menu_show(pm->menu, TRUE);
   refresh_needed = TRUE;
 }
 
@@ -361,7 +359,9 @@ void promptmenu_close(void) {
   pm->xflags &= ~PROMPTMENU_ACTIVE;
   pm->element->xflags |= ELEMENT_HIDDEN;
   menu_clear_entries(pm->menu);
-  menu_show(pm->menu, FALSE);
+  if (menu_is_shown(pm->menu)) {
+    menu_show(pm->menu, FALSE);
+  }
   cvec_clear(pm->completions);
   pm->data.raw = NULL;
   refresh_needed = TRUE;
@@ -413,8 +413,9 @@ void promptmenu_refresh_text(void) {
 void promptmenu_routine_completions_search(void) {
   ASSERT_PM;
   switch (pm->mode) {
+    case PROMPTMENU_TYPE_FILE_SAVE_BEFORE_CLOSE:
     case PROMPTMENU_TYPE_FILE_OPEN: {
-      promptmenu_open_file_search();
+      promptmenu_dir_search();
       break;
     }
     default: {
@@ -474,7 +475,7 @@ void promptmenu_routine_enter(void) {
         else {
           pwd    = getpwd();
           pwdlen = STRLEN(pwd);
-          if (STRNCMP(answer, pwd, pwdlen) && file_exists(answer + pwdlen + 1)) {
+          if (STRNCMP(answer, pwd, pwdlen) == 0 && file_exists(answer + pwdlen + 1)) {
             editor_open_buffer(answer + pwdlen + 1);
           }
           else {
@@ -487,7 +488,6 @@ void promptmenu_routine_enter(void) {
       break;
     }
     case PROMPTMENU_TYPE_FILE_SAVE_BEFORE_CLOSE: {
-      // full_path = get_full_path(answer);
       if (!file_exists(answer)) {
         log_INFO_0("Writing out name-less file as %s before closing", answer);
         pm->data.file->filename = xstrcpy(pm->data.file->filename, answer);
@@ -518,6 +518,7 @@ void promptmenu_routine_tab(void) {
   ASSERT_PM;
   promptmenu_should_accept_completion();
   switch (pm->mode) {
+    case PROMPTMENU_TYPE_FILE_SAVE_BEFORE_CLOSE:
     case PROMPTMENU_TYPE_FILE_OPEN: {
       if (dir_exists(answer) && typing_x && answer[typing_x - 1] != '/') {
         answer = xnstrncat(answer, typing_x++, S__LEN("/"));
@@ -539,7 +540,7 @@ void promptmenu_routine_tab(void) {
 void promptmenu_routine_yes(void) {
   ASSERT_PM;
   switch (pm->mode) {
-    case PROMPTMENU_TYPE_FILE_SAVE_MODIFIED: {
+    case PROMPTMENU_TYPE_YN_FILE_SAVE_MODIFIED: {
       /* TODO: Fix this.  Extend/Modify `do_savefile_for()` to save any file in the given context. */
       ALWAYS_ASSERT(pm->data.file);
       /* TODO: Here we need to prompt for a name. */
@@ -566,7 +567,7 @@ void promptmenu_routine_yes(void) {
 void promptmenu_routine_no(void) {
   ASSERT_PM;
   switch (pm->mode) {
-    case PROMPTMENU_TYPE_FILE_SAVE_MODIFIED: {
+    case PROMPTMENU_TYPE_YN_FILE_SAVE_MODIFIED: {
       ALWAYS_ASSERT(pm->data.file);
       editor_close_a_open_buffer(pm->data.file);
       break;
@@ -625,15 +626,15 @@ void promptmenu_ask(PromptMenuType type) {
     }
     case PROMPTMENU_TYPE_FILE_OPEN: {
       prompt = xstrncpy(prompt, S__LEN("File to open: "));
-      answer = free_and_assign(answer, getpwd());
-      typing_x = STRLEN(answer);
+      /* Pre-prep the answer with the current-working-directory. */
+      answer = free_and_assign(answer, getpwd_len(&typing_x));
       if (typing_x && answer[typing_x - 1] != '/') {
         answer = xnstrncat(answer, typing_x++, S__LEN("/"));
       }
       promptmenu_routine_completions_search();
       break;
     }
-    case PROMPTMENU_TYPE_FILE_SAVE_MODIFIED: {
+    case PROMPTMENU_TYPE_YN_FILE_SAVE_MODIFIED: {
       /* TODO: We should be able to take any file, also we should implement a union to hold the data. */
       if (*GUI_OF->filename) {
         prompt = fmtstrcpy(prompt, "Save modified buffer: [%s]? [Y/N]: ", GUI_OF->filename);
@@ -648,6 +649,12 @@ void promptmenu_ask(PromptMenuType type) {
     case PROMPTMENU_TYPE_FILE_SAVE_BEFORE_CLOSE: {
       ASSERT(pm->data.file);
       prompt = xstrncpy(prompt, S__LEN("Save as: "));
+      /* Pre-prep the answer with the current-working-directory. */
+      answer = free_and_assign(answer, getpwd_len(&typing_x));
+      if (typing_x && answer[typing_x - 1] != '/') {
+        answer = xnstrncat(answer, typing_x++, S__LEN("/"));
+      }
+      promptmenu_routine_completions_search();
       break;
     }
   }

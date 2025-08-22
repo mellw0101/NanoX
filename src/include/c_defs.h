@@ -1302,7 +1302,6 @@ typedef enum {
 # define MOUSE_PRESS_WAS_TRIPPLE  MOUSE_PRESS_WAS_TRIPPLE
 } MouseFlag;
 
-
 /* ----------------------------- gui/element.c ----------------------------- */
 
 /* State flags for elements. */
@@ -1369,12 +1368,12 @@ typedef enum {
   PROMPTMENU_TYPE_NONE,
   PROMPTMENU_TYPE_FILE_SAVE,
   PROMPTMENU_TYPE_FILE_OPEN,
-  PROMPTMENU_TYPE_FILE_SAVE_MODIFIED,
+  PROMPTMENU_TYPE_YN_FILE_SAVE_MODIFIED,
   PROMPTMENU_TYPE_FILE_SAVE_BEFORE_CLOSE,
 # define PROMPTMENU_TYPE_NONE                    PROMPTMENU_TYPE_NONE
 # define PROMPTMENU_TYPE_FILE_SAVE               PROMPTMENU_TYPE_FILE_SAVE
 # define PROMPTMENU_TYPE_FILE_OPEN               PROMPTMENU_TYPE_FILE_OPEN
-# define PROMPTMENU_TYPE_FILE_SAVE_MODIFIED      PROMPTMENU_TYPE_FILE_SAVE_MODIFIED
+# define PROMPTMENU_TYPE_YN_FILE_SAVE_MODIFIED   PROMPTMENU_TYPE_YN_FILE_SAVE_MODIFIED
 # define PROMPTMENU_TYPE_FILE_SAVE_BEFORE_CLOSE  PROMPTMENU_TYPE_FILE_SAVE_BEFORE_CLOSE
 } PromptMenuType;
 
@@ -1609,7 +1608,7 @@ struct rcoption {
 };
 
 struct keystruct {
-  const char *keystr;  /* The string that describes the keystroke, like "^C" or "M-R". */
+  const char *keystr;  /* The string that describes the keystroke, like `"^C"` or `"M-R"`. */
   int keycode;         /* The integer that, together with meta, identifies the keystroke. */
   int menus;           /* The menus in which this keystroke is bound. */
   void (*func)(void);  /* The function to which this keystroke is bound. */

@@ -455,7 +455,7 @@ void kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
             ;
           }
           else {
-            promptmenu_ask(PROMPTMENU_TYPE_FILE_SAVE_MODIFIED);
+            promptmenu_ask(PROMPTMENU_TYPE_YN_FILE_SAVE_MODIFIED);
           }
           break;
         }
