@@ -28,10 +28,12 @@ typedef enum {
   PROMPTMENU_REFRESH_TEXT = (1 << 1),
   PROMPTMENU_REFRESH_POS  = (1 << 2),
   PROMPTMENU_YN_MODE      = (1 << 3),
+  PROMPTMENU_KEEP_ANSWER  = (1 << 4),
 # define PROMPTMENU_ACTIVE          PROMPTMENU_ACTIVE
 # define PROMPTMENU_REFRESH_TEXT    PROMPTMENU_REFRESH_TEXT
 # define PROMPTMENU_REFRESH_POS     PROMPTMENU_REFRESH_POS
 # define PROMPTMENU_YN_MODE         PROMPTMENU_YN_MODE
+# define PROMPTMENU_KEEP_ANSWER     PROMPTMENU_KEEP_ANSWER
 # define PROMPTMENU_DEFAULT_XFLAGS  (0U)
 } PromptMenuState;
 
@@ -102,7 +104,10 @@ static inline void promptmenu_add_prompt_text(void) {
   float x = (pm->element->x + font_breadth(uifont, " "));
   float y = (pm->element->y + font_row_baseline(uifont, 0));
   font_vertbuf_add_mbstr(uifont, pm->buf, prompt, strlen(prompt), NULL, PACKED_UINT(255, 255, 255, 255), &x, &y);
-  font_vertbuf_add_mbstr(uifont, pm->buf, answer, strlen(answer), " ",  PACKED_UINT(255, 255, 255, 255), &x, &y);
+  /* Only draw the answer when not in yes/no mode. */
+  if (!(pm->xflags & PROMPTMENU_YN_MODE)) {
+    font_vertbuf_add_mbstr(uifont, pm->buf, answer, strlen(answer), " ",  PACKED_UINT(255, 255, 255, 255), &x, &y);
+  }
 }
 
 /* ----------------------------- Promptmenu add cursor ----------------------------- */
@@ -425,6 +430,29 @@ void promptmenu_routine_completions_search(void) {
   promptmenu_find_completions();
 }
 
+/* ----------------------------- Promptmenu routine mouse click left ----------------------------- */
+
+/* TODO: Rename to something better, as this is simply the routine to set typing_x based on a raw x position. */
+void promptmenu_routine_mouse_click_left(float x) {
+  ASSERT_PM;
+  typing_x = font_index_from_pos(
+    uifont,
+    answer,
+    STRLEN(answer),
+    x,
+    (pm->element->x + font_breadth(uifont, prompt) + font_breadth(uifont, " "))
+  );
+  pm->xflags |= PROMPTMENU_REFRESH_TEXT;
+}
+
+/* ----------------------------- Promptmenu routine marked set ----------------------------- */
+
+void promptmenu_routine_marked_set(void) {
+  ASSERT_PM;
+  st_marked_x = typing_x;
+  st_marked = TRUE;
+}
+
 /* ----------------------------- Promptmenu routine enter ----------------------------- */
 
 /* The routine that is performed when `enter` is pressed. */
@@ -488,6 +516,7 @@ void promptmenu_routine_enter(void) {
       break;
     }
     case PROMPTMENU_TYPE_FILE_SAVE_BEFORE_CLOSE: {
+      /* The given filename does not yet exist. */
       if (!file_exists(answer)) {
         log_INFO_0("Writing out name-less file as %s before closing", answer);
         pm->data.file->filename = xstrcpy(pm->data.file->filename, answer);
@@ -495,8 +524,12 @@ void promptmenu_routine_enter(void) {
           log_ERR_FA("Failed to write file %s to disk", answer);
         }
         editor_close_a_open_buffer(pm->data.file);
-        pm->data.raw = NULL;
         promptmenu_close();
+      }
+      else {
+        log_INFO_0("Prompting for confirmation to overwrite the file: '%s'", answer);
+        pm->xflags |= PROMPTMENU_KEEP_ANSWER;
+        promptmenu_ask(PROMPTMENU_TYPE_YN_FILE_SAVE_OVERWRITE);
       }
       break;
     }
@@ -543,7 +576,7 @@ void promptmenu_routine_yes(void) {
     case PROMPTMENU_TYPE_YN_FILE_SAVE_MODIFIED: {
       /* TODO: Fix this.  Extend/Modify `do_savefile_for()` to save any file in the given context. */
       ALWAYS_ASSERT(pm->data.file);
-      /* TODO: Here we need to prompt for a name. */
+      /* If the file is nameless, prompt for a name. */
       if (!*pm->data.file->filename) {
         pm->xflags &= ~PROMPTMENU_YN_MODE;
         promptmenu_ask(PROMPTMENU_TYPE_FILE_SAVE_BEFORE_CLOSE);
@@ -572,6 +605,11 @@ void promptmenu_routine_no(void) {
       editor_close_a_open_buffer(pm->data.file);
       break;
     }
+    case PROMPTMENU_TYPE_YN_FILE_SAVE_OVERWRITE: {
+      promptmenu_ask(PROMPTMENU_TYPE_FILE_SAVE_BEFORE_CLOSE);
+      pm->xflags &= ~PROMPTMENU_YN_MODE;
+      return;
+    }
     default: {
       break;
     }
@@ -580,36 +618,19 @@ void promptmenu_routine_no(void) {
   promptmenu_close();
 }
 
-/* ----------------------------- Promptmenu routine mouse click left ----------------------------- */
-
-/* TODO: Rename to something better, as this is simply the routine to set typing_x based on a raw x position. */
-void promptmenu_routine_mouse_click_left(float x) {
-  ASSERT_PM;
-  typing_x = font_index_from_pos(
-    uifont,
-    answer,
-    STRLEN(answer),
-    x,
-    (pm->element->x + font_breadth(uifont, prompt) + font_breadth(uifont, " "))
-  );
-  pm->xflags |= PROMPTMENU_REFRESH_TEXT;
-}
-
-/* ----------------------------- Promptmenu routine marked set ----------------------------- */
-
-void promptmenu_routine_marked_set(void) {
-  ASSERT_PM;
-  st_marked_x = typing_x;
-  st_marked = TRUE;
-}
-
 /* ----------------------------- Promptmenu ask ----------------------------- */
 
+/* TODO: Here we should implement the yn prompt when closing if the filename given already exists, to overwrite. */
 void promptmenu_ask(PromptMenuType type) {
   ASSERT_PM;
   promptmenu_open();
   pm->mode = type;
-  *answer = NUL;
+  if (pm->xflags & PROMPTMENU_KEEP_ANSWER) {
+    pm->xflags &= ~PROMPTMENU_KEEP_ANSWER;
+  }
+  else {
+    *answer = NUL;
+  }
   typing_x = 0;
   switch (type) {
     case PROMPTMENU_TYPE_NONE: {
@@ -655,6 +676,12 @@ void promptmenu_ask(PromptMenuType type) {
         answer = xnstrncat(answer, typing_x++, S__LEN("/"));
       }
       promptmenu_routine_completions_search();
+      break;
+    }
+    case PROMPTMENU_TYPE_YN_FILE_SAVE_OVERWRITE: {
+      ASSERT(pm->data.file);
+      prompt = xstrcpy(prompt, "Overwrite file? [Y/N]: ");
+      pm->xflags |= PROMPTMENU_YN_MODE;
       break;
     }
   }

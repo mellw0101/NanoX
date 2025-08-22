@@ -975,6 +975,10 @@ bool promptmenu_element_is_main(Element *const e);
 void promptmenu_refresh_text(void);
 /* ----------------------------- Promptmenu routine completions search ----------------------------- */
 void promptmenu_routine_completions_search(void);
+/* ----------------------------- Promptmenu routine mouse click left ----------------------------- */
+void promptmenu_routine_mouse_click_left(float x);
+/* ----------------------------- Promptmenu routine marked set ----------------------------- */
+void promptmenu_routine_marked_set(void);
 /* ----------------------------- Promptmenu routine enter ----------------------------- */
 void promptmenu_routine_enter(void);
 /* ----------------------------- Promptmenu routine tab ----------------------------- */
@@ -983,10 +987,6 @@ void promptmenu_routine_tab(void);
 void promptmenu_routine_yes(void);
 /* ----------------------------- Promptmenu routine no ----------------------------- */
 void promptmenu_routine_no(void);
-/* ----------------------------- Promptmenu routine mouse click left ----------------------------- */
-void promptmenu_routine_mouse_click_left(float x);
-/* ----------------------------- Promptmenu routine marked set ----------------------------- */
-void promptmenu_routine_marked_set(void);
 /* ----------------------------- Promptmenu ask ----------------------------- */
 void promptmenu_ask(PromptMenuType type);
 
