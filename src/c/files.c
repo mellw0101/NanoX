@@ -1233,28 +1233,31 @@ char *get_full_path(const char *const restrict origpath) {
   char *target;
   char *slash;
   struct stat fileinfo;
+  Ulong len;
   if (!origpath) {
     return NULL;
   }
   untilded = real_dir_from_tilde(origpath);
   target   = realpath(untilded, NULL);
-  slash    = strrchr(untilded, '/');
+  slash    = STRRCHR(untilded, '/');
   /* If realpath() returned NULL, try without the last component, as this can be a file that does not exist yet. */
   if (!target && slash && slash[1]) {
-    *slash = '\0';
+    *slash = NUL;
     target = realpath(untilded, NULL);
     /* Upon success, re-add the last component of the original path. */
     if (target) {
-      target = xrealloc(target, (strlen(target) + strlen(slash + 1) + 1));
-      strcat(target, (slash + 1));
+      len = STRLEN(target);
+      if (len && target[len - 1] != '/') {
+        target = xnstrncat(target, len++, S__LEN("/"));
+      }
+      target = xnstrcat(target, len, (slash + 1));
     }
   }
   /* Ensure that a non-apex directory path ends with a slash. */
   if (target && target[1] && stat(target, &fileinfo) == 0 && S_ISDIR(fileinfo.st_mode)) {
-    target = xrealloc(target, (strlen(target) + 2));
-    strcat(target, "/");
+    target = xstrncat(target, S__LEN("/"));
   }
-  free(untilded);
+  FREE(untilded);
   return target;
 }
 
@@ -1267,8 +1270,8 @@ char *check_writable_directory(const char *path) {
   if (!full_path) {
     return NULL;
   }
-  if (full_path[strlen(full_path) - 1] != '/' || access(full_path, W_OK) != 0) {
-    free(full_path);
+  if (full_path[STRLEN(full_path) - 1] != '/' || access(full_path, W_OK) != 0) {
+    FREE(full_path);
     return NULL;
   }
   return full_path;

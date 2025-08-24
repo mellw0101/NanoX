@@ -460,6 +460,9 @@ void promptmenu_routine_enter(void) {
   ASSERT_PM;
   char *pwd;
   char *full_path;
+  char *writable_dir;
+  char *dir;
+  char *slash;
   Ulong pwdlen;
   promptmenu_should_accept_completion();
   switch (pm->mode) {
@@ -479,7 +482,7 @@ void promptmenu_routine_enter(void) {
           }
           promptmenu_close();
         }
-        free(full_path);
+        FREE(full_path);
       }
       break;
     }
@@ -516,20 +519,49 @@ void promptmenu_routine_enter(void) {
       break;
     }
     case PROMPTMENU_TYPE_FILE_SAVE_BEFORE_CLOSE: {
-      /* The given filename does not yet exist. */
-      if (!file_exists(answer)) {
-        log_INFO_0("Writing out name-less file as %s before closing", answer);
-        pm->data.file->filename = xstrcpy(pm->data.file->filename, answer);
-        if (write_it_out_for(pm->data.file, FALSE, FALSE) == 2) {
-          log_ERR_FA("Failed to write file %s to disk", answer);
-        }
-        editor_close_a_open_buffer(pm->data.file);
-        promptmenu_close();
+      /* Inform the user if the answer is empty... */
+      if (!*answer) {
+        statusline(AHEM, _("Save path cannot be empty!"));
+        break;
+      }
+      /* Check that we have write access to the given path. */
+      full_path = get_full_path(answer);
+      if (!full_path) {
+        log_INFO_0("Hello");
+        break;
+      }
+      slash = STRRCHR(full_path, '/');
+      if (!slash) {
+        FREE(full_path);
+        break;
+      }
+      log_INFO_0("%s", full_path);
+      dir = measured_copy(full_path, ((slash - full_path) + 1));
+      FREE(full_path);
+      writable_dir = check_writable_directory(dir);
+      if (!writable_dir) {
+        statusline(AHEM, _("Cannot write to directory: %s"), dir);
+        FREE(dir);
+        break;
       }
       else {
-        log_INFO_0("Prompting for confirmation to overwrite the file: '%s'", answer);
-        pm->xflags |= PROMPTMENU_KEEP_ANSWER;
-        promptmenu_ask(PROMPTMENU_TYPE_YN_FILE_SAVE_OVERWRITE);
+        FREE(dir);
+        FREE(writable_dir);
+        /* The given filename does not yet exist. */
+        if (!file_exists(answer)) {
+          log_INFO_0("Writing out name-less file as %s before closing", answer);
+          pm->data.file->filename = xstrcpy(pm->data.file->filename, answer);
+          if (write_it_out_for(pm->data.file, FALSE, FALSE) == 2) {
+            log_ERR_FA("Failed to write file %s to disk", answer);
+          }
+          editor_close_a_open_buffer(pm->data.file);
+          promptmenu_close();
+        }
+        else {
+          log_INFO_0("Prompting for confirmation to overwrite the file: '%s'", answer);
+          pm->xflags |= PROMPTMENU_KEEP_ANSWER;
+          promptmenu_ask(PROMPTMENU_TYPE_YN_FILE_SAVE_OVERWRITE);
+        }
       }
       break;
     }
@@ -586,6 +618,12 @@ void promptmenu_routine_yes(void) {
       editor_close_a_open_buffer(pm->data.file);
       break;
     }
+    case PROMPTMENU_TYPE_YN_FILE_SAVE_OVERWRITE: {
+      /* TODO: Here we should write a temp backup of the file that will be overwritten, misstakes happen... */
+      ALWAYS_ASSERT(pm->data.file);
+      log_INFO_0("File: '%s' will be overwritten", answer);
+      break;
+    }
     default: {
       break;
     }
@@ -606,6 +644,7 @@ void promptmenu_routine_no(void) {
       break;
     }
     case PROMPTMENU_TYPE_YN_FILE_SAVE_OVERWRITE: {
+      /* If the user choose an already existing file, and said no when prompted to overwrite it, prompt for a new path. */
       promptmenu_ask(PROMPTMENU_TYPE_FILE_SAVE_BEFORE_CLOSE);
       pm->xflags &= ~PROMPTMENU_YN_MODE;
       return;
