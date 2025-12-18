@@ -199,7 +199,7 @@ void add_glyph(const char *current, const char *prev, vertex_buffer_t *buf, text
   ASSERT(penpos);
   float x0, x1, y0, y1;
   Uint indices[] = { 0, 1, 2, 0, 2, 3 };
-  vertex_t vertices[4];
+  FontVertex vertices[4];
   texture_glyph_t *glyph = texture_font_get_glyph(font, current);
   ALWAYS_ASSERT(glyph);
   if (prev) {
@@ -258,7 +258,7 @@ void add_cursor(texture_font_t *font, vertex_buffer_t *buf, vec4 color, vec2 at)
   float x1 = (int)(x0 + 1);
   float y1 = (int)(y0 + FONT_HEIGHT(font));
   Uint indices[] = { 0, 1, 2, 0, 2, 3 };
-  vertex_t vertices[] = {
+  FontVertex vertices[] = {
     // Position   Texture               Color
     {  x0,y0,   glyph->s0, glyph->t0, color.r,color.g,color.b,color.a },
     {  x0,y1,   glyph->s0, glyph->t1, color.r,color.g,color.b,color.a },

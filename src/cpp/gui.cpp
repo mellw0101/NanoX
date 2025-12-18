@@ -201,21 +201,15 @@ void glfw_loop(void) {
       /* Draw the editors. */
       CLIST_ITER(starteditor, editor,
         editor_confirm_margin(editor);
-        // draw_editor(editor);
       );
+      gl_mouse_draw_held_if_needed();
       /* Draw the top menu bar. */
-      // draw_topbar();
       promptmenu_draw();
-      /* Draw the bottom bar. */
-      // draw_botbar();
       /* Draw the status bar, if there is any status messages. */
       statusbar_draw();
-      // context_menu_draw(gui->context_menu);
       /* Draw the suggestmenu. */
-      // draw_suggestmenu();
       suggestmenu_draw();
       /* If refresh was needed it has been done so set it to FALSE. */
-      // glfwSwapBuffers(gl_window());
       gl_window_swap();
       refresh_needed = FALSE;
     }

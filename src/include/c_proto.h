@@ -789,6 +789,7 @@ void element_set_rounded_apex_fraction(Element *const e, float t);
 void element_set_data_callback(Element *const e, void *const ptr);
 /* ----------------------------- Element set extra routine rect ----------------------------- */
 void element_set_extra_routine_rect(Element *const e, ElementExtraCallback callback);
+Element *element_copy(Element *src, Element *parent);
 
 
 /* ---------------------------------------------------------- gui/scrollbar.c ---------------------------------------------------------- */
@@ -1772,11 +1773,16 @@ float gl_mouse_x(void);
 float gl_mouse_y(void);
 /* ----------------------------- Mouse gui get pos ----------------------------- */
 void mouse_gui_get_pos(float *const x, float *const y);
+/* ----------------------------- Mouse gui get last x ----------------------------- */
 float gl_mouse_last_x(void);
+/* ----------------------------- Mouse gui get last y ----------------------------- */
 float gl_mouse_last_y(void);
 /* ----------------------------- Is mouse flag set ----------------------------- */
 bool gl_mouse_flag_is_set(Uint flag);
+/* ----------------------------- gl_mouse_flag_clear_all ----------------------------- */
 void gl_mouse_flag_clear_all(void);
+/* ----------------------------- gl_mouse_draw_held_if_needed ----------------------------- */
+void gl_mouse_draw_held_if_needed(void);
 /* ----------------------------- Gl mouse routine button dn ----------------------------- */
 void gl_mouse_routine_button_dn(Uchar button, Ushort mod, float x, float y);
 /* ----------------------------- Gl mouse routine button up ----------------------------- */

@@ -10,12 +10,12 @@
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
-/* ----------------------------- Element create internal ----------------------------- */
+/* ----------------------------- element_create_internal ----------------------------- */
 
 static Element *element_create_internal(void) {
   Element *e = xmalloc(sizeof *e);
   /* State flags. */
-  e->xflags = ELEMENT_XFLAGS_DEFAULT;
+  e->xflags    = ELEMENT_XFLAGS_DEFAULT;
   e->xrectopts = 0U;
   /* Boolian flags. */
   e->dt = ELEMENT_DATA_NONE;
@@ -39,7 +39,6 @@ static Element *element_create_internal(void) {
   e->parent   = NULL;
   e->children = cvec_create();
   /* Cursor. */
-  // e->cursor = GLFW_ARROW_CURSOR;
   e->cursor = SDL_SYSTEM_CURSOR_DEFAULT;
   /* Rect buffer. */
   e->rect_buffer = vertex_buffer_new(RECT_VERTBUF);
@@ -197,14 +196,17 @@ static void element_rounded_rect(Element *const e) {
   Uint *indi = bazier_indices_create(n, &indi_len);
   float offset = (FMINF(e->width, e->height) / 2);
   element_add_rounded_center_rect(e, offset);
-  /* First do the top left arc. */
+  /* Top-Left */
   element_insert_bazier_arc_corner(e, vert, indi, indi_len, n, e->x, e->y, (e->x + offset), (e->y + offset));
   /* Top-Right */
-  element_insert_bazier_arc_corner(e, vert, indi, indi_len, n, (e->x + e->width), e->y, ((e->x + e->width - offset)), (e->y + offset));
+  element_insert_bazier_arc_corner(e, vert, indi, indi_len, n,
+    (e->x + e->width), e->y, ((e->x + e->width - offset)), (e->y + offset));
   /* Bottom-Left */
-  element_insert_bazier_arc_corner(e, vert, indi, indi_len, n, e->x, (e->y + e->height), (e->x + offset), ((e->y + e->height) - offset));
+  element_insert_bazier_arc_corner(e, vert, indi, indi_len, n,
+    e->x, (e->y + e->height), (e->x + offset), ((e->y + e->height) - offset));
   /* Bottom-Right */
-  element_insert_bazier_arc_corner(e, vert, indi, indi_len, n, (e->x + e->width), (e->y + e->height), ((e->x + e->width) - offset), ((e->y + e->height) - offset));
+  element_insert_bazier_arc_corner(e, vert, indi, indi_len, n,
+    (e->x + e->width), (e->y + e->height), ((e->x + e->width) - offset), ((e->y + e->height) - offset));
   free(indi);
   free(vert);
 }
@@ -249,7 +251,7 @@ static inline void element_draw_rect(Element *const e) {
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
-/* ----------------------------- Element create ----------------------------- */
+/* ----------------------------- element_create ----------------------------- */
 
 /* Create a new allocated `element`.  Note that is `in_gridmap` is `TRUE`
  * then the element must also be hidden to not react to mouse events. */
@@ -272,7 +274,7 @@ Element *element_create(float x, float y, float width, float height, bool in_gri
   return e;
 }
 
-/* ----------------------------- Element free ----------------------------- */
+/* ----------------------------- element_free ----------------------------- */
 
 void element_free(Element *const e) {
   if (!e) {
@@ -312,7 +314,7 @@ void element_move(Element *const e, float x, float y) {
   e->x = x;
   e->y = y;
   element_children_relative_pos(e);
-  element_grid_remove(e);
+  element_grid_set(e);
 }
 
 /* ----------------------------- Element resize ----------------------------- */
@@ -515,7 +517,7 @@ void element_set_rounded_apex_fraction(Element *const e, float t) {
   PACK_INT_DATA(e->xrectopts, FLOAT_TO_UCHAR(t), 0);
 }
 
-/* ----------------------------- Element set data callback ----------------------------- */
+/* ----------------------------- element_set_data_callback ----------------------------- */
 
 /* Set the `void *` that will be passed to all extra routine callbacks. */
 void element_set_data_callback(Element *const e, void *const ptr) {
@@ -524,7 +526,7 @@ void element_set_data_callback(Element *const e, void *const ptr) {
   e->cbdata = ptr;
 }
 
-/* ----------------------------- Element set extra routine rect ----------------------------- */
+/* ----------------------------- element_set_extra_routine_rect ----------------------------- */
 
 /* Set the callback that will be called when updating the rect of `e`.
  * Note that this is an extra thing to be performed, and not a replacement. */
@@ -534,4 +536,44 @@ void element_set_extra_routine_rect(Element *const e, ElementExtraCallback callb
   ASSERT(e->cbdata);
   ASSERT(callback);
   e->extra_routine_rect = callback;
+}
+
+/* ----------------------------- element_copy ----------------------------- */
+
+Element *element_copy(Element *src, Element *parent) {
+  ASSERT(src);
+  Element *copy = element_create(src->x, src->y, src->width, src->height, !(src->xflags & ELEMENT_NOT_IN_MAP));
+  if (parent) {
+    element_set_parent(copy, parent);
+  }
+  copy->layer          = src->layer;
+  copy->rel_x          = src->rel_x;
+  copy->rel_y          = src->rel_y;
+  copy->rel_width      = src->rel_width;
+  copy->rel_height     = src->rel_height;
+  copy->prefered_width = src->prefered_width;
+  copy->color          = src->color;
+  copy->text_color     = src->text_color;
+  /* This needs to be verified, but should correctly work. */
+  ELEMENT_CHILDREN_ITER(src, i, c,
+    element_set_parent(element_copy(c, NULL), copy);
+  );
+  copy->cursor             = src->cursor;
+  copy->xflags             = src->xflags;
+  copy->xrectopts          = src->xrectopts;
+  copy->dt                 = src->dt;
+  copy->dp_raw             = src->dp_raw;
+  copy->border_lsize       = src->border_lsize;
+  copy->border_tsize       = src->border_tsize;
+  copy->border_rsize       = src->border_rsize;
+  copy->border_bsize       = src->border_bsize;
+  copy->cbdata             = src->cbdata;
+  copy->extra_routine_rect = src->extra_routine_rect;
+  /* Ensure the lable is the same. */
+  if (src->xflags & ELEMENT_LABLE) {
+    element_set_lable(copy, src->lable, src->lable_len);
+    // copy->lable     = measured_copy(src->lable, src->lable_len);
+    // copy->lable_len = src->lable_len;
+  }
+  return copy;
 }

@@ -55,8 +55,10 @@ struct EditorTb {
   Uint xflags;
 
   vertex_buffer_t *buffer;
-  Editor          *editor;
-  Element         *element;
+
+  Editor *editor;
+
+  Element *element;
 
   EtbContextMenu *context;
 };
@@ -131,12 +133,17 @@ static void etb_create_button(EditorTb *const etb, openfilestruct *const f, floa
   Element *button;
   /* If `f` has a set name, then use it.  Otherwise, use the placeholder `Nameless`. */
   const char *lable = (*f->filename ? f->filename : "Nameless");
-  button = element_create((*pos_x), (*pos_y), (font_breadth(uifont, lable) + font_breadth(uifont, "  ")), font_height(uifont), TRUE);
+  button = element_create(
+    (*pos_x),
+    (*pos_y),
+    (font_breadth(uifont, lable) + font_breadth(uifont, "  ")),
+    font_height(uifont),
+    TRUE
+  );
   element_set_parent(button, etb->element);
   button->xflags |= ELEMENT_REL_POS;
   button->cursor  = SDL_SYSTEM_CURSOR_POINTER;
-  // button->cursor  = GLFW_HAND_CURSOR;
-  element_set_lable(button, lable, strlen(lable));
+  element_set_lable(button, lable, STRLEN(lable));
   element_set_data_file(button, f);
   /* Set the correct color for the button based on if it's the currently open file in the editor. */
   button->color = ((f == etb->editor->openfile) ? ETB_ACTIVE_COLOR : ETB_BUTTON_COLOR);
@@ -204,9 +211,9 @@ static void etb_button_context_menu_accept(void *arg, const char *const restrict
   && etb->element == etb->context->clicked->parent && etb->context->clicked->parent->dt == ELEMENT_DATA_EDITOR)
   {
     file = etb->context->clicked->dp_file;
-    /* TODO: Currently, none of these will check if the files are modified at all and as such will simply close,
-     * this should not be the case, so when we have added a more dynamic way to call the prompt-menu for such
-     * things, we should also make it able to resume some task, where it left off. */
+    /* TODO: Currently, none of these will check if the files are modified at all and as such will simply
+     * close, this should not be the case, so when we have added a more dynamic way to call the
+     * prompt-menu for such things, we should also make it able to resume some task, where it left off. */
     switch (index) {
       /* Close */
       case 0: {

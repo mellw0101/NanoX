@@ -36,7 +36,7 @@ void line_add_cursor(long lineno, Font *const font, vertex_buffer_t *const buf, 
   x1 = (int)(x0 + 1);
   y1 = (int)(bot + yoffset);
   Uint indices[] = { 0, 1, 2, 0, 2, 3 };
-  vertex_t vertices[] = {
+  FontVertex vertices[] = {
     // Position   Texture               Color
     {  x0,y0,   glyph->s0, glyph->t0, color.r,color.g,color.b,color.a },
     {  x0,y1,   glyph->s0, glyph->t1, color.r,color.g,color.b,color.a },

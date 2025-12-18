@@ -453,9 +453,11 @@ void font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const
   ASSERT_FONT;
   ASSERT(current);
   ASSERT(buf);
-  float x0, x1, y0, y1;
-  // Uint indices[] = { 0, 1, 2, 0, 2, 3 };
-  vertex_t vertices[4];
+  float x0;
+  float x1;
+  float y0;
+  float y1;
+  FontVertex vertices[4];
   texture_glyph_t *glyph = font_get_glyph(f, current);
   if (prev) {
     (*pen_x) += texture_glyph_get_kerning(glyph, prev);
@@ -464,10 +466,11 @@ void font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const
   y0 = (int)((*pen_y) - glyph->offset_y);
   x1 = (int)(x0 + glyph->width);
   y1 = (int)(y0 + glyph->height);
-  vertices[0] = (vertex_t){ x0,y0, glyph->s0,glyph->t0, UNPACK_UINT_FLOAT(color, 0),UNPACK_UINT_FLOAT(color, 1), UNPACK_UINT_FLOAT(color, 2), UNPACK_UINT_FLOAT(color, 3) };
-  vertices[1] = (vertex_t){ x0,y1, glyph->s0,glyph->t1, UNPACK_UINT_FLOAT(color, 0),UNPACK_UINT_FLOAT(color, 1), UNPACK_UINT_FLOAT(color, 2), UNPACK_UINT_FLOAT(color, 3) };
-  vertices[2] = (vertex_t){ x1,y1, glyph->s1,glyph->t1, UNPACK_UINT_FLOAT(color, 0),UNPACK_UINT_FLOAT(color, 1), UNPACK_UINT_FLOAT(color, 2), UNPACK_UINT_FLOAT(color, 3) };
-  vertices[3] = (vertex_t){ x1,y0, glyph->s1,glyph->t0, UNPACK_UINT_FLOAT(color, 0),UNPACK_UINT_FLOAT(color, 1), UNPACK_UINT_FLOAT(color, 2), UNPACK_UINT_FLOAT(color, 3) };
+  UNPACK_FUINT_VARS(color, r,g,b,a);
+  vertices[0] = (FontVertex){ x0,y0, glyph->s0,glyph->t0, r,g,b,a };
+  vertices[1] = (FontVertex){ x0,y1, glyph->s0,glyph->t1, r,g,b,a };
+  vertices[2] = (FontVertex){ x1,y1, glyph->s1,glyph->t1, r,g,b,a };
+  vertices[3] = (FontVertex){ x1,y0, glyph->s1,glyph->t0, r,g,b,a };
   vertex_buffer_push_back(buf, vertices, 4, FONT_INDICES, FONT_INDICES_LEN);
   (*pen_x) += glyph->advance_x;
 }
@@ -518,7 +521,7 @@ void font_add_cursor(Font *const f, vertex_buffer_t *const buf, long row, Uint c
   /* We use the NULL texture of font to make the cursor. */
   texture_glyph_t *glyph = texture_font_get_glyph(f->font, NULL);
   UNPACK_FUINT_VARS(color, r,g,b,a);
-  vertex_t vert[] = {
+  FontVertex vert[] = {
     { x0,y0, glyph->s0,glyph->t0, r,g,b,a },
     { x0,y1, glyph->s0,glyph->t1, r,g,b,a },
     { x1,y1, glyph->s1,glyph->t1, r,g,b,a },

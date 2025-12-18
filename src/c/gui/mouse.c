@@ -10,7 +10,7 @@
 /* ---------------------------------------------------------- Define's ---------------------------------------------------------- */
 
 
-#define MOUSE_FLAGS(flag)     mouse_flags[((flag) / sizeof(__TYPE(mouse_flags[0])) * 8)]
+#define MOUSE_FLAGS(flag)     mouse_flags[((flag) / (sizeof(__TYPE(mouse_flags[0])) * 8))]
 #define MOUSE_FLAGMASK(flag)  ((__TYPE(mouse_flags[0]))1 << ((flag) % (sizeof(__TYPE(mouse_flags[0])) * 8)))
 #define MOUSE_SET(flag)       MOUSE_FLAGS(flag) |= MOUSE_FLAGMASK(flag)
 #define MOUSE_UNSET(flag)     MOUSE_FLAGS(flag) &= ~MOUSE_FLAGMASK(flag)
@@ -24,6 +24,7 @@
 
 
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
+
 
 
 static int last_mouse_button = 0;
@@ -51,7 +52,7 @@ static int mouse_gui_current_cursor = SDL_SYSTEM_CURSOR_DEFAULT;
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
-/* ----------------------------- Gl mouse system cursor get ----------------------------- */
+/* ----------------------------- gl_mouse_system_cursor_get ----------------------------- */
 
 static SDL_Cursor *gl_mouse_system_cursor_get(SDL_SystemCursor type) {
   static SDL_Cursor *def  = NULL;
@@ -89,7 +90,7 @@ static SDL_Cursor *gl_mouse_system_cursor_get(SDL_SystemCursor type) {
   }
 }
 
-/* ----------------------------- Gl mouse set cursor ----------------------------- */
+/* ----------------------------- gl_mouse_set_cursor ----------------------------- */
 
 static inline void gl_mouse_set_cursor(SDL_SystemCursor type) {
   SDL_SetCursor(gl_mouse_system_cursor_get(type));
@@ -117,7 +118,7 @@ void gl_mouse_free(void) {
 
 /* Update the mouse click and flag state. */
 void gl_mouse_update_state(bool press, int button) {
-  MOUSE_LOCK_WRITE(
+  RWLOCK_WRLOCK_ACTION(&rwlock,
     /* Press */
     if (press) {
       /* Give some wiggle room for the position of a repeated mouse click. */
@@ -252,12 +253,26 @@ bool gl_mouse_flag_is_set(Uint flag) {
   return ret;
 }
 
-/* ----------------------------- Gl mouse flag clear all ----------------------------- */
+/* ----------------------------- gl_mouse_flag_clear_all ----------------------------- */
 
 void gl_mouse_flag_clear_all(void) {
   MOUSE_LOCK_WRITE(
     memset(mouse_flags, 0, sizeof(mouse_flags));
   );
+}
+
+/* ----------------------------- gl_mouse_draw_held_if_needed ----------------------------- */
+
+void gl_mouse_draw_held_if_needed(void) {
+  if (MOUSE_ISSET(MOUSE_SHOULD_DRAW_HELD)) {
+    if (!gl_mouse_element_clicked) {
+      MOUSE_UNSET(MOUSE_SHOULD_DRAW_HELD);
+    }
+    else {
+      element_draw(gl_mouse_element_clicked);
+      refresh_needed = TRUE;
+    }
+  }
 }
 
 /* ----------------------------- Gl mouse routine button dn ----------------------------- */
@@ -335,6 +350,7 @@ void gl_mouse_routine_button_dn(Uchar button, Ushort _UNUSED mod, float x, float
     && etb_element_is_main(e->parent->dp_editor->tb, e->parent))
     {
       etb_tab_routine_mouse_button_left_dn(e->parent->dp_editor->tb, e);
+      gl_mouse_element_clicked = element_copy(e, e->parent);
     }
   }
   else if (button == SDL_BUTTON_RIGHT) {
@@ -384,6 +400,17 @@ void gl_mouse_routine_button_up(Uchar button, Ushort _UNUSED mod, float x, float
         scrollbar_set_thumb_color(e->dp_sb, FALSE);
       }
       scrollbar_refresh(e->dp_sb);
+    }
+    /* Editor-Topbar-Button */
+    else if (e->dt == ELEMENT_DATA_FILE && e->parent && e->parent->dt == ELEMENT_DATA_EDITOR
+    && etb_element_is_main(e->parent->dp_editor->tb, e->parent))
+    {
+      log_INFO_0("Editor-Topbar-Button released");
+      if (e) {
+        element_free(e);
+        etb_text_refresh_needed(e->parent->dp_editor->tb);
+        MOUSE_UNSET(MOUSE_SHOULD_DRAW_HELD);
+      }
     }
     gl_mouse_element_clicked = NULL;
     refresh_needed = TRUE;
@@ -452,6 +479,15 @@ void gl_mouse_routine_position(float x, float y) {
       }
       else if (promptmenu_active() && promptmenu_element_is_main(clicked)) {
         promptmenu_routine_mouse_click_left(x);
+        refresh_needed = TRUE;
+      }
+      /* Editor-Topbar-Button */
+      else if (clicked->dt == ELEMENT_DATA_FILE && clicked->parent && clicked->parent->dt == ELEMENT_DATA_EDITOR
+      && etb_element_is_main(clicked->parent->dp_editor->tb, clicked->parent))
+      {
+        log_INFO_0("Editor-Topbar-Button: Held");
+        element_move(clicked, x, y);
+        etb_text_refresh_needed(clicked->parent->dp_editor->tb);
         refresh_needed = TRUE;
       }
     }

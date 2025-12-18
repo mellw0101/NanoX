@@ -1228,14 +1228,17 @@ static void process_a_keystroke(void) {
       }
       /* Otherwise, if it does not exist yet, create it. */
       else if (!puddle) {
-        puddle = (char *)nmalloc(capacity);
+        puddle = (char *)xmalloc(capacity);
       }
       /* If region is marked, and 'input' is an enclose char, then we enclose the marked region with that char. */
       if (openfile->mark && is_enclose_char(input)) {
         const char *s1, *s2;
         input == '"' ? s1 = "\"", s2 = s1 : input == '\'' ? s1 = "'", s2 = s1 : input == '(' ? s1 = "(", s2 = ")" :
-        input == '{' ? s1 = "{", s2 = "}" : input == '[' ? s1 = "[", s2 = "]" : input == '<' ? s1 = "<", s2 = ">" : 0;
-        enclose_marked_region(s1, s2);
+        input == '{' ? s1 = "{", s2 = "}" : input == '[' ? s1 = "[", s2 = "]" : input == '<' ? s1 = "<", s2 = ">" :
+        s1 = NULL, s2 = NULL;
+        if (s1 && s2) {
+          enclose_marked_region(s1, s2);
+        }
         return;
       }
       else if (openfile->mark && openfile->softmark) {
@@ -1253,41 +1256,48 @@ static void process_a_keystroke(void) {
         }
         /* Exceptions for enclosing quotes. */
         else if (input == '"'
-         /* Before current cursor position. */
-         && (((is_prev_cursor_word_char(FALSE) || is_prev_cursor_char_one_of("\"><")))
-         /* After current cursor position. */
-         || (!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of(";)}]")))) {
+        /* Before current cursor position. */
+        && (((is_prev_cursor_word_char(FALSE) || is_prev_cursor_char_one_of("\"><")))
+        /* After current cursor position. */
+        || (!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of(";)}]"))))
+        {
           ;
         }
         /* Exceptions for enclosing brackets. */
         else if ((input == '(' || input == '[' || input == '{')
-         /* After current cursor position. */
-         && ((!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of("\";')}]")) || (is_cursor_char_one_of("({[")))) {
+        /* After current cursor position. */
+        && ((!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of("\";')}]")) || (is_cursor_char_one_of("({["))))
+        {
           ;
         }
         /* If '<' is pressed without being in a c/cpp file and at an include line, we simply do nothing. */
-        else if (input == '<' && openfile->current->data[indent_length(openfile->current->data)] != '#' && /* openfile->type.is_set<C_CPP>() */ (openfile->is_c_file || openfile->is_cxx_file)) {
+        else if (input == '<' && openfile->current->data[indent_length(openfile->current->data)] != '#'
+        && /* openfile->type.is_set<C_CPP>() */ (openfile->is_c_file || openfile->is_cxx_file))
+        {
           ;
         }
         else {
           const char *s1, *s2;
           input == '"' ? s1 = "\"", s2 = s1 : input == '\'' ? s1 = "'", s2 = s1 : input == '(' ? s1 = "(", s2 = ")" :
-          input == '{' ? s1 = "{", s2 = "}" : input == '[' ? s1 = "[", s2 = "]" : input == '<' ? s1 = "<", s2 = ">" : 0;
-          /* 'Set' the mark, so that 'enclose_marked_region()' dosent exit because there is no marked region. */
-          openfile->mark = openfile->current;
-          openfile->mark_x = openfile->current_x;
-          enclose_marked_region(s1, s2);
-          /* Set the flag in the undo struct just created, marking an exception for future undo-redo actions. */
-          openfile->undotop->xflags |= SHOULD_NOT_KEEP_MARK;
-          openfile->mark = NULL;
-          keep_mark = FALSE;
-          /* This flag ensures that if backspace is the next key that is pressed it will erase both of the enclose char`s. */
-          last_key_was_bracket = TRUE;
-          last_bracket_char = (char)input;
+          input == '{' ? s1 = "{", s2 = "}" : input == '[' ? s1 = "[", s2 = "]" : input == '<' ? s1 = "<", s2 = ">" :
+          s1 = NULL, s2 = NULL;
+          if (s1 && s2) {
+            /* 'Set' the mark, so that 'enclose_marked_region()' dosent exit because there is no marked region. */
+            openfile->mark   = openfile->current;
+            openfile->mark_x = openfile->current_x;
+            enclose_marked_region(s1, s2);
+            /* Set the flag in the undo struct just created, marking an exception for future undo-redo actions. */
+            openfile->undotop->xflags |= SHOULD_NOT_KEEP_MARK;
+            openfile->mark = NULL;
+            keep_mark = FALSE;
+            /* This flag ensures that if backspace is the next key that is pressed it will erase both of the enclose char`s. */
+            last_key_was_bracket = TRUE;
+            last_bracket_char = (char)input;
+          }
           return;
         }
       }
-      puddle[depth++] = (char)input;
+      puddle[depth++]      = (char)input;
       last_key_was_bracket = FALSE;
       last_bracket_char    = '\0';
     }

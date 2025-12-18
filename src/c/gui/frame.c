@@ -55,7 +55,7 @@ static Llong elapsed_time = 0;
 /* Make sure both acuired samples are within the sample tolerance of any actual monitor. */
 _NODISCARD
 static inline bool frame_samples_within_tolerance(void) {
-  int count;
+  int  count;
   int *rates;
   if (LLABS(frame_sample_0 - frame_sample_1) < FRAME_SAMPLE_TOLERANCE) {
     rates = monitor_refresh_rate_array(&count);

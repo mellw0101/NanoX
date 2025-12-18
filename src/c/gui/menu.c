@@ -294,14 +294,27 @@ static void menu_check_submenu(Menu *const menu) {
   ASSERT_MENU;
   Menu *submenu;
   if (menu_selected_is_visible(menu) && (submenu = menu_get_entry_menu(menu, menu->selected))) {
-    /* TODO: Here i think we need to show and assign the correct submenu. */
-    if (menu->active_submenu && submenu != menu->active_submenu) {
-      menu_show_internal(menu->active_submenu, FALSE);
-    }
-    else {
+    /* No currently open submenu. */
+    if (!menu->active_submenu) {
       menu_show_internal(submenu, TRUE);
       menu->active_submenu = submenu;
     }
+    /* The currently open submenu is not the currently selected submenu. */
+    else if (menu->active_submenu != submenu) {
+      menu_show_internal(menu->active_submenu, FALSE);
+      menu_show_internal(submenu, TRUE);
+      menu->active_submenu = submenu;
+    }
+    /* The currently selected submenu is the currently open submenu. */
+
+    /* TODO: Here i think we need to show and assign the correct submenu. */
+    // if (menu->active_submenu && submenu != menu->active_submenu) {
+    //   menu_show_internal(menu->active_submenu, FALSE);
+    // }
+    // else {
+    //   menu_show_internal(submenu, TRUE);
+    //   menu->active_submenu = submenu;
+    // }
   }
   /* The currently selected row is outside the visible rows. */
   else if (menu->active_submenu) {

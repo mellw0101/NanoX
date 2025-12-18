@@ -1296,10 +1296,12 @@ typedef enum {
   MOUSE_BUTTON_HELD_RIGHT,
   MOUSE_PRESS_WAS_DOUBLE,
   MOUSE_PRESS_WAS_TRIPPLE,
+  MOUSE_SHOULD_DRAW_HELD,
 # define MOUSE_BUTTON_HELD_LEFT   MOUSE_BUTTON_HELD_LEFT
 # define MOUSE_BUTTON_HELD_RIGHT  MOUSE_BUTTON_HELD_RIGHT
 # define MOUSE_PRESS_WAS_DOUBLE   MOUSE_PRESS_WAS_DOUBLE
 # define MOUSE_PRESS_WAS_TRIPPLE  MOUSE_PRESS_WAS_TRIPPLE
+# define MOUSE_SHOULD_DRAW_HELD   MOUSE_SHOULD_DRAW_HELD
 } MouseFlag;
 
 /* ----------------------------- gui/element.c ----------------------------- */
@@ -1392,7 +1394,7 @@ typedef struct {
   float s, t;
   /* Color */
   float r, g, b, a;
-} vertex_t;
+} FontVertex;
 
 struct RectVertex {
   /* Cordinats for this vertex. */
