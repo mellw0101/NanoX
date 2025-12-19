@@ -247,7 +247,7 @@ float gl_mouse_last_y(void) {
 /* Check if a mouse flag is set. */
 bool gl_mouse_flag_is_set(Uint flag) {
   bool ret;
-  MOUSE_LOCK_READ(
+  RWLOCK_RDLOCK_ACTION(&rwlock,
     ret = MOUSE_ISSET(flag);
   );
   return ret;
@@ -256,24 +256,11 @@ bool gl_mouse_flag_is_set(Uint flag) {
 /* ----------------------------- gl_mouse_flag_clear_all ----------------------------- */
 
 void gl_mouse_flag_clear_all(void) {
-  MOUSE_LOCK_WRITE(
+  RWLOCK_WRLOCK_ACTION(&rwlock,
     memset(mouse_flags, 0, sizeof(mouse_flags));
   );
 }
 
-/* ----------------------------- gl_mouse_draw_held_if_needed ----------------------------- */
-
-// void gl_mouse_draw_held_if_needed(void) {
-//   if (MOUSE_ISSET(MOUSE_SHOULD_DRAW_HELD)) {
-//     if (!gl_mouse_element_clicked) {
-//       MOUSE_UNSET(MOUSE_SHOULD_DRAW_HELD);
-//     }
-//     else {
-//       element_draw(gl_mouse_element_clicked);
-//       refresh_needed = TRUE;
-//     }
-//   }
-// }
 
 /* ----------------------------- Gl mouse routine button dn ----------------------------- */
 
@@ -484,10 +471,10 @@ void gl_mouse_routine_position(float x, float y) {
       else if (clicked->dt == ELEMENT_DATA_FILE && clicked->parent && clicked->parent->dt == ELEMENT_DATA_EDITOR
       && etb_element_is_main(clicked->parent->dp_editor->tb, clicked->parent))
       {
-        log_INFO_0("Editor-Topbar-Button: Held");
-        element_move(clicked, x, y);
-        etb_text_refresh_needed(clicked->parent->dp_editor->tb);
-        refresh_needed = TRUE;
+        etb_tab_routine_mouse_held_left(clicked->parent->dp_editor->tb, clicked, x, y);
+        // element_move(clicked, x, y);
+        // etb_text_refresh_needed(clicked->parent->dp_editor->tb);
+        // refresh_needed = TRUE;
       }
     }
   }
@@ -529,17 +516,17 @@ void gl_mouse_routine_window_left(void) {
   Element *clicked = gl_mouse_element_clicked;
   float x = mouse_xpos;
   float y = mouse_ypos;
-  if (x <= (gl_window_width() / 2.F)) {
-    x = -30;
+  if (x <= (gl_window_width() / 2.f)) {
+    x = -30.f;
   }
-  else if (x >= (gl_window_width() / 2.F)) {
-    x = (gl_window_width() + 30);
+  else if (x >= (gl_window_width() / 2.f)) {
+    x = (gl_window_width() + 30.f);
   }
-  if (y <= (gl_window_height() / 2.F)) {
-    y = -30;
+  if (y <= (gl_window_height() / 2.f)) {
+    y = -30.f;
   }
-  else if (y >= (gl_window_height() / 2.F)) {
-    y = (gl_window_height() + 30);
+  else if (y >= (gl_window_height() / 2.f)) {
+    y = (gl_window_height() + 30.f);
   }
   gl_mouse_update_pos(x, y);
   /* If there is a last entered element set, clear it. */

@@ -254,7 +254,9 @@ static bool handle_editing(functionptrtype f) {
 /* ----------------------------- Acquire an answer ----------------------------- */
 
 /* Get a string of input at the status-bar prompt. */
-static functionptrtype acquire_an_answer(int *const actual, bool *listed, linestruct **const histlist, functionptrtype refresh_func) {
+static functionptrtype acquire_an_answer(int *const actual,
+  bool *listed, linestruct **const histlist, functionptrtype refresh_func)
+{
   /* Whatever the answer was before the user foraged into history. */
   char *stored_string = NULL;
   /* Whether the previous keystroke was an attempt at tab completion. */

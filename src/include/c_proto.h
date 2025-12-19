@@ -1657,25 +1657,27 @@ void chop_next_word(void);
 
 
 /* ----------------------------- Etb create ----------------------------- */
-EditorTb *etb_create(Editor *const editor);
+EDITOR_TB etb_create(Editor *const editor);
 /* ----------------------------- Etb free ----------------------------- */
-void etb_free(EditorTb *const etb);
+void etb_free(EDITOR_TB etb);
 /* ----------------------------- Etb draw ----------------------------- */
-void etb_draw(EditorTb *const etb);
+void etb_draw(EDITOR_TB etb);
 /* ----------------------------- Etb active refresh needed ----------------------------- */
-void etb_active_refresh_needed(EditorTb *const etb);
+void etb_active_refresh_needed(EDITOR_TB etb);
 /* ----------------------------- Etb text refresh needed ----------------------------- */
-void etb_text_refresh_needed(EditorTb *const etb);
+void etb_text_refresh_needed(EDITOR_TB etb);
 /* ----------------------------- Etb entries refresh needed ----------------------------- */
-void etb_entries_refresh_needed(EditorTb *const etb);
+void etb_entries_refresh_needed(EDITOR_TB etb);
 /* ----------------------------- Etb show context menu ----------------------------- */
-void etb_show_context_menu(EditorTb *const etb, Element *const from_element, bool show);
+void etb_show_context_menu(EDITOR_TB etb, Element *const from_element, bool show);
 /* ----------------------------- Etb element is main ----------------------------- */
-bool etb_element_is_main(EditorTb *const etb, Element *const e);
+bool etb_element_is_main(EDITOR_TB etb, Element *const e);
 /* ----------------------------- Etb owns element ----------------------------- */
-bool etb_owns_element(EditorTb *const etb, Element *const e);
+bool etb_owns_element(EDITOR_TB etb, Element *const e);
 /* ----------------------------- Etb tab routine set active ----------------------------- */
-void etb_tab_routine_mouse_button_left_dn(EditorTb *const etb, Element *const e);
+void etb_tab_routine_mouse_button_left_dn(EDITOR_TB etb, Element *const e);
+/* ----------------------------- etb_tab_routine_mouse_pos ----------------------------- */
+void etb_tab_routine_mouse_held_left(EDITOR_TB etb, Element *e, float x, float y);
 
 
 /* ---------------------------------------------------------- gui/editor/editor.c ---------------------------------------------------------- */
@@ -1741,6 +1743,8 @@ void editor_text_line_marked_region(Editor *const editor,
 void editor_text_line(Editor *const editor, linestruct *const line);
 /* ----------------------------- Editor draw ----------------------------- */
 void editor_draw(Editor *const editor);
+/* ----------------------------- editor_number_of_open_files ----------------------------- */
+Ulong editor_number_of_open_files(Editor *editor);
 
 
 /* ---------------------------------------------------------- gui/statusbar.c ---------------------------------------------------------- */

@@ -104,7 +104,7 @@ static Ulong scrollbar_closest_step_index(Uint idx, float rawpos, float *const a
   ASSERT(array);
   ASSERT(arraylen);
   /* Start of with the first index as the closest, as that would happen no matter what. */
-  Ulong index=0;
+  Ulong index   = 0;
   float closest = FABSF(array[0] - rawpos);
   float value;
   /* Then check the remaining indexes. */

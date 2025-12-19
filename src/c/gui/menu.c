@@ -85,7 +85,6 @@ struct Menu {
   vertex_buffer_t *buffer;
 
   Element *element;
-
   /* The element representing the selected rect to be drawn.  TODO: Maybe add a way to add additional rects to an element...? */
   Element *selelem;
   
@@ -184,11 +183,11 @@ static void menu_scrollbar_update_routine(void *arg, float *total_length, Uint *
   ASSERT(arg);
   Menu *menu = arg;
   ASSIGN_IF_VALID(total_length, (menu->element->height - (menu->border_size * 2)));
-  ASSIGN_IF_VALID(start, 0);
-  ASSIGN_IF_VALID(total, cvec_len(menu->entries) - menu->rows);
-  ASSIGN_IF_VALID(visible, menu->rows);
-  ASSIGN_IF_VALID(current, menu->viewtop);
-  ASSIGN_IF_VALID(top_offset, menu->border_size);
+  ASSIGN_IF_VALID(start,        0);
+  ASSIGN_IF_VALID(total,        (cvec_len(menu->entries) - menu->rows));
+  ASSIGN_IF_VALID(visible,      menu->rows);
+  ASSIGN_IF_VALID(current,      menu->viewtop);
+  ASSIGN_IF_VALID(top_offset,   menu->border_size);
   ASSIGN_IF_VALID(right_offset, menu->border_size);
 }
 
@@ -270,6 +269,7 @@ static void menu_show_internal(Menu *const menu, bool show) {
   }
   else {
     menu->element->xflags |= ELEMENT_HIDDEN;
+    menu->selelem->xflags |= ELEMENT_HIDDEN;
     if (menu->active_submenu) {
       menu_show_internal(menu->active_submenu, FALSE);
       menu->active_submenu = NULL;

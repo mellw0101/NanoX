@@ -672,12 +672,14 @@ void kb_char_input(const char *const restrict data, Ushort mod) {
       /* If an enclose char is pressed without having a marked region, we enclose in place. */
       else if (is_enclose_char(ch)) {
         /* If quote or double quote was just enclosed in place just move once to the right. */
-        if ((ch == '"' && last_key_was_bracket && last_bracket_char == '"') || (ch == '\'' && last_key_was_bracket && last_bracket_char == '\'')) {
+        if ((ch == '"' && last_key_was_bracket && last_bracket_char == '"')
+        || (ch == '\'' && last_key_was_bracket && last_bracket_char == '\''))
+        {
           do_right();
-          keep_mark = FALSE;
+          keep_mark            = FALSE;
           last_key_was_bracket = FALSE;
-          last_bracket_char = '\0';
-          refresh_needed = TRUE;
+          last_bracket_char    = '\0';
+          refresh_needed       = TRUE;
           free(burst);
           return;
         }
@@ -686,26 +688,28 @@ void kb_char_input(const char *const restrict data, Ushort mod) {
         /* Before current cursor position. */
         && (((is_prev_cursor_word_char(FALSE) || is_prev_cursor_char_one_of("\"><")))
         /* After current cursor position. */
-        || (!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of(")}]")))) {
+        || (!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of(")}]"))))
+        {
           ;
         }
         /* Exceptions for enclosing single quotes. */
-        else if (ch == '\''
-        /* Before current cursor position. */
-        && (((is_prev_cursor_word_char(FALSE) || is_prev_cursor_char_one_of("'><")))
-        /* After current cursor position. */
-        || (!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of(")}]")))) {
+        else if (ch == '\'' && (((is_prev_cursor_word_char(FALSE) || is_prev_cursor_char_one_of("'><")))
+        || (!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of(")}]"))))
+        {
           ;
         }
         /* Exceptions for enclosing brackets. */
         else if ((ch == '(' || ch == '[' || ch == '{')
         /* We only allow the insertion of double brackets when the cursor is either at a blank char or at EOL, or at any of the
           * given chars, all other sinarios with other chars at the cursor will result in only the start bracket beeing inserted. */
-        && ((!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of("\":;')}],")))) {
+        && ((!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of("\":;')}],"))))
+        {
           ;
         }
         /* If '<' is pressed without being in a c/cpp file and at an include line, we simply do nothing. */
-        else if (ch == '<' && GUI_OF->current->data[indentlen(GUI_OF->current->data)] != '#' && (GUI_OF->is_c_file || GUI_OF->is_cxx_file) /* GUI_OF->type.is_set<C_CPP>() */) {
+        else if (ch == '<' && GUI_OF->current->data[indentlen(GUI_OF->current->data)] != '#'
+        && (GUI_OF->is_c_file || GUI_OF->is_cxx_file) /* GUI_OF->type.is_set<C_CPP>() */)
+        {
           ;
         }
         else {
@@ -714,20 +718,22 @@ void kb_char_input(const char *const restrict data, Ushort mod) {
           ch == '('  ? s1 = "(",  s2 = ")" :
           ch == '{'  ? s1 = "{",  s2 = "}" :
           ch == '['  ? s1 = "[",  s2 = "]" :
-          ch == '<'  ? s1 = "<",  s2 = ">" : 0;
-          /* 'Set' the mark, so that 'enclose_marked_region()' dosent exit because there is no marked region. */
-          GUI_OF->mark = GUI_OF->current;
-          GUI_OF->mark_x = GUI_OF->current_x;
-          enclose_marked_region(s1, s2);
-          /* Set the flag in the undo struct just created, marking an exception for future undo-redo actions. */
-          GUI_OF->undotop->xflags |= SHOULD_NOT_KEEP_MARK;
-          GUI_OF->mark = NULL;
-          keep_mark      = FALSE;
-          /* This flag ensures that if backspace is the next key that is pressed it will erase both of the enclose char`s. */
-          last_key_was_bracket = TRUE;
-          last_bracket_char = ch;
-          free(burst);
-          return;
+          ch == '<'  ? s1 = "<",  s2 = ">" : (s1 = NULL, s2 = NULL);
+          if (s1 && s2) {
+            /* 'Set' the mark, so that 'enclose_marked_region()' dosent exit because there is no marked region. */
+            GUI_OF->mark   = GUI_OF->current;
+            GUI_OF->mark_x = GUI_OF->current_x;
+            enclose_marked_region(s1, s2);
+            /* Set the flag in the undo struct just created, marking an exception for future undo-redo actions. */
+            GUI_OF->undotop->xflags |= SHOULD_NOT_KEEP_MARK;
+            GUI_OF->mark = NULL;
+            keep_mark    = FALSE;
+            /* This flag ensures that if backspace is the next key that is pressed it will erase both of the enclose char`s. */
+            last_key_was_bracket = TRUE;
+            last_bracket_char    = ch;
+            free(burst);
+            return;
+          }
         }
       }
       inject_into_buffer(GUI_CTX, &ch, 1);

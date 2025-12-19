@@ -14,8 +14,7 @@
   ASSERT(etb);          \
   ASSERT(etb->buffer);  \
   ASSERT(etb->editor);  \
-  ASSERT(etb->element); \
-  ASSERT(etb->context)
+  ASSERT(etb->element)
 
 
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
@@ -24,6 +23,12 @@
 #define ETB_BORDER_COLOR  PACKED_UINT_FLOAT( .5f,  .5f,  .5f, 1.f)
 #define ETB_ACTIVE_COLOR  PACKED_UINT_FLOAT(.25f, .25f, .25f, 1.f)
 #define ETB_BUTTON_COLOR  PACKED_UINT_FLOAT(.08f, .08f, .08f, 1.f)
+
+
+/* ---------------------------------------------------------- Typedef's ---------------------------------------------------------- */
+
+
+// typedef struct EDITOR_TB_T *  EDITOR_TB;
 
 
 /* ---------------------------------------------------------- Enum's ---------------------------------------------------------- */
@@ -37,30 +42,31 @@ typedef enum {
 # define ETB_REFRESH_TEXT      ETB_REFRESH_TEXT
 # define ETB_REFRESH_ENTRIES   ETB_REFRESH_ENTRIES
 # define ETB_XFLAGS_DEFAULT    (ETB_REFRESH_SELECTED | ETB_REFRESH_TEXT | ETB_REFRESH_ENTRIES)
-} EtbStateFlag;
+} EDITOR_TB_STATE /* EtbStateFlag */;
 
 
 /* ---------------------------------------------------------- Struct's ---------------------------------------------------------- */
 
 
 /* `Internal` structure that represent's the context menu for a `EditorTb` structure. */
-typedef struct {
-  Element *clicked;
-  Menu *button_menu;
-  Menu *topbar_menu;
-} EtbContextMenu;
+// struct ETB_CONTEXT_MENU_T {
+//   Element *clicked;
+//   Menu *button_menu;
+//   Menu *topbar_menu;
+// };
 
-struct EditorTb {
+struct EDITOR_TB_T {
   /* State flags. */
   Uint xflags;
-
   vertex_buffer_t *buffer;
-
   Editor *editor;
-
   Element *element;
-
-  EtbContextMenu *context;
+  struct {
+    Element *clicked;
+    Menu    *button_menu;
+    Menu    *topbar_menu;
+  } context;
+  // ETB_CONTEXT_MENU context;
 };
 
 
@@ -69,7 +75,7 @@ struct EditorTb {
 
 /* ----------------------------- Etb refresh active ----------------------------- */
 
-static void etb_refresh_active(EditorTb *const etb) {
+static void etb_refresh_active(EDITOR_TB etb) {
   ASSERT_ETB;
   if (etb->xflags & ETB_REFRESH_SELECTED) {
     ELEMENT_CHILDREN_ITER(etb->element, i, button,
@@ -94,7 +100,7 @@ static void etb_refresh_active(EditorTb *const etb) {
 
 /* ----------------------------- Etb refresh text ----------------------------- */
 
-static void etb_refresh_text(EditorTb *const etb) {
+static void etb_refresh_text(EDITOR_TB etb) {
   ASSERT_ETB;
   float pen_x;
   float pen_y;
@@ -113,7 +119,7 @@ static void etb_refresh_text(EditorTb *const etb) {
 
 /* ----------------------------- Etb delete entries ----------------------------- */
 
-static void etb_delete_entries(EditorTb *const etb) {
+static void etb_delete_entries(EDITOR_TB etb) {
   ASSERT_ETB;
   ELEMENT_CHILDREN_ITER(etb->element, i, child,
     if (child->dt == ELEMENT_DATA_FILE) {
@@ -125,7 +131,7 @@ static void etb_delete_entries(EditorTb *const etb) {
 
 /* ----------------------------- Etb create button ----------------------------- */
 
-static void etb_create_button(EditorTb *const etb, openfilestruct *const f, float *const pos_x, float *const pos_y) {
+static void etb_create_button(EDITOR_TB etb, openfilestruct *const f, float *const pos_x, float *const pos_y) {
   ASSERT_ETB;
   ASSERT(f);
   ASSERT(pos_x);
@@ -157,7 +163,7 @@ static void etb_create_button(EditorTb *const etb, openfilestruct *const f, floa
 
 /* ----------------------------- Etb refresh entries ----------------------------- */
 
-static void etb_refresh_entries(EditorTb *const etb) {
+static void etb_refresh_entries(EDITOR_TB etb) {
   ASSERT_ETB;
   float x;
   float y;
@@ -177,7 +183,7 @@ static void etb_refresh_entries(EditorTb *const etb) {
 
 /* ----------------------------- Etb draw entries ----------------------------- */
 
-static void etb_draw_entries(EditorTb *const etb) {
+static void etb_draw_entries(EDITOR_TB etb) {
   ASSERT_ETB;
   ELEMENT_CHILDREN_ITER(etb->element, i, child,
     if (child->dt == ELEMENT_DATA_FILE) {
@@ -200,17 +206,15 @@ static void etb_button_context_menu_pos(void *arg, float _UNUSED width, float _U
 /* ----------------------------- Etb button context menu accept ----------------------------- */
 
 /* The accept routine for the button context menu of the editor topbar. */
-static void etb_button_context_menu_accept(void *arg, const char *const restrict entry_string, int index) {
-  ASSERT(arg);
-  ASSERT(entry_string);
-  EditorTb *etb = arg;
+static void etb_button_context_menu_accept(EDITOR_TB etb, const char *const restrict entry_string, int index) {
   ASSERT_ETB;
+  ASSERT(entry_string);
   openfilestruct *file;
   /* Ensure this only perfoms any action when the clicked element is a button of the topbar. */
-  if (etb->context->clicked && etb->context->clicked->dt == ELEMENT_DATA_FILE && etb->context->clicked->parent
-  && etb->element == etb->context->clicked->parent && etb->context->clicked->parent->dt == ELEMENT_DATA_EDITOR)
+  if (etb->context.clicked && etb->context.clicked->dt == ELEMENT_DATA_FILE && etb->context.clicked->parent
+  && etb->element == etb->context.clicked->parent && etb->context.clicked->parent->dt == ELEMENT_DATA_EDITOR)
   {
-    file = etb->context->clicked->dp_file;
+    file = etb->context.clicked->dp_file;
     /* TODO: Currently, none of these will check if the files are modified at all and as such will simply
      * close, this should not be the case, so when we have added a more dynamic way to call the
      * prompt-menu for such things, we should also make it able to resume some task, where it left off. */
@@ -233,7 +237,7 @@ static void etb_button_context_menu_accept(void *arg, const char *const restrict
         break;
       }
     }
-    etb->context->clicked = NULL;
+    etb->context.clicked = NULL;
   }
 }
 
@@ -244,56 +248,93 @@ static void etb_context_menu_pos(void *arg, float _UNUSED width, float _UNUSED h
   ASSERT(arg);
   ASSERT(x);
   ASSERT(y);
-  (*x) = gl_mouse_x();
-  (*y) = gl_mouse_y();
+  *x = gl_mouse_x();
+  *y = gl_mouse_y();
 }
 
 /* ----------------------------- Etb context menu accept ----------------------------- */
 
 /* The accept routine for the context menu of the editor topbar. */
-static void etb_context_menu_accept(void *arg, const char *const restrict entry_string, int index) {
-  ASSERT(arg);
-  ASSERT(entry_string);
-  EditorTb *etb = arg;
+static void etb_context_menu_accept(EDITOR_TB etb, const char *const restrict entry_string, int index) {
   ASSERT_ETB;
+  ASSERT(entry_string);
   /* Ensure this only perfoms any action when the clicked element is a button of the topbar. */
-  if (etb->context->clicked && etb->context->clicked == etb->element && etb->context->clicked->dt == ELEMENT_DATA_EDITOR) {
+  if (etb->context.clicked && etb->context.clicked == etb->element && etb->context.clicked->dt == ELEMENT_DATA_EDITOR) {
     switch (index) {
       case 0: {
-        // gui_editor_set_open(etb->context->clicked->ed_editor);
+        // gui_editor_set_open(etb->context.clicked->ed_editor);
         // gui_editor_open_new_empty_buffer();
         break;
       }
     }
-    etb->context->clicked = NULL;
+    etb->context.clicked = NULL;
   }
 }
 
 /* ----------------------------- Etb context menu create ----------------------------- */
 
-static void etb_context_menu_create(EditorTb *const etb) {
-  ASSERT(etb);
-  ASSERT(etb->buffer);
-  ASSERT(etb->editor);
-  ASSERT(etb->element);
-  MALLOC_STRUCT(etb->context);
-  etb->context->clicked = NULL;
-  etb->context->button_menu = menu_create(etb->element, uifont, etb, etb_button_context_menu_pos, etb_button_context_menu_accept);
-  menu_push_back(etb->context->button_menu, "Close");
-  menu_push_back(etb->context->button_menu, "Close Others");
-  menu_push_back(etb->context->button_menu, "Close All");
-  etb->context->topbar_menu = menu_create(etb->element, uifont, etb, etb_context_menu_pos, etb_context_menu_accept);
-  menu_push_back(etb->context->topbar_menu, "New Text File");
+static void etb_context_menu_create(EDITOR_TB etb) {
+  ASSERT_ETB;
+  etb->context.clicked = NULL;
+  etb->context.button_menu = menu_create(
+    etb->element,
+    uifont,
+    etb,
+    etb_button_context_menu_pos,
+    (MenuAcceptFunc)etb_button_context_menu_accept
+  );
+  menu_push_back(etb->context.button_menu, "Close");
+  menu_push_back(etb->context.button_menu, "Close Others");
+  menu_push_back(etb->context.button_menu, "Close All");
+  etb->context.topbar_menu = menu_create(
+    etb->element,
+    uifont,
+    etb,
+    etb_context_menu_pos,
+    (MenuAcceptFunc)etb_context_menu_accept
+  );
+  menu_push_back(etb->context.topbar_menu, "New Text File");
 }
 
 /* ----------------------------- Etb context menu free ----------------------------- */
 
 /* Free the editor topbar context menu's. */
-static void etb_context_menu_free(EditorTb *const etb) {
+static void etb_context_menu_free(EDITOR_TB etb) {
   ASSERT_ETB;
-  menu_free(etb->context->button_menu);
-  menu_free(etb->context->topbar_menu);
-  free(etb->context);
+  menu_free(etb->context.button_menu);
+  menu_free(etb->context.topbar_menu);
+}
+
+/* ----------------------------- etb_button_sinks_array ----------------------------- */
+
+static float *etb_button_sinks_array(EDITOR_TB etb, openfilestruct *ignore, Ulong *const outlen) {
+  ASSERT_ETB;
+  ASSERT(outlen);
+  ASSERT(ignore);
+  Ulong  max = editor_number_of_open_files(etb->editor);
+  Ulong  idx = 0;
+  float *arr = xmalloc(sizeof(float) * max);
+  Element *last = NULL;
+  ELEMENT_CHILDREN_ITER(etb->element, i, button,
+    if (button->dt == ELEMENT_DATA_FILE) {
+      /* We are at the last button. */
+      if (etb->editor->startfile->prev == button->dp_file && button->dp_file != ignore) {
+        if (!last || last->dp_file != ignore) {
+          arr[idx++] = button->x;
+        }
+        arr[idx++] = (button->x + button->width);
+        break;
+      }
+      if (button->dp_file == ignore || (last && last->dp_file == ignore)) {
+        last = button;
+        continue;
+      }
+      arr[idx++] = button->x;
+      last = button;
+    }
+  );
+  *outlen = idx;
+  return arr;
 }
 
 
@@ -302,11 +343,11 @@ static void etb_context_menu_free(EditorTb *const etb) {
 
 /* ----------------------------- Etb create ----------------------------- */
 
-EditorTb *etb_create(Editor *const editor) {
+EDITOR_TB etb_create(Editor *const editor) {
   ASSERT(uifont);
   ASSERT(editor);
   ASSERT(editor->main);
-  EditorTb *etb = xmalloc(sizeof *etb);
+  EDITOR_TB etb = xmalloc(sizeof *etb);
   /* State flags. */
   etb->xflags  = ETB_XFLAGS_DEFAULT;
   etb->buffer  = vertex_buffer_new(FONT_VERTBUF);
@@ -322,7 +363,7 @@ EditorTb *etb_create(Editor *const editor) {
 
 /* ----------------------------- Etb free ----------------------------- */
 
-void etb_free(EditorTb *const etb) {
+void etb_free(EDITOR_TB etb) {
   /* Make this function `NO-OP`. */
   if (!etb) {
     return;
@@ -334,7 +375,7 @@ void etb_free(EditorTb *const etb) {
 
 /* ----------------------------- Etb draw ----------------------------- */
 
-void etb_draw(EditorTb *const etb) {
+void etb_draw(EDITOR_TB etb) {
   ASSERT_ETB;
   element_draw(etb->element);
   etb_refresh_active(etb);
@@ -342,14 +383,14 @@ void etb_draw(EditorTb *const etb) {
   etb_refresh_text(etb);
   etb_draw_entries(etb);
   render_vertbuf(uifont, etb->buffer);
-  menu_draw(etb->context->button_menu);
-  menu_draw(etb->context->topbar_menu);
+  menu_draw(etb->context.button_menu);
+  menu_draw(etb->context.topbar_menu);
 }
 
 /* ----------------------------- Etb active refresh needed ----------------------------- */
 
 /* When the open file of the topbar has changed, this should be called to just update the currently active entry in the topbar. */
-void etb_active_refresh_needed(EditorTb *const etb) {
+void etb_active_refresh_needed(EDITOR_TB etb) {
   ASSERT_ETB;
   etb->xflags |= ETB_REFRESH_SELECTED;
 }
@@ -357,7 +398,7 @@ void etb_active_refresh_needed(EditorTb *const etb) {
 /* ----------------------------- Etb text refresh needed ----------------------------- */
 
 /* When the position has changed so the text needs to be re-input into the vertex buffer. */
-void etb_text_refresh_needed(EditorTb *const etb) {
+void etb_text_refresh_needed(EDITOR_TB etb) {
   ASSERT_ETB;
   etb->xflags |= ETB_REFRESH_TEXT;
 }
@@ -365,55 +406,55 @@ void etb_text_refresh_needed(EditorTb *const etb) {
 /* ----------------------------- Etb entries refresh needed ----------------------------- */
 
 /* When rebuilding the entire topbar is requiered. */
-void etb_entries_refresh_needed(EditorTb *const etb) {
+void etb_entries_refresh_needed(EDITOR_TB etb) {
   ASSERT_ETB;
   etb->xflags |= ETB_REFRESH_ENTRIES;
 }
 
 /* ----------------------------- Etb show context menu ----------------------------- */
 
-void etb_show_context_menu(EditorTb *const etb, Element *const from_element, bool show) {
+void etb_show_context_menu(EDITOR_TB etb, Element *const from_element, bool show) {
   ASSERT_ETB;
   /* Null passed. */
   if (!from_element) {
-    menu_show(etb->context->button_menu, FALSE);
-    menu_show(etb->context->topbar_menu, FALSE);
-    etb->context->clicked = NULL;
+    menu_show(etb->context.button_menu, FALSE);
+    menu_show(etb->context.topbar_menu, FALSE);
+    etb->context.clicked = NULL;
   }
   /* Main topbar element. */
   else if (from_element == etb->element) {
-    if (show && !menu_is_shown(etb->context->topbar_menu)) {
-      etb->context->clicked = from_element;
-      menu_show(etb->context->topbar_menu, TRUE);
+    if (show && !menu_is_shown(etb->context.topbar_menu)) {
+      etb->context.clicked = from_element;
+      menu_show(etb->context.topbar_menu, TRUE);
     }
     else {
-      etb->context->clicked = NULL;
-      menu_show(etb->context->topbar_menu, FALSE);
+      etb->context.clicked = NULL;
+      menu_show(etb->context.topbar_menu, FALSE);
     }
   }
   else if (element_is_ancestor(from_element, etb->element)) {
     /* If there is a call to show the menu, and the menu is not already shown. */
-    if (show && !menu_is_shown(etb->context->button_menu)) {
-      etb->context->clicked = from_element;
-      menu_show(etb->context->button_menu, TRUE);
+    if (show && !menu_is_shown(etb->context.button_menu)) {
+      etb->context.clicked = from_element;
+      menu_show(etb->context.button_menu, TRUE);
     }
     /* Otherwise, hide the menu. */
     else {
-      etb->context->clicked = NULL;
-      menu_show(etb->context->button_menu, FALSE);
+      etb->context.clicked = NULL;
+      menu_show(etb->context.button_menu, FALSE);
     }
   }
   else {
-    etb->context->clicked = NULL;
-    menu_show(etb->context->button_menu, FALSE);
-    menu_show(etb->context->topbar_menu, FALSE);
+    etb->context.clicked = NULL;
+    menu_show(etb->context.button_menu, FALSE);
+    menu_show(etb->context.topbar_menu, FALSE);
   }
 }
 
 /* ----------------------------- Etb element is main ----------------------------- */
 
 /* Return's `TRUE` when `e` is the main element of `etb`. */
-bool etb_element_is_main(EditorTb *const etb, Element *const e) {
+bool etb_element_is_main(EDITOR_TB etb, Element *const e) {
   ASSERT_ETB;
   ASSERT(e);
   return (etb->element == e);
@@ -422,14 +463,14 @@ bool etb_element_is_main(EditorTb *const etb, Element *const e) {
 /* ----------------------------- Etb owns element ----------------------------- */
 
 /* Return's `TRUE` when `e` is the main element of `etb` or related to the main element of `etb`. */
-bool etb_owns_element(EditorTb *const etb, Element *const e) {
+bool etb_owns_element(EDITOR_TB etb, Element *const e) {
   ASSERT_ETB;
   return element_is_ancestor(e, etb->element);
 }
 
-/* ----------------------------- Etb tab routine mouse button left dn ----------------------------- */
+/* ----------------------------- etb_tab_routine_mouse_button_left_dn ----------------------------- */
 
-void etb_tab_routine_mouse_button_left_dn(EditorTb *const etb, Element *const e) {
+void etb_tab_routine_mouse_button_left_dn(EDITOR_TB etb, Element *const e) {
   ASSERT_ETB;
   ASSERT(e);
   ASSERT(e->dp_file);
@@ -441,4 +482,34 @@ void etb_tab_routine_mouse_button_left_dn(EditorTb *const etb, Element *const e)
     etb->xflags |= ETB_REFRESH_SELECTED;
     refresh_needed = TRUE;
   }
+}
+
+/* ----------------------------- etb_tab_routine_mouse_pos ----------------------------- */
+
+void etb_tab_routine_mouse_held_left(EDITOR_TB etb, Element *e, float x, float y) {
+  ASSERT_ETB;
+  ASSERT(e);
+  ASSERT(e->dp_file);
+  Ulong len;
+  float *arr = etb_button_sinks_array(etb, e->dp_file, &len);
+  float fx = x;
+  Ulong index = 0;
+  float closest;
+  float value;
+  if (len && y >= etb->element->y && y < (etb->element->y + etb->element->height)) {
+    closest = FABSF(arr[0] - x);
+    for (Ulong i=1; i<len; ++i) {
+      if ((value = FABSF(arr[i] - x)) < closest) {
+        index = i;
+        closest = value;
+      }
+    }
+    if (closest <= 40.f) {
+      fx = arr[index];
+    }
+  }
+  element_move(e, fx, y);
+  FREE(arr);
+  etb->xflags |= ETB_REFRESH_TEXT;
+  refresh_needed = TRUE;
 }

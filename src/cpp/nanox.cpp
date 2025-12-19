@@ -158,8 +158,9 @@ main_thread_t *main_thread = NULL;
 
 /* Say how the user can achieve suspension (when they typed ^Z). */
 void suggest_ctrlT_ctrlZ(void) _NOTHROW {
-  if (first_sc_for(MMAIN, do_execute) && first_sc_for(MMAIN, do_execute)->keycode == 0x14
-   && first_sc_for(MEXECUTE, do_suspend) && first_sc_for(MEXECUTE, do_suspend)->keycode == 0x1A) {
+  if (first_sc_for(MMAIN, do_execute)    && first_sc_for(MMAIN, do_execute)->keycode    == 0x14
+  &&  first_sc_for(MEXECUTE, do_suspend) && first_sc_for(MEXECUTE, do_suspend)->keycode == 0x1A)
+  {
     statusline(AHEM, _("To suspend, type ^T^Z"));
   }
 }
@@ -1874,7 +1875,6 @@ int main(int argc, char **argv) {
   if (!punct) {
     punct = COPY_OF("!.?");
   }
-  // (!punct)    ? punct    = COPY_OF("!.?") : 0;
   (!brackets) ? brackets = COPY_OF("\"')>]}") : 0;
   (!quotestr) ? quotestr = COPY_OF("^([ \t]*([!#%:;>|}]|/{2}))+") : 0;
   /* Compile the quoting regex, and exit when it's invalid. */
@@ -2146,8 +2146,8 @@ int main(int argc, char **argv) {
   }
   else {
     openfile = openfile->next;
-    more_than_one ? mention_name_and_linecount() : (void)0;
-    ISSET(VIEW_MODE) ? SET(MULTIBUFFER) : 0;
+    more_than_one    ? mention_name_and_linecount() : (void)0;
+    ISSET(VIEW_MODE) ? SET(MULTIBUFFER)             : 0;
   }
   if (optind < argc) {
     die(_("Can open just one file\n"));
@@ -2169,8 +2169,6 @@ int main(int argc, char **argv) {
     gl_loop();
     /* Should never be reached. */
     exit(0);
-    // init_gui();
-    // glfw_loop();
   }
   else if (ISSET(NO_NCURSES)) {
     tui_main_loop(NULL);

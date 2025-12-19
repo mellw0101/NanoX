@@ -1158,24 +1158,24 @@ typedef void (*MenuHoverFunc)(void *, const char *const restrict, int index);
     guiscreen *prev;
   } guiscreen;
 
-  typedef struct {
-    bool text_refresh_needed : 1;
-    bool size_refresh_needed : 1;
-
-    vertex_buffer_t *buffer;
-    Element      *element;
-
-    CVec *search_vec;
-    CVec *completions;
-    int viewtop;
-    int selected;
-    int maxrows;
-    int rows;
-
-    Scrollbar *sb;
-
-    openfilestruct *closing_file;
-  } GuiPromptMenu;
+  // typedef struct {
+  //   bool text_refresh_needed : 1;
+  //   bool size_refresh_needed : 1;
+  //
+  //   vertex_buffer_t *buffer;
+  //   Element      *element;
+  //
+  //   CVec *search_vec;
+  //   CVec *completions;
+  //   int viewtop;
+  //   int selected;
+  //   int maxrows;
+  //   int rows;
+  //
+  //   Scrollbar *sb;
+  //
+  //   openfilestruct *closing_file;
+  // } GuiPromptMenu;
 
   /** TODO: Implement this. */
   /* typedef struct {

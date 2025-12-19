@@ -798,7 +798,8 @@ typedef struct Editor  Editor;
 
 /* ----------------------------- gui/editor/topbar.c ----------------------------- */
 
-typedef struct EditorTb   EditorTb;
+// typedef struct EditorTb   EditorTb;
+typedef struct EDITOR_TB_T *  EDITOR_TB;
 
 /* ----------------------------- gui/suggestmenu.c ----------------------------- */
 
@@ -1843,7 +1844,8 @@ struct Editor {
   Element *text;
 
   Scrollbar *sb;  
-  EditorTb *tb;
+  // EditorTb *tb;
+  EDITOR_TB tb;
   
   int rows;
   int cols;

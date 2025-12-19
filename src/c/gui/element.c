@@ -567,13 +567,12 @@ Element *element_copy(Element *src, Element *parent) {
   copy->border_tsize       = src->border_tsize;
   copy->border_rsize       = src->border_rsize;
   copy->border_bsize       = src->border_bsize;
+  copy->border_color       = src->border_color;
   copy->cbdata             = src->cbdata;
   copy->extra_routine_rect = src->extra_routine_rect;
   /* Ensure the lable is the same. */
   if (src->xflags & ELEMENT_LABLE) {
     element_set_lable(copy, src->lable, src->lable_len);
-    // copy->lable     = measured_copy(src->lable, src->lable_len);
-    // copy->lable_len = src->lable_len;
   }
   return copy;
 }

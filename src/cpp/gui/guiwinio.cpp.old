@@ -629,9 +629,9 @@
 // }
 
 /* Show the correct message when we toggle a flag. */
-void show_toggle_statusmsg(int flag) {
-  statusline_gui_timed(REMARK, 2, "%s %s", epithet_flag[flag], (ISSET(flag) ? "enabled" : "disabled"));
-}
+// void show_toggle_statusmsg(int flag) {
+//   statusline_gui_timed(REMARK, 2, "%s %s", epithet_flag[flag], (ISSET(flag) ? "enabled" : "disabled"));
+// }
 
 /* Draw a editor. */
 // void draw_editor(guieditor *editor) {

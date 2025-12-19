@@ -687,7 +687,7 @@ void editor_draw(Editor *const editor) {
   if (refresh_needed) {
     vertex_buffer_clear(editor->buffer);
     vertex_buffer_clear(editor->marked_region_buf);
-    while (line && row++ < editor->rows) {
+    while (line && row++<editor->rows) {
       editor_text_line(editor, line);
       DLIST_ADV_NEXT(line);
     }
@@ -710,4 +710,19 @@ void editor_draw(Editor *const editor) {
   /* Draw the top-bar of the editor. */
   etb_draw(editor->tb);
   scrollbar_draw(editor->sb);
+}
+
+/* ----------------------------- editor_number_of_open_files ----------------------------- */
+
+Ulong editor_number_of_open_files(Editor *editor) {
+  Ulong ret = 0;
+  openfilestruct *start = editor->startfile;
+  openfilestruct *file  = start;
+  if (file) {
+    do {
+      ++ret;
+      CLIST_ADV_NEXT(file);
+    } while (file != start);
+  }
+  return ret;
 }
