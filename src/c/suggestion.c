@@ -306,6 +306,7 @@ void suggestmenu_create(void) {
   menu_behavior_tab_accept(suggest->menu, TRUE);
   /* Insure <Left>/<Right> arrow input is ignored fully, as this menu will always only have a depth of one. */
   menu_behavior_arrow_depth_navigation(suggest->menu, FALSE);
+  menu_show(suggest->menu, FALSE);
   suggest->length = 0;
   suggest->buffer = NULL;
 }

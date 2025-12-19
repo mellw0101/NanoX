@@ -60,7 +60,7 @@ void statusbar_init(void) {
   // statusbar->element->hidden                     = TRUE;
   // statusbar->element->has_relative_x_pos         = TRUE;
   // statusbar->element->has_reverse_relative_y_pos = TRUE;
-  statusbar->element->xflags |= (ELEMENT_REL_X | ELEMENT_REVREL_Y);
+  statusbar->element->xflags |= (ELEMENT_REL_X | ELEMENT_REVREL_Y | ELEMENT_HIDDEN);
   statusbar->element->rel_y = (font_height(uifont) * 2);
 }
 

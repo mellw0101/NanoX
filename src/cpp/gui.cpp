@@ -202,7 +202,7 @@ void glfw_loop(void) {
       CLIST_ITER(starteditor, editor,
         editor_confirm_margin(editor);
       );
-      gl_mouse_draw_held_if_needed();
+      // gl_mouse_draw_held_if_needed();
       /* Draw the top menu bar. */
       promptmenu_draw();
       /* Draw the status bar, if there is any status messages. */

@@ -1782,7 +1782,7 @@ bool gl_mouse_flag_is_set(Uint flag);
 /* ----------------------------- gl_mouse_flag_clear_all ----------------------------- */
 void gl_mouse_flag_clear_all(void);
 /* ----------------------------- gl_mouse_draw_held_if_needed ----------------------------- */
-void gl_mouse_draw_held_if_needed(void);
+// void gl_mouse_draw_held_if_needed(void);
 /* ----------------------------- Gl mouse routine button dn ----------------------------- */
 void gl_mouse_routine_button_dn(Uchar button, Ushort mod, float x, float y);
 /* ----------------------------- Gl mouse routine button up ----------------------------- */

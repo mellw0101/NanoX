@@ -586,6 +586,7 @@ Menu *menu_create(Element *const parent, Font *const font, void *data,
   element_set_data_menu(menu->element, menu);
   /* Create the selected rect element. */
   menu->selelem = element_create(100, 100, 100, font_height(font), FALSE);
+  menu->selelem->xflags |= ELEMENT_HIDDEN;
   menu->selelem->color = MENU_DEFAULT_SELECTED_COLOR;
   /* Row init. */
   menu->was_viewtop = -1;

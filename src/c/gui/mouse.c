@@ -263,17 +263,17 @@ void gl_mouse_flag_clear_all(void) {
 
 /* ----------------------------- gl_mouse_draw_held_if_needed ----------------------------- */
 
-void gl_mouse_draw_held_if_needed(void) {
-  if (MOUSE_ISSET(MOUSE_SHOULD_DRAW_HELD)) {
-    if (!gl_mouse_element_clicked) {
-      MOUSE_UNSET(MOUSE_SHOULD_DRAW_HELD);
-    }
-    else {
-      element_draw(gl_mouse_element_clicked);
-      refresh_needed = TRUE;
-    }
-  }
-}
+// void gl_mouse_draw_held_if_needed(void) {
+//   if (MOUSE_ISSET(MOUSE_SHOULD_DRAW_HELD)) {
+//     if (!gl_mouse_element_clicked) {
+//       MOUSE_UNSET(MOUSE_SHOULD_DRAW_HELD);
+//     }
+//     else {
+//       element_draw(gl_mouse_element_clicked);
+//       refresh_needed = TRUE;
+//     }
+//   }
+// }
 
 /* ----------------------------- Gl mouse routine button dn ----------------------------- */
 
@@ -409,7 +409,6 @@ void gl_mouse_routine_button_up(Uchar button, Ushort _UNUSED mod, float x, float
       if (e) {
         element_free(e);
         etb_text_refresh_needed(e->parent->dp_editor->tb);
-        MOUSE_UNSET(MOUSE_SHOULD_DRAW_HELD);
       }
     }
     gl_mouse_element_clicked = NULL;

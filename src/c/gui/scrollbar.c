@@ -225,11 +225,11 @@ Scrollbar *scrollbar_create(Element *const parent, void *const data, ScrollbarUp
   sb->base->color  = PACKED_UINT_FLOAT(0.05f, 0.05f, 0.05f, 0.3f);
   sb->thumb->color = PACKED_UINT_FLOAT(1.0f, 1.0f, 1.0f, 0.3f);
   /* Base. */
-  sb->base->xflags |= (ELEMENT_REVREL_X | ELEMENT_REL_Y);
+  sb->base->xflags |= (ELEMENT_REVREL_X | ELEMENT_REL_Y | ELEMENT_HIDDEN);
   sb->base->rel_x = (SB_WIDTH + r_offset);
   sb->base->rel_y = t_offset;
   /* Thumb. */
-  sb->thumb->xflags |= (ELEMENT_REL_POS | ELEMENT_ROUNDED_RECT);
+  sb->thumb->xflags |= (ELEMENT_REL_POS | ELEMENT_ROUNDED_RECT | ELEMENT_HIDDEN);
   /* Data ptr. */
   sb->data = data;
   /* Update routine. */

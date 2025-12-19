@@ -18,7 +18,8 @@ ElementGrid *element_grid = NULL;
 
 struct ElementGrid {
   int cell_size;
-  HashMapNum *map;
+  HNMAP map;
+  // HashMapNum *map;
 };
 
 typedef struct {
@@ -31,15 +32,21 @@ typedef struct {
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
-static inline Ulong element_gridpos_hash(ElementGridpos pos) {
-  Ulong hx = (Ulong)pos.x;
-  Ulong hy = (Ulong)pos.y;
-  return (hx ^ (hy * 0x9e3779b9UL + (hx << 6) + (hx >> 2)));
+static __always_inline Ulong element_gridpos_xy_hash(int gx, int gy) {
+  Ulong x = (Ulong)gx;
+  Ulong y = (Ulong)gy;
+  return (x ^ (y * 0x9e3779b9UL + (x << 6) + (x >> 2)));
 }
 
-static inline Ulong element_grid_key(int x, int y) {
-  return element_gridpos_hash((ElementGridpos){x, y});
-}
+// static inline Ulong element_gridpos_hash(ElementGridpos pos) {
+//   Ulong hx = (Ulong)pos.x;
+//   Ulong hy = (Ulong)pos.y;
+//   return (hx ^ (hy * 0x9e3779b9UL + (hx << 6) + (hx >> 2)));
+// }
+
+// static inline Ulong element_grid_key(int x, int y) {
+//   return element_gridpos_hash((ElementGridpos){x, y});
+// }
 
 static inline ElementGridpos element_gridpos_get(float x, float y) {
   ASSERT(element_grid);
@@ -90,7 +97,8 @@ static inline void element_grid_get_action(Ulong _UNUSED key, void *value, void 
 void element_grid_create(int cell_size) {
   MALLOC_STRUCT(element_grid);
   element_grid->cell_size = cell_size;
-  element_grid->map = hashmapnum_create_wfreefunc(hashmapnum_free_void_ptr);
+  element_grid->map = hnmap_create();
+  hnmap_set_free_func(element_grid->map, (void (*)(void *))hnmap_free);
 }
 
 /* ----------------------------- Element grid free ----------------------------- */
@@ -99,7 +107,7 @@ void element_grid_free(void) {
   if (!element_grid) {
     return;
   }
-  hashmapnum_free(element_grid->map);
+  hnmap_free(element_grid->map);
   free(element_grid);
   element_grid = NULL;
 }
@@ -112,7 +120,7 @@ void element_grid_set(Element *const e) {
   ElementGridpos start;
   ElementGridpos end;
   Ulong key;
-  HashMapNum *cellmap;
+  HNMAP cellmap;
   if (e->xflags & ELEMENT_NOT_IN_MAP) {
     return;
   }
@@ -120,13 +128,13 @@ void element_grid_set(Element *const e) {
   end   = element_grid_get_end(e);
   for (int x=start.x; x<=end.x; ++x) {
     for (int y=start.y; y<=end.y; ++y) {
-      key     = element_grid_key(x, y);
-      cellmap = hashmapnum_get(element_grid->map, key);
+      key     = element_gridpos_xy_hash(x, y);
+      cellmap = hnmap_get(element_grid->map, key);
       if (!cellmap) {
-        cellmap = hashmapnum_create();
-        hashmapnum_insert(element_grid->map, key, cellmap);
+        cellmap = hnmap_create();
+        hnmap_insert(element_grid->map, key, cellmap);
       }
-      hashmapnum_insert(cellmap, (Ulong)e, e);
+      hnmap_insert(cellmap, (Ulong)e, e);
     }
   }
 }
@@ -139,7 +147,7 @@ void element_grid_remove(Element *const e) {
   ElementGridpos start;
   ElementGridpos end;
   Ulong key;
-  HashMapNum *cellmap;
+  HNMAP cellmap;
   /* If the element do not wish to be part of the grid, and therefor not be part of mouse events, respect that. */
   if (e->xflags & ELEMENT_NOT_IN_MAP) {
     return;
@@ -150,12 +158,12 @@ void element_grid_remove(Element *const e) {
   for (int x=start.x; x<=end.x; ++x) {
     /* Rows */
     for (int y=start.y; y<=end.y; ++y) {
-      key     = element_grid_key(x, y);
-      cellmap = hashmapnum_get(element_grid->map, key);
+      key     = element_gridpos_xy_hash(x, y);
+      cellmap = hnmap_get(element_grid->map, key);
       if (!cellmap) {
         continue;
       }
-      hashmapnum_remove(cellmap, (Ulong)e);
+      hnmap_remove(cellmap, (Ulong)e);
       /* Currently we only grow, in the sense that we never free empty grid tile maps. If we wanted to
        * we could do it like this.  But first we should improve the grid map as a whole and the hashmap.
 
@@ -173,8 +181,8 @@ void element_grid_remove(Element *const e) {
 Element *element_grid_get(float x, float y) {
   ASSERT(element_grid);
   ElementGridpos gridpos = element_gridpos_get(x, y);
-  Ulong key = element_grid_key(gridpos.x, gridpos.y);
-  HashMapNum *cellmap = hashmapnum_get(element_grid->map, key);
+  Ulong key = element_gridpos_xy_hash(gridpos.x, gridpos.y);
+  HNMAP cellmap = hnmap_get(element_grid->map, key);
   GetPackage *p;
   Element *ret;
   if (!cellmap) {
@@ -184,7 +192,7 @@ Element *element_grid_get(float x, float y) {
   p->x   = x;
   p->y   = y;
   p->ret = NULL;
-  hashmapnum_forall_wdata(cellmap, element_grid_get_action, p);
+  hnmap_forall_wdata(cellmap, element_grid_get_action, p);
   ret = p->ret;
   free(p);
   return ret;
@@ -198,7 +206,7 @@ Element *element_grid_get(float x, float y) {
 bool element_grid_contains(float x, float y) {
   ASSERT(element_grid);
   ElementGridpos gridpos = element_gridpos_get(x, y);
-  return hashmapnum_get(element_grid->map, element_grid_key(gridpos.x, gridpos.y));
+  return hnmap_get(element_grid->map, element_gridpos_xy_hash(gridpos.x, gridpos.y));
 }
 
 // ElementGrid *element_grid_create(int cell_size) {
