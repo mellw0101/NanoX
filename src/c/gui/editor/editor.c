@@ -536,7 +536,7 @@ void editor_close_a_open_buffer(openfilestruct *const file) {
   if (!CLIST_SINGLE(file)) {
     close_buffer_for(file, &editor->startfile, &editor->openfile);
     if (editor == openeditor) {
-      openfile = editor->openfile;
+      openfile  = editor->openfile;
       startfile = editor->startfile;
     }
     etb_entries_refresh_needed(editor->tb);

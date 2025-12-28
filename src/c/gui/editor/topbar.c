@@ -25,16 +25,10 @@
 #define ETB_BUTTON_COLOR  PACKED_UINT_FLOAT(.08f, .08f, .08f, 1.f)
 
 
-/* ---------------------------------------------------------- Typedef's ---------------------------------------------------------- */
-
-
-// typedef struct EDITOR_TB_T *  EDITOR_TB;
-
-
 /* ---------------------------------------------------------- Enum's ---------------------------------------------------------- */
 
 
-typedef enum {
+enum {
   ETB_REFRESH_SELECTED = (1 << 0),
   ETB_REFRESH_TEXT     = (1 << 1),
   ETB_REFRESH_ENTRIES  = (1 << 2),
@@ -42,31 +36,23 @@ typedef enum {
 # define ETB_REFRESH_TEXT      ETB_REFRESH_TEXT
 # define ETB_REFRESH_ENTRIES   ETB_REFRESH_ENTRIES
 # define ETB_XFLAGS_DEFAULT    (ETB_REFRESH_SELECTED | ETB_REFRESH_TEXT | ETB_REFRESH_ENTRIES)
-} EDITOR_TB_STATE /* EtbStateFlag */;
+};
 
 
 /* ---------------------------------------------------------- Struct's ---------------------------------------------------------- */
 
 
-/* `Internal` structure that represent's the context menu for a `EditorTb` structure. */
-// struct ETB_CONTEXT_MENU_T {
-//   Element *clicked;
-//   Menu *button_menu;
-//   Menu *topbar_menu;
-// };
-
 struct EDITOR_TB_T {
   /* State flags. */
-  Uint xflags;
+  Uint             xflags;
   vertex_buffer_t *buffer;
-  Editor *editor;
-  Element *element;
+  Editor          *editor;
+  Element         *element;
   struct {
     Element *clicked;
     Menu    *button_menu;
     Menu    *topbar_menu;
   } context;
-  // ETB_CONTEXT_MENU context;
 };
 
 

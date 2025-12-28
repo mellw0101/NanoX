@@ -549,7 +549,8 @@ void renumber_from(linestruct *line) {
   long number = (!line->prev ? 0 : line->prev->lineno);
   while (line) {
     line->lineno = ++number;
-    line = line->next;
+    DLIST_ADV_NEXT(line);
+    // line = line->next;
   }
 }
 

@@ -2162,7 +2162,6 @@ int main(int argc, char **argv) {
   /* Set the margin to an impossible value to force re-evaluation. */
   margin = 12345;
   we_are_running = TRUE;
-  logI("Reached main loop.");
   if (ISSET(USING_GUI)) {
     prosses_callback_queue();
     restore_terminal();
