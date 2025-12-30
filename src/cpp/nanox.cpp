@@ -1178,6 +1178,8 @@ bool changes_something(functionptrtype f) {
 //   }
 // }
 
+// static void process_a_enclose_char()
+
 /* Read in a keystroke, and execute its command or insert it into the buffer. */
 static void process_a_keystroke(void) {
   /* The keystroke we read in, this can be a char or a shortcut. */
@@ -1233,13 +1235,11 @@ static void process_a_keystroke(void) {
       }
       /* If region is marked, and 'input' is an enclose char, then we enclose the marked region with that char. */
       if (openfile->mark && is_enclose_char(input)) {
-        const char *s1, *s2;
+        const char *s1 = NULL;
+        const char *s2 = NULL;
         input == '"' ? s1 = "\"", s2 = s1 : input == '\'' ? s1 = "'", s2 = s1 : input == '(' ? s1 = "(", s2 = ")" :
-        input == '{' ? s1 = "{", s2 = "}" : input == '[' ? s1 = "[", s2 = "]" : input == '<' ? s1 = "<", s2 = ">" :
-        s1 = NULL, s2 = NULL;
-        if (s1 && s2) {
-          enclose_marked_region(s1, s2);
-        }
+        input == '{' ? s1 = "{", s2 = "}" : input == '[' ? s1 = "[", s2 = "]" : input == '<' ? s1 = "<", s2 = ">" : 0;
+        enclose_marked_region(s1, s2);
         return;
       }
       else if (openfile->mark && openfile->softmark) {
@@ -1267,7 +1267,8 @@ static void process_a_keystroke(void) {
         /* Exceptions for enclosing brackets. */
         else if ((input == '(' || input == '[' || input == '{')
         /* After current cursor position. */
-        && ((!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of("\";')}]")) || (is_cursor_char_one_of("({["))))
+        && ((!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of("\":;')}],")))
+         /* ((!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of("\";')}]")) || (is_cursor_char_one_of("({["))) */)
         {
           ;
         }
@@ -1278,10 +1279,10 @@ static void process_a_keystroke(void) {
           ;
         }
         else {
-          const char *s1, *s2;
+          const char *s1 = NULL;
+          const char *s2 = NULL;
           input == '"' ? s1 = "\"", s2 = s1 : input == '\'' ? s1 = "'", s2 = s1 : input == '(' ? s1 = "(", s2 = ")" :
-          input == '{' ? s1 = "{", s2 = "}" : input == '[' ? s1 = "[", s2 = "]" : input == '<' ? s1 = "<", s2 = ">" :
-          s1 = NULL, s2 = NULL;
+          input == '{' ? s1 = "{", s2 = "}" : input == '[' ? s1 = "[", s2 = "]" : input == '<' ? s1 = "<", s2 = ">" : 0;
           if (s1 && s2) {
             /* 'Set' the mark, so that 'enclose_marked_region()' dosent exit because there is no marked region. */
             openfile->mark   = openfile->current;
@@ -1294,13 +1295,14 @@ static void process_a_keystroke(void) {
             /* This flag ensures that if backspace is the next key that is pressed it will erase both of the enclose char`s. */
             last_key_was_bracket = TRUE;
             last_bracket_char = (char)input;
+            return;
           }
-          return;
         }
       }
       puddle[depth++]      = (char)input;
       last_key_was_bracket = FALSE;
       last_bracket_char    = '\0';
+
     }
   }
   /* If there are gathered bytes and we have a command or no other key codes are waiting, it's time to insert these bytes into the edit buffer. */

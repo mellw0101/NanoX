@@ -1,10 +1,27 @@
 Diagnostics:
   # MissingIncludes: None
   UnusedIncludes: None
-# CompileFlags:
-#   Add:
-#     - -std=c++23              # Specify C++23 standard
-#     - -stdlib=libc++          # Use libc++ as the standard library
+Index:
+  External:
+    File: /home/mellw/source/NanoX/clangd.dex
+    MountPoint: /home/mellw/source/NanoX
+  Background: Build
+---
+If:
+  PathMatch: [".*\\.(c)$"]
+CompileFlags:
+  Add:
+    - -std=gnu99
+    - -xc
+  Remove:
+    - -std=c\\+\\+23
+---
+If:
+  PathMatch: [".*\\.(cpp)$"]
+CompileFlags:
+  Add:
+    - -std=c++23              # Specify C++23 standard
+    - -stdlib=libc++          # Use libc++ as the standard library
 #     - -I/usr/include/c++/v1/  # Include path for libc++ headers
     # - -I./src/include/         # Specify include directories
     # - -I./src/cpp/         # Specify include directories
