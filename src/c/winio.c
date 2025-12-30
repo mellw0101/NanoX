@@ -3414,9 +3414,9 @@ void draw_row_marked_region_curses(int row, const char *const restrict converted
   draw_row_marked_region_for_curses(TUI_OF, row, converted, line, from_col);
 }
 
-/* Draw the given text on the given row of the edit window.  line is the line to be drawn, and converted
- * is the actual string to be written with tabs and control characters replaced by strings of regular
- * characters.  'from_col' is the column number of the first character of this "page". */
+/* Draw the given text on the given row of the edit window.  line is the line to be drawn, and
+ * converted is the actual string to be written with tabs and control characters replaced by strings
+ * of regular characters.  'from_col' is the column number of the first character of this "page". */
 void draw_row_curses_for(openfilestruct *const file, int row, const char *const restrict converted, linestruct *const line, Ulong from_col) {
   ASSERT(file);
   render_line_text(row, converted, line, from_col);

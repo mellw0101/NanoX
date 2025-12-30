@@ -114,7 +114,7 @@ static const struct{ const char *const restrict name; int flag;} rcopts[] = {
 };
 
 /* TODO: Add the one missing functions once they are defined in C. */
-static const struct{ const char *const restrict str; VoidFuncPtr func;} scmap[] = {
+static const struct{ const char *const restrict str; voidfunc func;} scmap[] = {
   {"cancel",        do_cancel},
   {"help",          do_help},
   {"exit",          do_exit},
@@ -245,7 +245,7 @@ static const struct{ const char *const restrict str; int flag;} togglemap[] = {
 /* ----------------------------- Sc from str ----------------------------- */
 
 _NODISCARD _NONNULL(1)
-static inline VoidFuncPtr sc_from_str(const char *const restrict str) {
+static inline voidfunc sc_from_str(const char *const restrict str) {
   for (Ulong i=0; i<ARRAY_SIZE(scmap); ++i) {
     if (strcmp(str, scmap[i].str) == 0) {
       return scmap[i].func;

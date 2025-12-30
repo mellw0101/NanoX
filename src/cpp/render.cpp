@@ -808,10 +808,10 @@ static void render_control_statements(Ulong index) {
 /* Main function that applies syntax to a line in real time. */
 void apply_syntax_to_line(const int inrow, const char *inconverted, linestruct *in_line, Ulong infrom_col) {
   PROFILE_FUNCTION;
-  ::row       = inrow;
-  ::converted = inconverted;
-  ::line      = in_line;
-  ::from_col  = infrom_col;
+  row       = inrow;
+  converted = inconverted;
+  line      = in_line;
+  from_col  = infrom_col;
   if (/* openfile->type.is_set<C_CPP>() */ openfile->is_c_file || openfile->is_cxx_file) {
     render_bracket();
     render_comment();
@@ -951,14 +951,14 @@ void apply_syntax_to_line(const int inrow, const char *inconverted, linestruct *
       if (test_map.find(node->str) != test_map.end()) {
         mv_add_nstr_color(midwin, inrow, node->start + margin, node->str, node->len, test_map[node->str].color);
       }
-      else if (LSP->index.bash_data.variable.find(node->str) != LSP->index.bash_data.variable.end()) {
-        if (in_line->lineno == LSP->index.bash_data.variable[node->str].lineno) {
-          mv_add_nstr_color(midwin, inrow, node->start + margin, node->str, node->len, FG_VS_CODE_BRIGHT_CYAN);
-        }
-        else if (is_prev_char(in_line->data, node->start, '$')) {
-          mv_add_nstr_color(midwin, inrow, (node->start + margin - 1), &in_line->data[node->start - 1], (node->len + 1), FG_VS_CODE_BRIGHT_CYAN);
-        }
-      }
+      // else if (LSP->index.bash_data.variable.find(node->str) != LSP->index.bash_data.variable.end()) {
+      //   if (in_line->lineno == LSP->index.bash_data.variable[node->str].lineno) {
+      //     mv_add_nstr_color(midwin, inrow, node->start + margin, node->str, node->len, FG_VS_CODE_BRIGHT_CYAN);
+      //   }
+      //   else if ( is_prev_char(in_line->data, node->start, '$')) {
+      //     mv_add_nstr_color(midwin, inrow, (node->start + margin - 1), &in_line->data[node->start - 1], (node->len + 1), FG_VS_CODE_BRIGHT_CYAN);
+      //   }
+      // }
       free_node(node);
     }
   }

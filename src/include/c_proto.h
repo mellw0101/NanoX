@@ -392,36 +392,6 @@ int  nanox_socket_client(void);
 /* ----------------------------------------------- text.c ----------------------------------------------- */
 
 
-/* static */ void copy_character(char **const from, char **const to);
-/* static */ void squeeze(linestruct *const line, Ulong skip);
-
-/* static */ bool fix_spello_for(CTX_ARGS, const char *const restrict word);
-/* static */ bool fix_spello(const char *const restrict word);
-
-/* static */ void concat_paragraph_for(openfilestruct *const file, linestruct *const line, Ulong count);
-/* static */ void concat_paragraph(linestruct *const line, Ulong count);
-
-/* static */ void rewrap_paragraph_for(openfilestruct *const file, int rows,
-  linestruct **const line, const char *const restrict lead_str, Ulong lead_len);
-/* static */ void rewrap_paragraph(linestruct **const line, const char *const restrict lead_str, Ulong lead_len);
-
-/* static */ void justify_paragraph_for(openfilestruct *const file, int rows, linestruct **const line, Ulong count);
-/* static */ void justify_paragraph(linestruct **const line, Ulong count);
-
-/* static */ void construct_argument_list(char ***arguments, char *command, char *filename);
-
-/* static */ bool replace_buffer_for(CTX_ARGS, const char *const restrict filename, undo_type action, const char *const restrict operation);
-/* static */ bool replace_buffer(const char *const restrict filename, undo_type action, const char *const restrict operation);
-
-/* static */ void treat_for(CTX_ARGS, char *tempfile, char *program, bool spelling);
-/* static */ void treat(char *tempfile, char *program, bool spelling);
-
-/* static */ void do_int_speller_for(CTX_ARGS, const char *const restrict tempfile);
-/* static */ void do_int_speller(const char *const restrict tempfile);
-
-/* static */ void justify_text_for(CTX_ARGS, bool whole_buffer);
-/* static */ void justify_text(bool whole_buffer);
-
 /* ----------------------------- Line indent plus tab ----------------------------- */
 char *line_indent_plus_tab(const char *const restrict data, Ulong *const len);
 /* ----------------------------- Set marked region ----------------------------- */

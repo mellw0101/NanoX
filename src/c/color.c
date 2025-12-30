@@ -273,7 +273,7 @@ void set_syntax_colorpairs(syntaxtype *const sntx) {
 void find_and_prime_applicable_syntax_for(openfilestruct *const file) {
   ASSERT(file);
   syntaxtype *sntx = NULL;
-  char *fullname;
+  char       *fullname;
 # ifdef HAVE_LIBMAGIC
   struct stat  fileinfo;
   magic_t      cookie      = NULL;

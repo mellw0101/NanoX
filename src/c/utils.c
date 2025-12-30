@@ -472,7 +472,8 @@ void set_pww(void) {
 
 /* ----------------------------- Set cursor to end of line ----------------------------- */
 
-/* Correctly sets `file->current_x` to the end of `file->current->data` and correctly sets `file->placewewant` to ensure visual correctness. */
+/* Correctly sets `file->current_x` to the end of `file->current->data`
+ * and correctly sets `file->placewewant` to ensure visual correctness. */
 void set_cursor_to_eol_for(openfilestruct *const file) {
   ASSERT(file);
   file->current_x = strlen(file->current->data);

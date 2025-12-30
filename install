@@ -31,13 +31,15 @@ AmakeCpp --test
 sudo AmakeCpp --link --bin -lGLEW -lGL -lglfw -lSDL3 -lfreetype -lunibilium\
  /usr/lib/Mlib.a /usr/lib/libftgl.a /usr/lib/libfcio.a /usr/lib/libz.a
 if [ -f build/bin/NanoX ]; then
-  # # Create the shorthand nanox.
+  # Create the shorthand nanox.
   if [ ! -e /usr/bin/nanox ]; then
     sudo ln -s /usr/bin/NanoX /usr/bin/nanox
+    sudo chmod +x /usr/bin/nanox
   fi
   # Create the shorthand nx.
   if [ ! -e /usr/bin/nx ]; then
     sudo ln -s /usr/bin/NanoX /usr/bin/nx
+    sudo chmod +x /usr/bin/nx
   fi
 fi
 

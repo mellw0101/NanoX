@@ -357,7 +357,7 @@ static void set_bash_synx(openfilestruct *const file) {
   test_map["while"] = {FG_VS_CODE_BRIGHT_MAGENTA};
   test_map["do"]    = {FG_VS_CODE_BRIGHT_MAGENTA};
   test_map["done"]  = {FG_VS_CODE_BRIGHT_MAGENTA};
-  get_env_path_binaries();
+  // get_env_path_binaries();
 }
 
 /* Configure color map with base systemd service syntax. */

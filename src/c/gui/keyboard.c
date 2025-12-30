@@ -98,8 +98,7 @@
 /* ---------------------------------------------------------- Enum's ---------------------------------------------------------- */
 
 
-/* This is used as absolute and singular flags,
- * after we filter them, so we only need to filter once. */
+/* This is used as absolute and singular flags, after we filter them, so we only need to filter once. */
 typedef enum {
   KB_MOD_NOT_SUPPORTED = -1,
   KB_MOD_NONE,

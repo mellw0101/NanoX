@@ -832,6 +832,7 @@ typedef void (*FreeFuncPtr)(void *);
 typedef void (*functionptrtype)(void);
 typedef void (*funcptr)(void);
 typedef void (*VoidFuncPtr)(void);
+typedef void (*voidfunc)(void);
 
 /* ----------------------------- nevhandler.c ----------------------------- */
 

@@ -449,7 +449,7 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
 
 /* Copy a character form one place to another.  TODO: Make a macro
  * that always performs the copy, thus we will inline when needed. */
-/* static */ void copy_character(char **const from, char **const to) {
+static void copy_character(char **const from, char **const to) {
   ASSERT(from);
   ASSERT(to);
   int len = char_length(*from);
@@ -470,7 +470,7 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
 /* In the given `line`, replace any series of blanks with a single space, but keep two
  * spaces (if if there are two) after any closing punctuation, and remove all blanks
  * from the end of the line.  Leave the first skip number of characters untreated. */
-/* static */ void squeeze(linestruct *const line, Ulong skip) {
+static void squeeze(linestruct *const line, Ulong skip) {
   ASSERT(line);
   char *start = (line->data + skip);
   char *from  = start;
@@ -523,7 +523,7 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
 /* ----------------------------- Fix spello ----------------------------- */
 
 /* Let the user edit the misspelled word.  Returns `FALSE` if user cancels. */
-/* static */ bool fix_spello_for(CTX_ARGS, const char *const restrict word) {
+static bool fix_spello_for(CTX_ARGS, const char *const restrict word) {
   ASSERT(file);
   ASSERT(word);
   linestruct *was_edittop = file->edittop;
@@ -613,15 +613,15 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
 }
 
 /* Let the user edit the misspelled word.  Returns `FALSE` if user cancels.  Note that this is `context-safe`. */
-/* static */ bool fix_spello(const char *const restrict word) {
-  RET_CTX_CALL_WARGS(fix_spello_for, word);
-}
+// static bool fix_spello(const char *const restrict word) {
+//   RET_CTX_CALL_WARGS(fix_spello_for, word);
+// }
 
 /* ----------------------------- Concat paragraph ----------------------------- */
 
 /* Concatenate into a single line all the lines of the paragraph that starts at `line` and
  * consists of `count` lines, skipping the quoting and indentation of all lines after the first. */
-/* static */ void concat_paragraph_for(openfilestruct *const file, linestruct *const line, Ulong count) {
+static void concat_paragraph_for(openfilestruct *const file, linestruct *const line, Ulong count) {
   ASSERT(line);
   linestruct *next;
   Ulong quot_len;
@@ -641,15 +641,15 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
 
 /* Concatenate into a single line all the lines of the paragraph that starts at `line` and
  * consists of `count` lines, skipping the quoting and indentation of all lines after the first. */
-/* static */ void concat_paragraph(linestruct *const line, Ulong count) {
-  concat_paragraph_for(CTX_OF, line, count);
-}
+// static void concat_paragraph(linestruct *const line, Ulong count) {
+//   concat_paragraph_for(CTX_OF, line, count);
+// }
 
 /* ----------------------------- Rewrap paragraph ----------------------------- */
 
 /* Rewrap the given line (that starts with the given lead string which is of
  * the given length), into lines that fit within the target width (wrap_at). */
-/* static */ void rewrap_paragraph_for(openfilestruct *const file, int rows,
+static void rewrap_paragraph_for(openfilestruct *const file, int rows,
   linestruct **const line, const char *const restrict lead_str, Ulong lead_len)
 {
   ASSERT(line);
@@ -696,20 +696,20 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
 
 /* Rewrap the given line (that starts with the given lead string which is of the given length),
  * into lines that fit within the target width (wrap_at).  Note that this is `context-safe`. */
-/* static */ void rewrap_paragraph(linestruct **const line, const char *const restrict lead_str, Ulong lead_len) {
-  if (IN_GUI_CTX) {
-    rewrap_paragraph_for(GUI_OF, GUI_ROWS, line, lead_str, lead_len);
-  }
-  else {
-    rewrap_paragraph_for(TUI_OF, TUI_ROWS, line, lead_str, lead_len);
-  }
-}
+// static void rewrap_paragraph(linestruct **const line, const char *const restrict lead_str, Ulong lead_len) {
+//   if (IN_GUI_CTX) {
+//     rewrap_paragraph_for(GUI_OF, GUI_ROWS, line, lead_str, lead_len);
+//   }
+//   else {
+//     rewrap_paragraph_for(TUI_OF, TUI_ROWS, line, lead_str, lead_len);
+//   }
+// }
 
 /* ----------------------------- Justify paragraph ----------------------------- */
 
 /* Justify the lines of the given paragraph (that starts at `*line`, and consitis of `count` lines)
  * so they all fit within the target width (`wrap at`) and have their whitespaces normalized. */
-/* static */ void justify_paragraph_for(openfilestruct *const file, int rows, linestruct **const line, Ulong count) {
+static void justify_paragraph_for(openfilestruct *const file, int rows, linestruct **const line, Ulong count) {
   ASSERT(line);
   /* The line from which the indentation is copied. */
   linestruct *sample;
@@ -736,19 +736,19 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
 
 /* Justify the lines of the given paragraph (that starts at `*line`, and consitis of `count` lines) so they all
  * fit within the target width (`wrap at`) and have their whitespaces normalized.  Note that this is `context-safe`. */
-/* static */ void justify_paragraph(linestruct **const line, Ulong count) {
-  if (IN_GUI_CTX) {
-    justify_paragraph_for(GUI_OF, GUI_ROWS, line, count);
-  }
-  else {
-    justify_paragraph_for(TUI_OF, TUI_ROWS, line, count);
-  }
-}
+// static void justify_paragraph(linestruct **const line, Ulong count) {
+//   if (IN_GUI_CTX) {
+//     justify_paragraph_for(GUI_OF, GUI_ROWS, line, count);
+//   }
+//   else {
+//     justify_paragraph_for(TUI_OF, TUI_ROWS, line, count);
+//   }
+// }
 
 /* ----------------------------- Construct argument list ----------------------------- */
 
 /* Set up an argument list for executing the given command. */
-/* static */ void construct_argument_list(char ***arguments, char *command, char *filename) {
+static void construct_argument_list(char ***arguments, char *command, char *filename) {
   ASSERT(arguments);
   char *copy_of_command = copy_of(command);
   char *element = strtok(copy_of_command, " ");
@@ -768,7 +768,7 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
  * region or of the entire buffer and read the file contents into it's place.
  * TODO: Split this up, or make subfuctionality from this available, so that
  * we can implement replace marked region in a mush better way and also more things. */
-/* static */ bool replace_buffer_for(CTX_ARGS, const char *const restrict filename, undo_type action, const char *const restrict operation) {
+static bool replace_buffer_for(CTX_ARGS, const char *const restrict filename, undo_type action, const char *const restrict operation) {
   ASSERT(file);
   ASSERT(filename);
   linestruct *was_cutbuffer = cutbuffer;
@@ -802,14 +802,14 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
  * region or of the entire buffer and read the file contents into it's place.
  * TODO: Split this up, or make subfuctionality from this available, so that
  * we can implement replace marked region in a mush better way and also more things. */
-/* static */ bool replace_buffer(const char *const restrict filename, undo_type action, const char *const restrict operation) {
-  RET_CTX_CALL_WARGS(replace_buffer_for, filename, action, operation);
-}
+// static bool replace_buffer(const char *const restrict filename, undo_type action, const char *const restrict operation) {
+//   RET_CTX_CALL_WARGS(replace_buffer_for, filename, action, operation);
+// }
 
 /* ----------------------------- Treat ----------------------------- */
 
 /* Execute the given program, with the given temp-file as the last argument. */
-/* static */ void treat_for(CTX_ARGS, char *tempfile, char *program, bool spelling) {
+static void treat_for(CTX_ARGS, char *tempfile, char *program, bool spelling) {
   ASSERT(file);
   char **arguments = NULL;
   struct stat info;
@@ -935,16 +935,16 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
 }
 
 /* Execute the given program, with the given temp-file as the last argument.  Note that this is `context-safe`. */
-/* static */ void treat(char *tempfile, char *program, bool spelling) {
-  CTX_CALL_WARGS(treat_for, tempfile, program, spelling);
-}
+// static void treat(char *tempfile, char *program, bool spelling) {
+//   CTX_CALL_WARGS(treat_for, tempfile, program, spelling);
+// }
 
 /* ----------------------------- Do int speller ----------------------------- */
 
 /* Run a spell-check on the given temp-file, using `spell` to preduce a list of all
  * misspelled words, then feeding those through `sort` and `uniq` to obtain a alphabetical
  * non-duplicate list, which words are then offered one by one to the user for correction. */
-/* static */ void do_int_speller_for(CTX_ARGS, const char *const restrict tempfile) {
+static void do_int_speller_for(CTX_ARGS, const char *const restrict tempfile) {
   ASSERT(file);
   ASSERT(tempfile);
   char *buf;
@@ -1128,15 +1128,15 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
 /* Run a spell-check on the given temp-file, using `spell` to preduce a list of all
  * misspelled words, then feeding those through `sort` and `uniq` to obtain a alphabetical
  * non-duplicate list, which words are then offered one by one to the user for correction. */
-/* static */ void do_int_speller(const char *const restrict tempfile) {
-  CTX_CALL_WARGS(do_int_speller_for, tempfile);
-}
+// static void do_int_speller(const char *const restrict tempfile) {
+//   CTX_CALL_WARGS(do_int_speller_for, tempfile);
+// }
 
 /* ----------------------------- Justify text ----------------------------- */
 
 /* Justify the current paragraph in `file`, or the entire buffer when whole_buffer
  * is `TRUE`.  But if the mark is on, justify only the marked text instead. */
-/* static */ void justify_text_for(CTX_ARGS, bool whole_buffer) {
+static void justify_text_for(CTX_ARGS, bool whole_buffer) {
   ASSERT(file);
   /* The leading part (quoting + indentation) of the first line of the paragraph where the marked region begins. */
   char *primary_lead = NULL;
@@ -1367,9 +1367,9 @@ static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const
 
 /* Justify the current paragraph in the `currently open buffer`, or the entire buffer when `whole_buffer`
  * is `TRUE`.  But if the mark is on, justify only the marked text instead.  Note that this is `context-safe`. */
-/* static */ void justify_text(bool whole_buffer) {
-  CTX_CALL_WARGS(justify_text_for, whole_buffer);
-}
+// static void justify_text(bool whole_buffer) {
+//   CTX_CALL_WARGS(justify_text_for, whole_buffer);
+// }
 
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
