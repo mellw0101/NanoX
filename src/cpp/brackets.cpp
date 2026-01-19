@@ -109,7 +109,7 @@ bool find_end_bracket(linestruct *from, Ulong index, linestruct **end, Ulong *en
   int         lvl     = 0;
   const char *b_start = nullptr;
   const char *b_end   = nullptr;
-  FOR_EACH_LINE_NEXT(line, from) {
+  DLIST_FOR_NEXT(from, line) {
     /* Skip empty lines. */
     if (!line->data[0]) {
       continue;
@@ -157,7 +157,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index) {
     if (from == end_line) {
       return measured_copy(&from->data[index + 1], (&from->data[end_index] - &from->data[index + 1]));
     }
-    FOR_EACH_LINE_NEXT(line, from) {
+    DLIST_FOR_NEXT(from, line) {
       if (line == from) {
         ret += &line->data[index];
       }

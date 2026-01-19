@@ -120,8 +120,8 @@ typedef enum {
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
-_UNUSED
-static inline void get_enclose_chars(const char ch, const char **const s1, const char **const s2) {
+static inline void _UNUSED
+get_enclose_chars(const char ch, const char **const s1, const char **const s2) {
   switch (ch) {
     case '"': {
       *s1 = *s2 = "\"";
@@ -157,7 +157,8 @@ static inline void get_enclose_chars(const char ch, const char **const s1, const
 /* ----------------------------- Kb filter mod ----------------------------- */
 
 /* Returns a exclusive modifier type, so that we can switch case correctly on any combination, regardless of order. */
-static inline KbModType kb_filter_mod(Ushort mod) {
+static inline KbModType
+kb_filter_mod(Ushort mod) {
   if (MOD_NONE_IG_DEF(mod)) {
     return KB_MOD_NONE;
   }
@@ -187,7 +188,8 @@ static inline KbModType kb_filter_mod(Ushort mod) {
 
 /* ----------------------------- Kb key pressed ----------------------------- */
 
-void kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
+void
+kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
   VoidFuncPtr func = NULL;
   linestruct *was_current;
   Ulong was_x;
@@ -629,7 +631,8 @@ void kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
 /* ----------------------------- Kb char input ----------------------------- */
 
 /* TODO: Fix this shit. */
-void kb_char_input(const char *const restrict data, Ushort mod) {
+void
+kb_char_input(const char *const restrict data, Ushort mod) {
   Ulong len;
   char *burst;
   char ch;
@@ -748,7 +751,8 @@ void kb_char_input(const char *const restrict data, Ushort mod) {
 
 /* ----------------------------- Kb prompt key pressed ----------------------------- */
 
-void kb_key_pressed_prompt(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED repeat) {
+void
+kb_key_pressed_prompt(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED repeat) {
   if (promptmenu_yn_mode()) {
     switch (kb_filter_mod(mod)) {
       case KB_MOD_NONE:
@@ -899,7 +903,8 @@ void kb_key_pressed_prompt(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED
 /* ----------------------------- Kb prompt char input ----------------------------- */
 
 /* Handle char input when the `prompt-menu` is active. */
-void kb_char_input_prompt(const char *const restrict data, Ushort mod) {
+void
+kb_char_input_prompt(const char *const restrict data, Ushort mod) {
   Ulong len;
   char *burst;
   /* Only ever perform any action when no modifiers (excluding CAPS, SCROLL and NUM). */

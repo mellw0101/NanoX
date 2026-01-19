@@ -177,6 +177,7 @@ static void clioptmap_create(void) {
   clioptmap_entry_add(           "--gui", CLIOPT_GUI           );
   clioptmap_entry_add(          "--safe", CLIOPT_SAFE          );
   clioptmap_entry_add(          "--test", CLIOPT_TEST          );
+  clioptmap_entry_add(  "--debug-socket", CLIOPT_DEBUG_SOCKET  );
 }
 
 /* Free the `command line option map`. */
@@ -382,6 +383,9 @@ void proccess_cli_arguments(int *const argc, char **argv) {
               // SET(NO_NCURSES);
               // consume_argument(argc, argv, i--);
               break;
+            }
+            case CLIOPT_DEBUG_SOCKET: {
+              exit(nanox_socketrun());
             }
           }
         }

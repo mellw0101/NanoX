@@ -8,7 +8,7 @@
 
 #include "../include/c/wchars.h"
 
-#define TEST_SOCKET_PATH  "/tmp/nanox_test_epoll_socket"
+#define TEST_SOCKET_PATH  "/tmp/test" /* "/tmp/nanox_test_epoll_socket" */
 #define MAX_EVENTS        10
 #define BUFFER_SIZE       128
 
@@ -28,8 +28,11 @@ void nanox_fork_socket(void) {
 
 /* Start our socket. */
 int nanox_socketrun(void) {
-  int clientfd, epollfd;
-  int eventcount, bytesread;
+  int clientfd;
+  int epollfd;
+  int eventcount;
+  long bytesread;
+  Ulong total = 0;
   struct sockaddr_un addr;
   struct epoll_event event, events[MAX_EVENTS];
   char buffer[BUFFER_SIZE] = {0};
@@ -62,16 +65,19 @@ int nanox_socketrun(void) {
         epoll_ctl(epollfd, EPOLL_CTL_ADD, clientfd, &event);
       }
       else {
+        /* Read the incomming data. */
+        while ((bytesread = read(events[i].data.fd, BUF__LEN(buffer))) > 0) {
+          total += bytesread;
+          write(STDOUT_FILENO, buffer, bytesread);
+        }
         /* Handle client message.  Terminating apon any errors from 'read()'. */
-        ALWAYS_ASSERT_MSG(((bytesread = read(events[i].data.fd, BUF__LEN(buffer))) != -1), strerror(errno));
+        ALWAYS_ASSERT_MSG((bytesread != -1), strerror(errno));
         /* Client disconnected. */
-        if (bytesread == 0) {
+        if (total == 0) {
           close(events[i].data.fd);
           epoll_ctl(epollfd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
         }
-        /* Read the incomming data. */
         else {
-          write(STDOUT_FILENO, buffer, bytesread);
           /* Check for hello. */
           if (strncmp(buffer, S__LEN("hello")) == 0 && isblankornulc(buffer + SLTLEN("hello"))) {
             write(events[i].data.fd, S__LEN("Hello client.\n"));

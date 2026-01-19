@@ -960,7 +960,8 @@ void shortcut_init(void) {
   add_to_sclist(MMAIN, "M->", 0, switch_to_next_buffer, 0);
   add_to_sclist(MMOST, "M-V", 0, do_verbatim_input, 0);
   add_to_sclist(MMAIN, "M-T", 0, cut_till_eof, 0);
-  add_to_sclist(MEXECUTE, "^V", 0, cut_till_eof, 0);
+  /* TODO: We should probebly have a unified prompt line.  To have it do more things. */
+  // add_to_sclist(MEXECUTE, "^V", 0, cut_till_eof, 0);
   add_to_sclist(MEXECUTE, "^Z", 0, do_suspend, 0);
   add_to_sclist(MMAIN, "^Z", 0, suggest_ctrlT_ctrlZ, 0);
   add_to_sclist(MMAIN, "M-D", 0, count_lines_words_and_characters, 0);

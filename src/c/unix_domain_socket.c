@@ -28,16 +28,22 @@ void unix_socket_connect(const char *path) {
 /* Send a debug msg to the unix domain socket.  If 'unix_socket_connect'
  * has not been called or has failed this function will do nothing. */
 void unix_socket_debug(const char *format, ...) {
+  static char buf[BUF_SIZE];
+  va_list ap;
+  Ulong len;
+  long written;
+  Ulong total = 0;
   if (unix_socket_fd < 0) {
     return;
   }
-  static char buf[BUF_SIZE];
-  va_list     ap;
   va_start(ap, format);
   vsnprintf(buf, BUF_SIZE, format, ap);
   va_end(ap);
-  Ulong len = strlen(buf);
-  if (write(unix_socket_fd, buf, len) < 0) {
+  len = strlen(buf);
+  while (total != len && (written = write(unix_socket_fd, buf, len)) > 0) {
+    total += written;
+  }
+  if (written < 0) {
     unix_socket_fd = -1;
   }
 }

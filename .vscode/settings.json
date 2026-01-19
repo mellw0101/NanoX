@@ -1,7 +1,7 @@
 {
   "clangd.arguments": [
     "-j=8",
-    "--all-scopes-completion=0",
+    "--all-scopes-completion=1",
     "--background-index=1",
     "--background-index-priority=low",
     "--clang-tidy=1",

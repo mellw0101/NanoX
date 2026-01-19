@@ -805,8 +805,16 @@ static void render_control_statements(Ulong index) {
 //   } */
 // }
 
-/* Main function that applies syntax to a line in real time. */
-void apply_syntax_to_line(const int inrow, const char *inconverted, linestruct *in_line, Ulong infrom_col) {
+/* Main function that applies syntax to a line in real time.
+ * 
+ * We need to fully move away from this, as there is no longer any need to draw each line in strict order,
+ * I have not yet decided how i will implement it, but i will make some form of hashmap based, fully generic,
+ * syntax base.  So that we can begin with line comments first, then strings and block-comments.  We should
+ * do a fully avx based line reader.  This would be best done by adding a length to `linestruct` and always,
+ * allocating to the next 32 byte factor when not empty.  This would mean we never do a scalar scan.
+ */
+void
+apply_syntax_to_line(const int inrow, const char *inconverted, linestruct *in_line, Ulong infrom_col) {
   PROFILE_FUNCTION;
   row       = inrow;
   converted = inconverted;

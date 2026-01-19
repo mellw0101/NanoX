@@ -649,7 +649,8 @@ Ulong step_left(const char *const buf, const Ulong pos) {
 
 /* Returns the index in `mbstr` of the visual beginning of the multi-byte character
  * before the one at pos, meaning that it will advance past all zerowidth chars. */
-Ulong visual_step_left(const char *const restrict mbstr, Ulong pos) {
+static Ulong _UNUSED
+visual_step_left(const char *const restrict mbstr, Ulong pos) {
   ASSERT(mbstr);
   Ulong ret = pos;
   /* Only perform any action when not already at the beginning of the string. */

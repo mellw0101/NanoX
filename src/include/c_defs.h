@@ -859,10 +859,10 @@ typedef void (*MenuAcceptFunc)(void *, const char *const restrict lable, int ind
 typedef void (*ElementExtraCallback)(Element *const, void *);
 
 
+/*==============================================================================================================================*/
 /* ---------------------------------------------------------- Enum's ---------------------------------------------------------- */
+/*==============================================================================================================================*/
 
-
-/* ----------------------------- General ----------------------------- */
 
 /* The kinds of undo actions.  ADD...REPLACE must come first. */
 typedef enum {
@@ -1011,7 +1011,10 @@ typedef enum {
   MYESNO       = (1 << 13),
   MLINTER      = (1 << 14),
   MFINDINHELP  = (1 << 15),
-  MMOST        = (MMAIN | MWHEREIS | MREPLACE | MREPLACEWITH | MGOTOLINE | MWRITEFILE | MINSERTFILE | MEXECUTE | MWHEREISFILE | MGOTODIR | MFINDINHELP | MSPELL | MLINTER),
+  MMOST        = (
+    MMAIN | MWHEREIS | MREPLACE | MREPLACEWITH | MGOTOLINE | MWRITEFILE | MINSERTFILE
+    | MEXECUTE | MWHEREISFILE | MGOTODIR | MFINDINHELP | MSPELL | MLINTER
+  ),
   MSOME        = (MMOST | MBROWSER)
 # define MMAIN         MMAIN
 # define MWHEREIS      MWHEREIS
@@ -1179,6 +1182,7 @@ typedef enum {
   CLIOPT_GUI,
   CLIOPT_SAFE,
   CLIOPT_TEST,
+  CLIOPT_DEBUG_SOCKET 
 # define CLIOPT_IGNORERCFILE    CLIOPT_IGNORERCFILE
 # define CLIOPT_VERSION         CLIOPT_VERSION
 # define CLIOPT_HELP            CLIOPT_HELP
@@ -1196,6 +1200,7 @@ typedef enum {
 # define CLIOPT_GUI             CLIOPT_GUI
 # define CLIOPT_SAFE            CLIOPT_SAFE
 # define CLIOPT_TEST            CLIOPT_TEST
+# define CLIOPT_DEBUG_SOCKET    CLIOPT_DEBUG_SOCKET
 } cliopt_type;
 
 typedef enum {
@@ -1483,6 +1488,7 @@ struct linestruct {
   short *multidata;
   /* Whether the user has placed an anchor at this line. */
   bool has_anchor;
+
   /* TODO: Add `data_length`, `indent_length` and `alloc_length` and
    * strictly enforce these to stop dooing unessesary operations. */
 
@@ -1547,6 +1553,8 @@ struct openfilestruct {
   bool is_glsl_file     : 1;
   bool is_systemd_file  : 1;
   bool is_nanox_file    : 1;
+
+
 
   char *filename;             /* The file's name. */
   linestruct *filetop;        /* The file's first line. */

@@ -21,13 +21,18 @@ static statusbar_undostruct *statusbar_current_undo = NULL;
 static statusbar_undo_type   statusbar_last_action  = STATUSBAR_OTHER;
 
 
+/*=========================================================================================================================================*/
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
+/*=========================================================================================================================================*/
 
 
-/* ----------------------------- Statusbar discard until ----------------------------- */
+/*=====================================================================================*/
+/* ----------------------------- statusbar_discard_until ----------------------------- */
+/*=====================================================================================*/
 
 /* Discard the current redo stack to make the undo-redo path a singular path. */
-static void statusbar_discard_until(const statusbar_undostruct *item) {
+static void
+statusbar_discard_until(const statusbar_undostruct *item) {
   statusbar_undostruct *dropit = statusbar_undotop;
   while (dropit && dropit != item) {
     statusbar_undotop = dropit->next;
@@ -42,7 +47,8 @@ static void statusbar_discard_until(const statusbar_undostruct *item) {
 /* ----------------------------- Statusbar add undo ----------------------------- */
 
 /* Init a new 'statusbar_undostruct *' and add to the stack.  Then based on action perform nessesary actions. */
-static void statusbar_add_undo(statusbar_undo_type action, const char *message) {
+static void
+statusbar_add_undo(statusbar_undo_type action, const char *message) {
   statusbar_undostruct *u = xmalloc(sizeof *u);
   /* Init the new undo item. */
   u->type       = action;
@@ -243,6 +249,7 @@ static bool handle_editing(functionptrtype f) {
     if (cutbuffer) {
       paste_into_answer();
     }
+
   }
   else {
     return FALSE;
@@ -254,9 +261,8 @@ static bool handle_editing(functionptrtype f) {
 /* ----------------------------- Acquire an answer ----------------------------- */
 
 /* Get a string of input at the status-bar prompt. */
-static functionptrtype acquire_an_answer(int *const actual,
-  bool *listed, linestruct **const histlist, functionptrtype refresh_func)
-{
+static functionptrtype
+acquire_an_answer(int *const actual, bool *listed, linestruct **const histlist, functionptrtype refresh_func) {
   /* Whatever the answer was before the user foraged into history. */
   char *stored_string = NULL;
   /* Whether the previous keystroke was an attempt at tab completion. */
@@ -367,6 +373,10 @@ static functionptrtype acquire_an_answer(int *const actual,
         else if (function && !handle_editing(function)) {
           /* When it's a permissible shortcut, run it and done. */
           if (!ISSET(VIEW_MODE) || !changes_something(function)) {
+            unix_socket_debug("!ISSET(VIEW_MODE) || !changes_something(function)");
+            if (function == paste_text) {
+              unix_socket_debug("paste_text");
+            }
             function();
             break;
           }
