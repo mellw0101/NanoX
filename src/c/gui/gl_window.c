@@ -31,7 +31,7 @@ static int last_width  = -1;
 static int last_height = -1;
 
 /* The main window. */
-static GLFWwindow *window = NULL;
+// static GLFWwindow *window = NULL;
 static SDL_Window *gl_win = NULL;
 
 /* The SDL3 main window id. */
@@ -207,9 +207,9 @@ void gl_window_free(void) {
 
 /* ----------------------------- Gl window ----------------------------- */
 
-GLFWwindow *gl_window(void) {
-  return window;
-}
+// GLFWwindow *gl_window(void) {
+//   return window;
+// }
 
 /* ----------------------------- Gl window root ----------------------------- */
 

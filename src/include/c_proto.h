@@ -629,7 +629,7 @@ Ulong strpx_str_index(texture_font_t *const font, const char *const restrict str
 /* ---------------------------------------------------------- gui/cursor.c ---------------------------------------------------------- */
 
 
-void set_cursor_type(GLFWwindow *const window, int type) _NONNULL(1);
+// void set_cursor_type(GLFWwindow *const window, int type) _NONNULL(1);
 
 
 /* ---------------------------------------------------------- gui/font.c ---------------------------------------------------------- */
@@ -918,7 +918,7 @@ int monitor_fastest_refresh_rate_from_array(int *const rates, int count);
 /* ----------------------------- Monitor mode ----------------------------- */
 // const SDL_DisplayMode *monitor_mode(void);
 /* ----------------------------- Monitor refresh rate ----------------------------- */
-int monitor_refresh_rate(void);
+// int monitor_refresh_rate(void);
 
 
 /* ---------------------------------------------------------- gui/promptmenu.c ---------------------------------------------------------- */
@@ -1804,7 +1804,7 @@ void gl_window_init(void);
 /* ----------------------------- Gl window free ----------------------------- */
 void gl_window_free(void);
 /* ----------------------------- Gl window ----------------------------- */
-GLFWwindow *gl_window(void);
+// GLFWwindow *gl_window(void);
 /* ----------------------------- Gl window root ----------------------------- */
 Element *gl_window_root(void);
 /* ----------------------------- Gl window width ----------------------------- */

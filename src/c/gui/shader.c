@@ -232,7 +232,7 @@ static Uint shader_create(Ulong len, Uint *const parts) {
 /* ----------------------------- Shader set openGL version ----------------------------- */
 
 /* Inform glfw about the openGL version we are using. */
-static inline void shader_set_openGL_version(int glsl_major, int glsl_minor, bool core) {
+static inline void shader_set_openGL_version(int glsl_major, int glsl_minor, bool _UNUSED core) {
   switch (glsl_major) {
     case 1: {
       switch (glsl_minor) {
@@ -292,11 +292,11 @@ static inline void shader_set_openGL_version(int glsl_major, int glsl_minor, boo
       die("\nGLSL: Major version: '%d' does not exist.\n", glsl_major);
     }
   }
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, openGL_major);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, openGL_minor);
-  if (core) {
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  }
+  // glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, openGL_major);
+  // glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, openGL_minor);
+  // if (core) {
+    // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  // }
 }
 
 /* ----------------------------- Mat4x4 orthographic ----------------------------- */

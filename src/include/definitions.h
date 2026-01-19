@@ -746,7 +746,10 @@ typedef enum {
 // typedef struct Menu          Menu;
 // typedef struct ContextMenu   ContextMenu;
 
-typedef struct EditorTb      EditorTb;
+// typedef struct EditorTb      EditorTb;
+
+// typedef struct 
+
 typedef struct EditorText    EditorText;
 
 /* Some typedefs. */

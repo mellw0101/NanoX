@@ -152,17 +152,17 @@ int monitor_fastest_refresh_rate_from_array(int *const rates, int count) {
 
 /* ----------------------------- Monitor refresh rate ----------------------------- */
 
-int monitor_refresh_rate(void) {
-  int count;
-  int rate = 60;
-  GLFWmonitor **monitors;
-  /* Failure to get monitors means this should not be run at all as glfw has not been init. */
-  ALWAYS_ASSERT_MSG((monitors = glfwGetMonitors(&count)), "GLFW needs to be init");
-  /* Go through all monitors. */
-  for (int i=0; i<count; ++i) {
-    if (glfwGetVideoMode(monitors[i])->refreshRate > rate) {
-      rate = glfwGetVideoMode(monitors[i])->refreshRate;
-    }
-  }
-  return rate;
-}
+// int monitor_refresh_rate(void) {
+//   int count;
+//   int rate = 60;
+//   GLFWmonitor **monitors;
+//   /* Failure to get monitors means this should not be run at all as glfw has not been init. */
+//   ALWAYS_ASSERT_MSG((monitors = glfwGetMonitors(&count)), "GLFW needs to be init");
+//   /* Go through all monitors. */
+//   for (int i=0; i<count; ++i) {
+//     if (glfwGetVideoMode(monitors[i])->refreshRate > rate) {
+//       rate = glfwGetVideoMode(monitors[i])->refreshRate;
+//     }
+//   }
+//   return rate;
+// }
