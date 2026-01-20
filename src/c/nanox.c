@@ -181,7 +181,7 @@ static void restore_terminal(void) {
 
 /* Save `file` under the given name (or `nanox.<pid>` when nameless) with
  * suffix `.save`.  If needed, the name is further suffixed to be unique. */
-/* static */ void emergency_save_for(openfilestruct *const file, const char *const restrict name) {
+static void emergency_save_for(openfilestruct *const file, const char *const restrict name) {
   ASSERT(file);
   ASSERT(name);
   char *plain  = (*name ? copy_of(name) : fmtstr("nanox.%u", getpid()));
@@ -196,16 +196,12 @@ static void restore_terminal(void) {
   free(target);
 }
 
-/* Save the currently open buffer under the given name (or `nanox.<pid>` when nameless) with suffix
- * `.save`.  If needed, the name is further suffixed to be unique.  Note that this is `context-safe`. */
-/* static */ void emergency_save(const char *const restrict name) {
-  emergency_save_for(CTX_OF, name);
-}
-
 /* ----------------------------- Print opt ----------------------------- */
 
 /* Print the usage line for the given option to the screen. */
-/* static */ void print_opt(const char *const restrict sflag, const char *const restrict lflag, const char *const restrict description) {
+static void print_opt(const char *const restrict sflag,
+  const char *const restrict lflag, const char *const restrict description)
+{
   ASSERT(sflag);
   ASSERT(lflag);
   ASSERT(description);

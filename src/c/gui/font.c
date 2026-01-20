@@ -53,7 +53,8 @@ struct Font {
   /* The freetype font type. */
   texture_font_t  *font;
 
-  /* This represents a deviation from the base separation between rows.  Note that this can be negative or positive. */
+  /* This represents a deviation from the base separation
+   * between rows.  Note that this can be negative or positive. */
   long line_height;
 };
 
@@ -116,7 +117,7 @@ static inline void font_internal_load_font(Font *const f) {
 /* ----------------------------- Font internal load fallback ----------------------------- */
 
 static inline void font_internal_load_fallback(Font *const f) {
-  ASSERT_FONT;
+  ASSERT(f);
   ALWAYS_ASSERT_MSG(file_exists(FALLBACK_FONT_PATH),
     "\nPlease re-compile NanoX using the install script.\n "
     "  The fallback gui font does not exist in the correct location `/etc/nanox/fonts/unifont.ttf`.\n"

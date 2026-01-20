@@ -82,7 +82,7 @@ static void read_the_list(const char *path, DIR *dir) {
 
 /* ----------------------------- Reselect ----------------------------- */
 
-/* Reselect the given file or directory name, if it still exists.  Note: Make static later. */
+/* Reselect the given file or directory name, if it still exists. */
 static void reselect(const char *const name) {
   Ulong looking_at = 0;
   while (looking_at < list_length && strcmp(filelist[looking_at], name) != 0) {
@@ -240,7 +240,8 @@ static char *browse(char *path) {
         lastmessage = VACUUM;
         free(present_path);
         free(path);
-        napms(1200);
+        hiactime_msleep(1200);
+        // napms(1200);
         return NULL;
       }
       path         = xstrcpy(path, present_path);

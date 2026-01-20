@@ -1849,11 +1849,6 @@ void gl_loop(void);
 
 /* static */ void mouse_init(void);
 
-/* static */ void emergency_save_for(openfilestruct *const file, const char *const restrict name);
-/* static */ void emergency_save(const char *const restrict name);
-
-/* static */ void print_opt(const char *const restrict sflag, const char *const restrict lflag, const char *const restrict description);
-
 /* static */ void signal_init(void);
 
 /* static */ void suck_up_input_and_paste_it(void);

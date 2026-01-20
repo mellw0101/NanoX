@@ -83,6 +83,14 @@
 # define _UNUSED_IN_DEBUG _UNUSED
 #endif
 
+/* ----------------------------- Builtins ----------------------------- */
+
+/* Enable direct __builtin* calls when they exists. */
+#ifdef free
+# undef free
+#endif
+#define free  FREE
+
 /* ----------------------------- color.c ----------------------------- */
 
 #define COLOR_8BIT(r, g, b, a)  MAX((r / 255.0f), 1), MAX((g / 255.0f), 1), MAX((b / 255.0f), 1), MAX(a, 1)

@@ -1496,34 +1496,6 @@ void add_undo_for(openfilestruct *const file, undo_type action, const char *cons
   ASSERT(file);
   linestruct *thisline = file->current;
   undostruct *u = undostruct_create_for(file, &action);
-  // undostruct *u = xmalloc(sizeof(*u));
-  // /* Initialize the newly allocated undo item. */
-  // u->type        = action;
-  // u->strdata     = NULL;
-  // u->cutbuffer   = NULL;
-  // u->head_lineno = thisline->lineno;
-  // u->head_x      = file->current_x;
-  // u->tail_lineno = thisline->lineno;
-  // u->tail_x      = file->current_x;
-  // u->wassize     = file->totsize;
-  // u->newsize     = file->totsize;
-  // u->grouping    = NULL;
-  // u->xflags      = 0;
-  // /* Blow away any undone items. */
-  // discard_until_for(file, file->current_undo);
-  // /* If some action caused automatic long-line wrapping, insert the SPLIT_BEGIN item underneath
-  //  * that action's undo item.  Otherwise, just add the new item to the top of the undo stack. */
-  // if (u->type == SPLIT_BEGIN) {
-  //   action     = file->undotop->type;
-  //   u->wassize = file->undotop->wassize;
-  //   u->next    = file->undotop->next;
-  //   file->undotop->next = u;
-  // }
-  // else {
-  //   u->next = file->undotop;
-  //   file->undotop      = u;
-  //   file->current_undo = u;
-  // }
   /* Record the info needed to be able to undo each possible action. */
   switch (u->type) {
     case ADD: {
@@ -2266,7 +2238,7 @@ void compensate_leftward_for(openfilestruct *const file, linestruct *const line,
       file->current_x -= leftshift;
     }
     /* Set placewewant for file. */
-    set_pww_for(file);
+    SET_PWW(file);
   }
 }
 
