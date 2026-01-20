@@ -342,9 +342,10 @@ static void die_curses(void) {
         index = 0;
       }
       else if ((0x20 <= input && input <= 0xFF && input != DEL_CODE) || input == '\t') {
-        line->data = xrealloc(line->data, (index + 2));
-        line->data[index++] = input;
-        line->data[index]   = '\0';
+        line->data = xnstrncat(line->data, index, (char *)&input, 1);
+        // line->data = xrealloc(line->data, (index + 2));
+        // line->data[index++] = input;
+        // line->data[index]   = '\0';
       }
       else if (input != BRACKETED_PASTE_MARKER) {
         beep();
@@ -401,7 +402,8 @@ linestruct *make_new_node(linestruct *prevnode)  {
 
 /* ----------------------------- Splice node ----------------------------- */
 
-/* Splice a new node into an existing linked list of linestructs for `file`, or `NULL` when lines are not related to an `openfilestruct *`. */
+/* Splice a new node into an existing linked list of linestructs for
+ * `file`, or `NULL` when lines are not related to an `openfilestruct *`. */
 void splice_node_for(openfilestruct *const file, linestruct *const after, linestruct *const node) {
   ASSERT(after);
   ASSERT(node);
@@ -499,7 +501,8 @@ linestruct *copy_node(const linestruct *const src) {
 
 /* ----------------------------- Copy buffer top bot ----------------------------- */
 
-/* Duplicate an entire linked list of linestructs, and assign the head to `*top` and when the caller wants the tail to `*bot`. */
+/* Duplicate an entire linked list of linestructs, and assign the
+ * head to `*top` and when the caller wants the tail to `*bot`. */
 void copy_buffer_top_bot(const linestruct *src, linestruct **const top, linestruct **const bot) {
   ASSERT(src);
   ASSERT(top);

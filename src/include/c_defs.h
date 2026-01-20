@@ -1,5 +1,6 @@
 #pragma once
 
+#define _USE_ALL_BUILTINS
 
 /* ---------------------------------------------------------- Include's ---------------------------------------------------------- */
 
@@ -12,7 +13,6 @@
 
 #include <fcio/proto.h>
 #include <fcio/statics.h>
-
 
 /* NanoX */
 #include "../../config.h"
@@ -82,14 +82,6 @@
 #else
 # define _UNUSED_IN_DEBUG _UNUSED
 #endif
-
-/* ----------------------------- Builtins ----------------------------- */
-
-/* Enable direct __builtin* calls when they exists. */
-#ifdef free
-# undef free
-#endif
-#define free  FREE
 
 /* ----------------------------- color.c ----------------------------- */
 

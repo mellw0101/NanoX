@@ -179,10 +179,10 @@ static void promptmenu_dir_search(void) {
       directory_get(answer, &dir);
     }
     /* Otherwise, try the parent directory when there is a preceding slash. */
-    else if ((last_slash = STRRCHR(answer, '/'))) {
+    else if ((last_slash = strrchr(answer, '/'))) {
       dirpath = measured_copy(answer, ((last_slash - answer) + 1));
       directory_get(dirpath, &dir);
-      FREE(dirpath);
+      free(dirpath);
     }
     /* Otherwise, when non absolute path is used, try pwd. */
     /* else {
@@ -566,8 +566,11 @@ void promptmenu_routine_enter(void) {
       break;
     }
     default: {
-      if (STRCASECMP(answer, "open file") == 0) {
+      if (strcasecmp(answer, "open file") == 0) {
         promptmenu_ask(PROMPTMENU_TYPE_FILE_OPEN);
+      }
+      else if (strcasecmp(answer, "syntaxfile_test_read") == 0) {
+        syntaxfile_test_read();
       }
       else {
         promptmenu_close();

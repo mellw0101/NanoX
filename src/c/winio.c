@@ -130,10 +130,14 @@ static void read_keys_from(WINDOW *const frame) {
   bool  timed    = FALSE;
   /* Before reading the first keycode, display any pending screen updates. */
   doupdate();
-  if (reveal_cursor && (!spotlighted || ISSET(SHOW_CURSOR) || currmenu == MSPELL) && (LINES > 1 || lastmessage <= HUSH)) {
+  if (reveal_cursor
+  && (!spotlighted || ISSET(SHOW_CURSOR) || currmenu == MSPELL) && (LINES > 1 || lastmessage <= HUSH))
+  {
     curs_set(1);
   }
-  if (currmenu == MMAIN && (((ISSET(MINIBAR) || ISSET(ZERO) || LINES == 1) && lastmessage > HUSH && lastmessage < ALERT && lastmessage != INFO) || spotlighted)) {
+  if (currmenu == MMAIN && (((ISSET(MINIBAR) || ISSET(ZERO) || LINES == 1)
+  && lastmessage > HUSH && lastmessage < ALERT && lastmessage != INFO) || spotlighted))
+  {
     timed = TRUE;
     halfdelay(ISSET(QUICK_BLANK) ? 8 : 15);
     /* Counteract a side effect of half-delay mode. */
@@ -200,7 +204,8 @@ static void read_keys_from(WINDOW *const frame) {
   nodelay(frame, TRUE);
   /* After an ESC, when ncurses does not translate escape sequences, give the keyboard some time to bring the next code to ncurses. */
   if (input == ESC_CODE && (linger_after_escape || ISSET(RAW_SEQUENCES))) {
-    napms(20);
+    // napms(20);
+    hiactime_nsleep(MILLI_TO_NANO(20));
   }
   while (TRUE) {
     if (recording) {

@@ -96,7 +96,8 @@ static inline void font_internal_set_path(Font *const f, const char *const restr
 
 /* ----------------------------- Font internal load atlas ----------------------------- */
 
-/* Free the internal `texture_atlas_t` of `f` if it exists and create a new one using the internal `atlas_size`. */
+/* Free the internal `texture_atlas_t` of `f` if it exists
+ * and create a new one using the internal `atlas_size`. */
 static inline void font_internal_load_atlas(Font *const f) {
   ASSERT(f);
   texture_atlas_free(f->atlas);
