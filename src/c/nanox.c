@@ -342,7 +342,7 @@ static void die_curses(void) {
         index = 0;
       }
       else if ((0x20 <= input && input <= 0xFF && input != DEL_CODE) || input == '\t') {
-        line->data = xnstrncat(line->data, index, (char *)&input, 1);
+        line->data = xnstrncat(line->data, index++, (char *)&input, 1);
         // line->data = xrealloc(line->data, (index + 2));
         // line->data[index++] = input;
         // line->data[index]   = '\0';
