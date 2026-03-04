@@ -394,7 +394,7 @@ void             shortcut_init(void);
 // void        renumber_from(linestruct *line) _NOTHROW;
 // void        print_view_warning(void) _NOTHROW;
 // bool        in_restricted_mode(void) _NOTHROW;
-void        suggest_ctrlT_ctrlZ(void) _NOTHROW;
+// void        suggest_ctrlT_ctrlZ(void) _NOTHROW;
 // void        finish(void) _NOTHROW _NO_RETURN;
 // void        close_and_go(void);
 // void        do_exit(void);
@@ -738,7 +738,7 @@ void  lock_pthread_mutex(pthread_mutex_t *mutex, bool lock) _NOTHROW;
 void  pause_all_sub_threads(bool pause) _NOTHROW;
 void  init_queue_task(void) _NOTHROW;
 int   task_queue_count(void) _NOTHROW;
-void  shutdown_queue(void) _NOTHROW;
+// void  shutdown_queue(void) _NOTHROW;
 void  submit_task(task_functionptr_t function, void *arg, void **result, callback_functionptr_t callback) _NOTHROW;
 void  stop_thread(Uchar thread_id) _NOTHROW;
 Uchar thread_id_from_pthread(pthread_t *thread) _NOTHROW;
@@ -753,7 +753,7 @@ void send_signal_to_main_thread(callback_functionptr_t func, void *arg) _NOTHROW
 void init_event_handler(void) _NOTHROW;
 void enqueue_callback(callback_functionptr_t callback, void *result) _NOTHROW;
 void prosses_callback_queue(void) _NOTHROW;
-void cleanup_event_handler(void) _NOTHROW;
+// void cleanup_event_handler(void) _NOTHROW;
 
 
 /* ---------------------------------------------------------- tasks.cpp ---------------------------------------------------------- */
@@ -1026,7 +1026,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
 
 bool lookup_coloropt(const char *color, int len, int *color_opt) _NOTHROW;
 void init_cfg(void);
-void cleanup_cfg(void) _NOTHROW;
+// void cleanup_cfg(void) _NOTHROW;
 
 /* bash_lsp.cpp */
 void get_env_path_binaries(void);

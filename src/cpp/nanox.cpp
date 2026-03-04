@@ -157,60 +157,60 @@ main_thread_t *main_thread = NULL;
 // }
 
 /* Say how the user can achieve suspension (when they typed ^Z). */
-void suggest_ctrlT_ctrlZ(void) _NOTHROW {
-  if (first_sc_for(MMAIN, do_execute)    && first_sc_for(MMAIN, do_execute)->keycode    == 0x14
-  &&  first_sc_for(MEXECUTE, do_suspend) && first_sc_for(MEXECUTE, do_suspend)->keycode == 0x1A)
-  {
-    statusline(AHEM, _("To suspend, type ^T^Z"));
-  }
-}
+// void suggest_ctrlT_ctrlZ(void) _NOTHROW {
+//   if (first_sc_for(MMAIN, do_execute)    && first_sc_for(MMAIN, do_execute)->keycode    == 0x14
+//   &&  first_sc_for(MEXECUTE, do_suspend) && first_sc_for(MEXECUTE, do_suspend)->keycode == 0x1A)
+//   {
+//     statusline(AHEM, _("To suspend, type ^T^Z"));
+//   }
+// }
 
 /* Make sure the cursor is visible, then exit from curses mode, disable
  * bracketed-paste mode, and restore the original terminal settings. */
-static void restore_terminal(void) _NOTHROW {
-  /* When using our tui. */
-  if (ISSET(NO_NCURSES)) {
-    tui_curs_visible(TRUE);
-    tui_disable_bracketed_pastes();
-  }
-  /* Otherwise, when using ncurses. */
-  else {
-    curs_set(1);
-    endwin();
-    printf("\x1B[?2004l");
-  }
-  tcsetattr(STDIN_FILENO, TCSANOW, &original_state);
-}
+// static void restore_terminal(void) _NOTHROW {
+//   /* When using our tui. */
+//   if (ISSET(NO_NCURSES)) {
+//     tui_curs_visible(TRUE);
+//     tui_disable_bracketed_pastes();
+//   }
+//   /* Otherwise, when using ncurses. */
+//   else {
+//     curs_set(1);
+//     endwin();
+//     printf("\x1B[?2004l");
+//   }
+//   tcsetattr(STDIN_FILENO, TCSANOW, &original_state);
+// }
 
 /* Exit normally: restore terminal state and report any startup errors. */
-void finish(void) _NOTHROW {
-  /* Blank the status bar and (if applicable) the shortcut list. */
-  blank_statusbar();
-  blank_bottombars();
-  if (ISSET(NO_NCURSES)) {
-    tui_curs_visible(TRUE);
-    tcsetattr(STDIN_FILENO, TCSAFLUSH, &original_state);
-    tui_disable_bracketed_pastes();
-    nevhandler_stop(tui_handler, 0);
-    nfdreader_stop(nfdreader_stdin);
-    nevhandler_free(tui_handler);
-  }
-  else {
-    wrefresh(footwin);
-    /* Deallocate the two or three subwindows. */
-    if (topwin) {
-      delwin(topwin);
-    }
-    delwin(midwin);
-    delwin(footwin);
-    restore_terminal();
-  }
-  display_rcfile_errors();
-  cleanup_event_handler();
-  shutdown_queue();
-  cleanup_cfg();
-  exit(0);
-}
+// void finish(void) _NOTHROW {
+//   /* Blank the status bar and (if applicable) the shortcut list. */
+//   blank_statusbar();
+//   blank_bottombars();
+//   if (ISSET(NO_NCURSES)) {
+//     tui_curs_visible(TRUE);
+//     tcsetattr(STDIN_FILENO, TCSAFLUSH, &original_state);
+//     tui_disable_bracketed_pastes();
+//     nevhandler_stop(tui_handler, 0);
+//     nfdreader_stop(nfdreader_stdin);
+//     nevhandler_free(tui_handler);
+//   }
+//   else {
+//     wrefresh(footwin);
+//     /* Deallocate the two or three subwindows. */
+//     if (topwin) {
+//       delwin(topwin);
+//     }
+//     delwin(midwin);
+//     delwin(footwin);
+//     restore_terminal();
+//   }
+//   display_rcfile_errors();
+//   cleanup_event_handler();
+//   shutdown_queue();
+//   cleanup_cfg();
+//   exit(0);
+// }
 
 /* Close the current buffer, freeing its memory. */
 // void close_and_go(void) {
@@ -607,6 +607,7 @@ void do_exit(void) {
 /* Read whatever comes from standard input into a new buffer. */
 static bool scoop_stdin(void) {
   FILE *stream;
+  const char *errno_str;
   restore_terminal();
   /* When input comes from a terminal, show a helpful message. */
   if (isatty(STDIN_FILENO)) {
@@ -615,7 +616,7 @@ static bool scoop_stdin(void) {
   /* Open standard input. */
   stream = fopen("/dev/stdin", "rb");
   if (!stream) {
-    const char *errno_str = strerror(errno);
+    errno_str = strerror(errno);
     terminal_init();
     doupdate();
     statusline(ALERT, _("Failed to open stdin: %s"), errno_str);
@@ -769,12 +770,7 @@ static void toggle_this(const int flag) {
   focusing = FALSE;
   switch (flag) {
     case ZERO : {
-      if (ISSET(NO_NCURSES)) {
-        window_init();
-      }
-      else {
-        window_init();
-      }
+      window_init();
       draw_all_subwindows();
       return;
     }
@@ -1562,6 +1558,10 @@ static void init_tui(void) {
 }
 
 int main(int argc, char **argv) {
+  int stdin_flags;
+  /* Whether the quoting regex was compiled successfully. */
+  int quoterc;
+  vt_stat dummy;
   fcio_set_die_callback(die);
   initcheck_utf8();
   init_queue_task();
@@ -1613,13 +1613,6 @@ int main(int argc, char **argv) {
     (unix_socket_fd < 0) ? 0 : close(unix_socket_fd);
   });
   init_cfg();
-  // set_c_die_callback(die);
-  int  stdin_flags;
-  // bool ignore_rcfiles = FALSE; /* Whether to ignore the nanorc files. */
-  // bool fill_used      = FALSE; /* Was the fill option used on the command line? */
-  // int  hardwrap       = -2;    /* Becomes 0 when --nowrap and 1 when --breaklonglines is used. */
-  int  quoterc;                /* Whether the quoting regex was compiled successfully. */
-  vt_stat dummy;
   /* Check whether we're running on a Linux console. */
   on_a_vt = !ioctl(STDOUT_FILENO, VT_GETSTATE, &dummy);
   /* Back up the terminal settings so that they can be restored. */
@@ -1659,81 +1652,8 @@ int main(int argc, char **argv) {
   if (*(tail(argv[0])) == 'r') {
     SET(RESTRICTED);
   }
+  /* Handle all cli-arguments. */
   proccess_cli_arguments(&argc, argv);
-  // arguments_proccess_flags(&argc, argv);
-  // arguments_proccess_cliopts(&argc, argv);
-  /* Check for cmd flags. */
-  // for (int i = 1; i < argc; ++i) {
-  //   // const Uint flag = retriveFlagFromStr(argv[i]);
-  //   // flag ? SET(flag) : 0;
-  //   const Uint cliCmd = retriveCliOptionFromStr(argv[i]);
-  //   cliCmd &CLI_OPT_VERSION ? version() : void();
-  //   cliCmd &CLI_OPT_HELP ? usage() : void();
-  //   cliCmd &CLI_OPT_IGNORERCFILE ? ignore_rcfiles = TRUE : 0;
-  //   cliCmd &CLI_OPT_BACKUPDIR ? (i++ < argc) ? backup_dir = realloc_strcpy(backup_dir, argv[i]) : 0 : 0;
-  //   cliCmd &CLI_OPT_WORDCHARS ? (i++ < argc) ? word_chars = realloc_strcpy(word_chars, argv[i]) : 0 : 0;
-  //   cliCmd &CLI_OPT_SYNTAX ? (i++ < argc) ? syntaxstr = realloc_strcpy(syntaxstr, argv[i]) : 0 : 0;
-  //   cliCmd &CLI_OPT_RCFILE ? (i++ < argc) ? custom_nanorc = realloc_strcpy(custom_nanorc, argv[i]) : 0 : 0;
-  //   cliCmd &CLI_OPT_BREAKLONGLINES ? hardwrap = 1 : 0;
-  //   cliCmd &CLI_OPT_SPELLER ? (i++ < argc) ? alt_speller = realloc_strcpy(alt_speller, argv[i]) : 0 : 0;
-  //   cliCmd &CLI_OPT_SYNTAX ? (i++ < argc) ? syntaxstr = realloc_strcpy(syntaxstr, argv[i]) : 0 : 0;
-  //   if (cliCmd & CLI_OPT_OPERATINGDIR) {
-  //     if (++i < argc) {
-  //       operating_dir = realloc_strcpy(operating_dir, argv[i]);
-  //     }
-  //   }
-  //   if (cliCmd & CLI_OPT_LISTSYNTAX) {
-  //     if (!ignore_rcfiles) {
-  //       do_rcfiles();
-  //     }
-  //     if (syntaxes) {
-  //       list_syntax_names();
-  //     }
-  //     exit(0);
-  //   }
-  //   if (cliCmd & CLI_OPT_FILL) {
-  //     if (++i < argc) {
-  //       if (!parse_num(argv[i], &fill) || fill <= 0) {
-  //         fprintf(stderr, _("Requested fill size \"%s\" is invalid"), optarg);
-  //         fprintf(stderr, "\n");
-  //         exit(1);
-  //       }
-  //       fill_used = TRUE;
-  //     }
-  //   }
-  //   if (cliCmd & CLI_OPT_TABSIZE) {
-  //     if (++i < argc) {
-  //       if (!parse_num(argv[i], &tabsize) || tabsize <= 0) {
-  //         fprintf(stderr, _("Requested tab size \"%s\" is invalid"), argv[i]);
-  //         fprintf(stderr, "\n");
-  //         exit(1);
-  //       }
-  //       continue;
-  //     }
-  //   }
-  //   if (cliCmd & CLI_OPT_GUIDESTRIPE) {
-  //     if (++i < argc) {
-  //       if (!parse_num(argv[i], &stripe_column) || stripe_column <= 0) {
-  //         fprintf(stderr, _("Guide column \"%s\" is invalid"), optarg);
-  //         fprintf(stderr, "\n");
-  //         exit(1);
-  //       }
-  //     }
-  //   }
-  //   if (cliCmd & CLI_OPT_GUI) {
-  //   #ifdef HAVE_GLFW
-  //     SET(USING_GUI);
-  //   #else
-  //     die("NanoX was compiled without gui support.\n");
-  //   #endif
-  //   }
-  //   if (cliCmd & CLI_OPT_SAFE) {
-  //     UNSET(EXPERIMENTAL_FAST_LIVE_SYNTAX);
-  //   }
-  //   if (cliCmd & CLI_OPT_TEST) {
-  //     SET(NO_NCURSES);
-  //   }
-  // }
   /* Curses needs TERM; if it is unset, try falling back to a VT220. */
   if (!getenv("TERM")) {
     putenv((char *)"TERM=vt220");

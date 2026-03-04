@@ -165,7 +165,7 @@ static void enable_mouse_support(void) {
 
 /* Make sure the cursor is visible, then exit from curses mode, disable
  * bracketed-paste mode, and restore the original terminal settings. */
-static void restore_terminal(void) {
+/* static */ void restore_terminal(void) {
   /* For now we only perform any action when in curses mode, as we will probebly also
    * take control of the terminal later when in tui mode to create a debugging interface. */
   if (IN_CURSES_CTX) {
@@ -923,9 +923,9 @@ void handle_hupterm(int _UNUSED signal) {
 
 /* Handler for SIGSEGV (segfault) and SIGABRT (abort). */
 void handle_crash(int _UNUSED_IN_DEBUG signal) {
-# if !defined(DEBUG)
-  void *buffer[256];
-  int size = backtrace(buffer, ARRAY_SIZE(buffer));
+#if !defined(DEBUG)
+  void  *buffer[256];
+  int    size    = backtrace(buffer, ARRAY_SIZE(buffer));
   char **symbols = backtrace_symbols(buffer, size);
   /* When we are dying from a signal, try to print the last ran functions. */
   for (int i=0; i<size; ++i) {
@@ -945,9 +945,9 @@ void handle_crash(int _UNUSED_IN_DEBUG signal) {
       break;
     }
   }
-# else
+#else
   ;
-# endif
+#endif
 }
 
 /* ----------------------------- Inject ----------------------------- */
@@ -1155,24 +1155,20 @@ void die(const char *const restrict format, ...) {
 /* Display the verison number of NanoX, a copyright notice for the original creators
  * of the forked version of `GNU nano`.  And also some information about this fork. */
 void version(void) {
-  writef(_("NanoX (nx), version %s\n"), VERSION);
-  writef(VERSION_TEXT, REVISION);
-  // writef("  'NanoX %s' is a fork of `GNU nano v8.0-44-gef1c9b9f` from git source code.\n", REVISION);
-  // writef("  First converted from 'C' into 'C++', and modernized to include mush more\n");
-  // writef("  modern features, sush as (whole line moving / selection region moving),\n");
-  // writef("  mush better mark state tracking, and also a new openGL based gui and mush more.\n");
-  // writef("  Then converted back into 'C' once again.\n");
-  writef(_("  (C) %s the Free Software Foundation and various contributors\n"), "2024");
+  printf(_("NanoX (nx), version %s\n"), VERSION);
+  printf(VERSION_TEXT, REVISION);
+  printf(_("  (C) %s the Free Software Foundation and various contributors\n"), "2024");
 # ifdef DEBUG
-  writef(_("  Compiled options:"));
-  writef("    --enable-dubug");
+  printf(_("  Compiled options:"));
+  printf("    --enable-dubug");
 # endif
-  writef("\n");
+  printf("\n");
   exit(0);
 }
 
 /* ----------------------------- Usage ----------------------------- */
 
+/* TODO: Update this. */
 /* Explain how to properly use `NanoX` and it's `command-line-options`. */
 void usage(void) {
   writef(_("Usage: <%s|%s|%s> [OPTIONS] [[+LINE[,COLUMN]] FILE]...\n\n"), PROJECT_NAME, PROJECT_SHORTHAND_1, PROJECT_SHORTHAND_2);
@@ -1271,3 +1267,42 @@ const char *menu_to_name(Uint menu) {
   }
   return "Ehhh... -- What menu are you in???";
 }
+
+/* ----------------------------- Suggest Ctrl-T Ctrl-Z ----------------------------- */
+
+/* Say how the user can achive suspension (when they typed ^Z). */
+void suggest_ctrlT_ctrlZ(void) {
+  const keystruct *ks_exec;
+  const keystruct *ks_susp;
+  if ((ks_exec = first_sc_for(MMAIN, do_execute))    && ks_exec->keycode == 0x14
+  &&  (ks_susp = first_sc_for(MEXECUTE, do_suspend)) && ks_susp->keycode == 0x1A)
+  {
+    statusline(AHEM, _("To suspend, type ^T^Z"));
+  }
+}
+
+/* ----------------------------- Finish ----------------------------- */
+
+/* Exit normally: restore terminal state and report any startup errors. */
+void finish(void) {
+  /* Blank the status-bar and (if applicable) the shortcut-list. */
+  blank_statusbar();
+  blank_bottombars();
+  /* TODO: This needs to be checked.  As in, we must not init these, when using the gui. */
+  if (IN_CURSES_CTX) {
+    wrefresh(footwin);
+    /* Deallocate the two or three sub-windows. */
+    if (topwin) {
+      delwin(topwin);
+    }
+    delwin(midwin);
+    delwin(footwin);
+    restore_terminal();
+  }
+  display_rcfile_errors();
+  cleanup_event_handler();
+  shutdown_queue();
+  cleanup_cfg();
+  exit(0);
+}
+

@@ -1849,6 +1849,8 @@ void gl_loop(void);
 
 /* static */ void mouse_init(void);
 
+/* static */ void restore_terminal(void);
+
 /* static */ void signal_init(void);
 
 /* static */ void suck_up_input_and_paste_it(void);
@@ -1936,6 +1938,10 @@ void usage(void) _NO_RETURN;
 Uint name_to_menu(const char *const restrict name);
 /* ----------------------------- Menu to name ----------------------------- */
 const char *menu_to_name(Uint menu);
+/* ----------------------------- Suggest Ctrl-T Ctrl-Z ----------------------------- */
+void suggest_ctrlT_ctrlZ(void);
+/* ----------------------------- Finish ----------------------------- */
+void finish(void) _NO_RETURN;
 
 
 /* ---------------------------------------------------------- Defined in C++ ---------------------------------------------------------- */
@@ -1944,12 +1950,16 @@ const char *menu_to_name(Uint menu);
 void render_line_text(int row, const char *str, linestruct *line, Ulong from_col) __THROW;
 void apply_syntax_to_line(const int row, const char *converted, linestruct *line, Ulong from_col);
 // keystruct *strtosc(const char *input);
-void finish(void) __THROW _NO_RETURN;
+// void finish(void) _NO_RETURN;
 void syntax_check_file(openfilestruct *file);
 
 bool wanted_to_move(functionptrtype f);
 bool changes_something(functionptrtype f);
 void do_exit(void);
+
+void cleanup_event_handler(void);
+void shutdown_queue(void);
+void cleanup_cfg(void);
 
 
 _END_C_LINKAGE

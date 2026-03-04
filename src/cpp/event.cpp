@@ -80,6 +80,6 @@ static void cleanup_callback_queue(void) _NOTHROW {
 
 /* This is the main cleanup function for the event handler, this is used to clean up all subfunctions
  * of the event handler, this way we can ensure everything gets cleaned in the correct order. */
-void cleanup_event_handler(void) _NOTHROW {
+void cleanup_event_handler(void) /* _NOTHROW */ {
   cleanup_callback_queue();
 }
