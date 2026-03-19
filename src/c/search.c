@@ -543,7 +543,8 @@ void go_looking_for(CTX_ARGS) {
   edit_redraw_for(STACK_CTX, was_current, CENTERING);
 }
 
-/* Search for the global string 'last_search' in the currently open buffer.  Inform the user when the string occurs only once. */
+/* Search for the global string 'last_search' in the currently
+ * open buffer.  Inform the user when the string occurs only once. */
 void go_looking(void) {
   CTX_CALL(go_looking_for);
 }
@@ -557,7 +558,8 @@ void do_findprevious_for(CTX_ARGS) {
   do_research_for(STACK_CTX);
 }
 
-/* Search in the backward direction for the next occurrence in the currently open buffer.  Note that this is `context-safe` */
+/* Search in the backward direction for the next occurrence in
+ * the currently open buffer.  Note that this is `context-safe` */
 void do_findprevious(void) {
   CTX_CALL(do_findprevious_for);
 }
@@ -571,7 +573,8 @@ void do_findnext_for(CTX_ARGS) {
   do_research_for(STACK_CTX);
 }
 
-/* Search in the forward direction for the next occurrence in the currently open buffer.  Note that this is `context-safe` */
+/* Search in the forward direction for the next occurrence in
+ * the currently open buffer.  Note that this is `context-safe` */
 void do_findnext(void) {
   CTX_CALL(do_findnext_for);
 }
@@ -990,4 +993,138 @@ void to_next_anchor_for(CTX_ARGS) {
 /* Jump to the first anchor after the current line in the currently open buffer.  Wrap around at to bottom. */
 void to_next_anchor(void) {
   CTX_CALL(to_next_anchor_for);
+}
+
+/* ----------------------------- Find a bracket ----------------------------- */
+
+/* Search, starting from the current position, for any of the two characters in `bracket_pair`.  If reverse is `TRUE`,
+ * search backwards, otherwise forwards.  Return `TRUE` when one of the brackets was found, and `FALSE` otherwise. */
+bool find_a_bracket_for(bool reverse,
+  const char *const restrict bracket_pair, linestruct **const outline, Ulong *const outx)
+{
+  ASSERT(bracket_pair);
+  ASSERT(outline);
+  ASSERT(outx);
+  linestruct *line = *outline;
+  const char *pointer;
+  const char *found;
+  if (reverse) {
+    /* First step away from the current bracket. */
+    if (!*outx) {
+      DLIST_ADV_PREV(line);
+      /* We began at the top of the file. */
+      if (!line) {
+        return FALSE;
+      }
+      pointer = (line->data + strlen(line->data));
+    }
+    else {
+      pointer = (line->data + step_left(line->data, *outx));
+    }
+    /* Now seek for any of the two brackets we are intrested in. */
+    while (!(found = mbrevstrpbrk(line->data, bracket_pair, pointer))) {
+      DLIST_ADV_PREV(line);
+      if (!line) {
+        return FALSE;
+      }
+      pointer = (line->data + strlen(line->data));
+    }
+  }
+  else {
+    pointer = (line->data + step_right(line->data, *outx));
+    while (!(found = mbstrpbrk(pointer, bracket_pair))) {
+      DLIST_ADV_NEXT(line);
+      if (!line) {
+        return FALSE;
+      }
+      pointer = line->data;
+    }
+  }
+  /* Set the current position to the found bracket.  TODO: We should return ptrs with the
+   * position, so that we only ever update the actual position on a successfull completion. */
+  *outline = line;
+  *outx    = (found - line->data);
+  return TRUE;
+}
+
+bool find_a_bracket(bool reverse, const char *const restrict bracket_pair) {
+  return find_a_bracket_for(reverse, bracket_pair, &CTX_OF->current, &CTX_OF->current_x);
+}
+
+/* ----------------------------- Do find bracket ----------------------------- */
+
+/* Search for a match to the bracket at the current cursor position, if there is one. */
+void do_find_bracket_for(CTX_ARGS) {
+  ASSERT(file);
+  linestruct *current = file->current;
+  Ulong current_x = file->current_x;
+  /* The location in matchbrackets of the bracket under the cursor. */
+  const char *ch;
+  /* The length of ch in bytes. */
+  int ch_len;
+  /* The location in `matchbrackets` of the complementing bracket. */
+  const char *wanted_ch;
+  /* The length of `wanted_ch` in bytes. */
+  int wanted_ch_len;
+  /* The pair of open-close brackets. */
+  char bracket_pair[(MAXCHARLEN * 2) + 1];
+  /* The index in matchbrackets where the closing bracket starts. */
+  Ulong halfway = 0;
+  /* Half the number of characters in `matchbrackets`. */
+  Ulong charcount = (mbstrlen(matchbrackets) / 2);
+  /* The initiol bracket count. */
+  Ulong balance = 1;
+  /* The direction we search. */
+  bool reverse;
+  /* If the char at the current cursor position does not match any chars in `matchbrackets`, inform the user. */
+  if (!(ch = mbstrchr(matchbrackets, (current->data + current_x)))) {
+    statusline(AHEM, _("Not a bracket"));
+    return;
+  }
+  /* Find the halfway point in `matchbrackets`, where the closing ones start. */
+  for (Ulong i=0; i<charcount; ++i) {
+    halfway += char_length(matchbrackets + halfway);
+  }
+  /* When on a closing bracket, we have to search backwards for a matching
+   * opening bracket.  Otherwise, forward for a matching closing bracket. */
+  reverse = (ch >= (matchbrackets + halfway));
+  /* Step half the number of toal characters either backwards or forwards
+   * through `matchbrackets` to find the wanted complementary bracket. */
+  wanted_ch = ch;
+  while (charcount-- > 0) {
+    if (reverse) {
+      wanted_ch = (matchbrackets + step_left(matchbrackets, (wanted_ch - matchbrackets)));
+    }
+    else {
+      wanted_ch += char_length(wanted_ch);
+    }
+  }
+  ch_len        = char_length(ch);
+  wanted_ch_len = char_length(wanted_ch);
+  /* Copy the two complemntary brackets into a single string. */
+  memcpy(bracket_pair, ch, ch_len);
+  memcpy((bracket_pair + ch_len), wanted_ch, wanted_ch_len);
+  bracket_pair[ch_len + wanted_ch_len] = '\0';
+  while (find_a_bracket_for(reverse, bracket_pair, &current, &current_x)) {
+    /* Increment/decrement balance for an identical/other bracket. */
+    balance += ((strncmp((current->data + current_x), ch, ch_len) == 0) ? 1 : -1);
+    /* When balance reached zero, we've found the complementary bracket. */
+    if (!balance) {
+      /* We only change the file's cursor position on success. */
+      SWAP(file->current, current);
+      file->current_x = current_x;
+      edit_redraw_for(STACK_CTX, current, FLOWING);
+      return;
+    }
+  }
+  statusline(AHEM, _("No matching bracket"));
+}
+
+void do_find_bracket(void) {
+  if (IN_GUI_CTX) {
+    do_find_bracket_for(GUI_CTX);
+  }
+  else {
+    do_find_bracket_for(TUI_CTX);
+  }
 }

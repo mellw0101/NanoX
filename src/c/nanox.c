@@ -893,6 +893,36 @@ void do_suspend(void) {
   ran_a_tool = TRUE;
 }
 
+/* ----------------------------- Do exit ----------------------------- */
+
+/* Close the current buffer if it is unmodified.  Otherwise, (When not doing auto saving, and not in
+ * gui mode), ask the user whether to save it, then close it and exit, or return when the user cancelled. */
+void do_exit(void) {
+  int choice;
+  /* When unmodified, simply close. */
+  if (!TUI_OF->modified || ISSET(VIEW_MODE)) {
+    choice = NO;
+  }
+  /* Else, when doing auto saving and the file has a name, simply save. */
+  else if (ISSET(SAVE_ON_EXIT) && *TUI_OF->filename) {
+    choice = YES;
+  }
+  /* Otherwize, ask the user. */
+  else {
+    if (ISSET(SAVE_ON_EXIT)) {
+      warn_and_briefly_pause(_("No file name"));
+    }
+    choice = ask_user(YESORNO, _("Save modified buffer?"));
+  }
+  /* When not saving, or the save succeeds, close the buffer. */
+  if (choice == NO || (choice == YES && write_it_out(TRUE, TRUE) > 0)) {
+    close_and_go();
+  }
+  else if (choice != YES) {
+    statusbar_all(_("Cancelled"));
+  }
+}
+
 /* ----------------------------- Reconnect and store state ----------------------------- */
 
 /* Reconnect standard input to the tty, and store its state. */
@@ -967,8 +997,11 @@ void inject_into_buffer(CTX_ARGS, char *burst, Ulong count) {
   }
   /* Encode an embedded `NUL` byte as `0x0A`. */
   RECODE_NUL_TO_LF(burst, count);
-  /* Only add a new undo item when the current item is not an `ADD` or when the current typing is not contignous with the previous typing. */
-  if (file->last_action != ADD || file->current_undo->tail_lineno != line->lineno || file->current_undo->tail_x != file->current_x) {
+  /* Only add a new undo item when the current item is not an `ADD` or
+   * when the current typing is not contignous with the previous typing. */
+  if (file->last_action != ADD
+  || file->current_undo->tail_lineno != line->lineno || file->current_undo->tail_x != file->current_x)
+  {
     add_undo_for(file, ADD, NULL);
   }
   /* Inject the burst into the cursor line of `file`. */

@@ -91,7 +91,11 @@ static void editor_scrollbar_moving_routine(void *arg, long index) {
 static void editor_scrollbar_create(Editor *const editor) {
   ASSERT(editor);
   ASSERT(editor->text);
-  editor->sb = scrollbar_create(editor->text, editor, editor_scrollbar_update_routine, editor_scrollbar_moving_routine);
+  editor->sb = scrollbar_create(
+    editor->text,
+    editor, editor_scrollbar_update_routine,
+    editor_scrollbar_moving_routine
+  );
 }
 
 

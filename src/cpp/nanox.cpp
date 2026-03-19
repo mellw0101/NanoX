@@ -240,31 +240,31 @@ main_thread_t *main_thread = NULL;
 
 /* Close the current buffer if it is unmodified.  Otherwise (when not doing automatic saving),
  * ask the user whether to save it, then close it and exit, or return when the user cancelled. */
-void do_exit(void) {
-  int choice;
-  /* When unmodified, simply close. */
-  if (!openfile->modified || ISSET(VIEW_MODE)) {
-    choice = NO;
-  }
-  /* Else, when doing automatic saving and the file has a name, simply save. */
-  else if (ISSET(SAVE_ON_EXIT) && openfile->filename[0]) {
-    choice = YES;
-  }
-  /* Otherwise, ask the user. */
-  else {
-    if (ISSET(SAVE_ON_EXIT)) {
-      warn_and_briefly_pause(_("No file name"));
-    }
-    choice = ask_user(YESORNO, _("Save modified buffer? "));
-  }
-  /* When not saving, or the save succeeds, close the buffer. */
-  if (choice == NO || (choice == YES && write_it_out(TRUE, TRUE) > 0)) {
-    close_and_go();
-  }
-  else if (choice != YES) {
-    statusbar_all(_("Cancelled"));
-  }
-}
+// void do_exit(void) {
+//   int choice;
+//   /* When unmodified, simply close. */
+//   if (!openfile->modified || ISSET(VIEW_MODE)) {
+//     choice = NO;
+//   }
+//   /* Else, when doing automatic saving and the file has a name, simply save. */
+//   else if (ISSET(SAVE_ON_EXIT) && openfile->filename[0]) {
+//     choice = YES;
+//   }
+//   /* Otherwise, ask the user. */
+//   else {
+//     if (ISSET(SAVE_ON_EXIT)) {
+//       warn_and_briefly_pause(_("No file name"));
+//     }
+//     choice = ask_user(YESORNO, _("Save modified buffer? "));
+//   }
+//   /* When not saving, or the save succeeds, close the buffer. */
+//   if (choice == NO || (choice == YES && write_it_out(TRUE, TRUE) > 0)) {
+//     close_and_go();
+//   }
+//   else if (choice != YES) {
+//     statusbar_all(_("Cancelled"));
+//   }
+// }
 
 /* Save the current buffer under the given name (or "nano.<pid>" when nameless)
  * with suffix ".save". If needed, the name is further suffixed to be unique. */

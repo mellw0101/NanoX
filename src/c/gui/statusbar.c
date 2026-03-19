@@ -15,7 +15,7 @@ static Statusbar *statusbar = NULL;
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
-
+_PRINTFLIKE(3, 0)
 static void statusbar_timed_msg_internal(message_type type, double seconds, const char *const restrict format, va_list ap) {
   ASSERT(seconds);
   ASSERT(format);

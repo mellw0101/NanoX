@@ -205,7 +205,7 @@ static void read_keys_from(WINDOW *const frame) {
   /* After an ESC, when ncurses does not translate escape sequences, give the keyboard some time to bring the next code to ncurses. */
   if (input == ESC_CODE && (linger_after_escape || ISSET(RAW_SEQUENCES))) {
     // napms(20);
-    hiactime_nsleep(MILLI_TO_NANO(20));
+    hiactime_msleep(20);
   }
   while (TRUE) {
     if (recording) {
@@ -1074,7 +1074,8 @@ static long assemble_unicode(int symbol) {
   else {
     outcome = INVALID_DIGIT;
   }
-  /* If also the sixth digit was a valid hexadecimal value, then the Unicode sequence is complete, so return it (when it's valid). */
+  /* If also the sixth digit was a valid hexadecimal value, then
+   * the Unicode sequence is complete, so return it (when it's valid). */
   if (++digits == 6 && outcome == PROCEED) {
     outcome = (unicode < 0x110000) ? unicode : INVALID_DIGIT;
   }
@@ -1083,7 +1084,8 @@ static long assemble_unicode(int symbol) {
     // char partial[7] = "      ";
     memcpy(partial, "      ", 7);
     sprintf((partial + 6 - digits), "%0*lX", digits, unicode);
-    /* TRANSLATORS: This is shown while a six-digit hexadecimal Unicode character code (%s) is being typed in. */
+    /* TRANSLATORS: This is shown while a six-digit
+     * hexadecimal Unicode character code (%s) is being typed in. */
     statusline(INFO, _("Unicode Input: %s"), partial);
   }
   /* If we have an end result, reset the value and the counter. */
@@ -1094,8 +1096,9 @@ static long assemble_unicode(int symbol) {
   return outcome;
 }
 
-/* Read in one control character (or an iTerm/Eterm/rxvt double Escape), or convert a series of six digits into a Unicode codepoint.
- * Return in count either 1 (for a control character or the first byte of a multibyte sequence), or 2 (for an iTerm/Eterm/rxvt double Escape). */
+/* Read in one control character (or an iTerm/Eterm/rxvt double Escape), or convert a series
+ * of six digits into a Unicode codepoint.  Return in count either 1 (for a control character
+ * or the first byte of a multibyte sequence), or 2 (for an iTerm/Eterm/rxvt double Escape). */
 static int *parse_verbatim_kbinput(WINDOW *const frame, Ulong *const count) {
   int keycode;
   int *yield;
@@ -1299,7 +1302,8 @@ void implant(const char *const string) {
   mute_modifiers = TRUE;
 }
 
-/* Return one code from the keystroke buffer.  If the buffer is empty but frame is given, first read more codes from the keyboard. */
+/* Return one code from the keystroke buffer.  If the buffer is
+ * empty but frame is given, first read more codes from the keyboard. */
 int get_input(WINDOW *const frame) {
   if (waiting_codes) {
     spotlighted = FALSE;
@@ -2167,7 +2171,8 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
     converted[0] = '\0';
     return converted;
   }
-  /* If the first character starts before the left edge, or would be overwritten by a "<" token, then show placeholders instead. */
+  /* If the first character starts before the left edge, or would
+   * be overwritten by a "<" token, then show placeholders instead. */
   if ((start_col < column || (start_col > 0 && isdata && !ISSET(SOFTWRAP))) && *text && *text != '\t') {
     if (is_cntrl_char(text)) {
       if (start_col < column) {
@@ -2210,7 +2215,9 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
     }
     /* Show a tab as a visible character plus spaces, or as just spaces. */
     if (*text == '\t') {
-      if (ISSET(WHITESPACE_DISPLAY) && (index > 0 || !isdata || !ISSET(SOFTWRAP) || column % tabsize == 0 || column == start_col)) {
+      if (ISSET(WHITESPACE_DISPLAY) && (index > 0 || !isdata
+      || !ISSET(SOFTWRAP) || column % tabsize == 0 || column == start_col))
+      {
         for (int i=0; i<whitelen[0];) {
           converted[index++] = whitespace[i++];
         }
@@ -2235,7 +2242,8 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
       column += 2;
       continue;
     }
-    int charlength, charwidth;
+    int charlength;
+    int charwidth;
     wchar wc;
     /* Convert a multibyte character to a single code. */
     charlength = mbtowide(&wc, text);
@@ -2399,7 +2407,8 @@ bool current_is_below_screen_for(CTX_ARGS) {
   if (ISSET(SOFTWRAP)) {
     line     = file->edittop;
     leftedge = file->firstcolumn;
-    /* If current[current_x] is more than a screen's worth of lines after edittop at column firstcolumn, it's below the screen. */
+    /* If current[current_x] is more than a screen's worth of lines
+     * after edittop at column firstcolumn, it's below the screen. */
     return (go_forward_chunks_for(file, cols, (rows - 1 - SHIM), &line, &leftedge) == 0 && (line->lineno < file->current->lineno
      || (line->lineno == file->current->lineno && leftedge < leftedge_for(cols, xplustabs_for(file), file->current))));
   }
@@ -2462,7 +2471,8 @@ void adjust_viewport(update_type manner) {
   CTX_CALL_WARGS(adjust_viewport_for, manner);
 }
 
-/* Redetermine `cursor_row` from the position of current relative to edittop, and put the cursor in the edit window at (cursor_row, "current_x"). */
+/* Redetermine `cursor_row` from the position of current relative to
+ * edittop, and put the cursor in the edit window at (cursor_row, "current_x"). */
 void place_the_cursor_for(openfilestruct *const file) {
   ASSERT(file);
   Ulong column;
@@ -3012,7 +3022,8 @@ void blank_edit(void) {
   }
 }
 
-/* Draw all elements of the screen.  That is: the title bar plus the content of the edit window (when not in the file browser), and the bottom bars. */
+/* Draw all elements of the screen.  That is: the title bar plus the content
+ * of the edit window (when not in the file browser), and the bottom bars. */
 void draw_all_subwindows(void) {
   if (currmenu & ~(MBROWSER | MWHEREISFILE | MGOTODIR)) {
     titlebar(title);
@@ -3088,7 +3099,8 @@ void post_one_key(const char *const restrict keystroke, const char *const restri
   }
 }
 
-/* Display the shortcut list corresponding to the menu on the last to rows of the bottom portion of the window.  The shortcuts are shown in pairs. */
+/* Display the shortcut list corresponding to the menu on the last to rows
+ * of the bottom portion of the window.  The shortcuts are shown in pairs. */
 void bottombars(int menu) {
   /* Running in curses mode. */
   if (IN_CURSES_CTX) {
@@ -3152,7 +3164,8 @@ void report_cursor_position_for(openfilestruct *const file) {
     file->current->lineno, file->filebot->lineno, linepct, column, fullwidth, colpct, digits(file->totsize), sum, file->totsize, charpct);
 }
 
-/* Display on the status bar details about the current cursor position in the currently open buffer.  Note that this is context safe. */
+/* Display on the status bar details about the current cursor
+ * position in the currently open buffer.  Note that this is context safe. */
 void report_cursor_position(void) {
   report_cursor_position_for(CTX_OF);
 }
@@ -3298,7 +3311,8 @@ void post_one_key_curses(const char *const restrict keystroke, const char *const
   wattroff(footwin, interface_color_pair[FUNCTION_TAG]);
 }
 
-/* Display the shortcut list corresponding to the menu on the last to rows of the bottom portion of the window.  The shortcuts are shown in pairs. */
+/* Display the shortcut list corresponding to the menu on the last to rows
+ * of the bottom portion of the window.  The shortcuts are shown in pairs. */
 void bottombars_curses(int menu) {
   Ulong index     = 0;
   Ulong number    = 0;
@@ -3342,7 +3356,8 @@ void bottombars_curses(int menu) {
   wrefresh(footwin);
 }
 
-/* Redetermine `file->cursor_row` form the current position relative to `file->edittop`, and put the cursor in the edit window at (`file->cursor_row`, `file->current_x`) */
+/* Redetermine `file->cursor_row` form the current position relative to `file->edittop`,
+ * and put the cursor in the edit window at (`file->cursor_row`, `file->current_x`) */
 void place_the_cursor_curses_for(openfilestruct *const file) {
   ASSERT(file);
   Ulong column;

@@ -164,6 +164,7 @@ int task_queue_count(void) _NOTHROW {
   return (current_count);
 }
 
+
 /* Cleanup the threadpool and join all threads. */
 void shutdown_queue(void) /* _NOTHROW */ {
   for (Uchar i = 0; i < MAX_THREADS; i++) {

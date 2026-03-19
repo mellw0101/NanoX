@@ -673,28 +673,6 @@ constexpr Uint retrieve_preprossesor_type(string_view str) {
   return 0;
 }
 
-#define STRSTR(return_str, haystack, needle)    \
-  do {                                          \
-    return_str = NULL;                          \
-    if (!*needle) {                             \
-      return_str = (haystack);                  \
-      break;                                    \
-    }                                           \
-    for (const char *h = (haystack); *h; ++h) { \
-      const char *n     = (needle);             \
-      const char *start = h;                    \
-      while (*start && *n && *start == *n) {    \
-        ++start;                                \
-        ++n;                                    \
-      }                                         \
-      if (!*n) {                                \
-        return_str = h;                         \
-        break;                                  \
-      }                                         \
-    }                                           \
-  }                                             \
-  while (FALSE)
-
 #define ADV_PTR_BY_CH(ptr, ch)     for (; *ptr && (*ptr != ch); ptr++);
 
 #define ADV_PTR_TO_CH(ptr, ch)     for (; *ptr && (*ptr != ch); ptr++)

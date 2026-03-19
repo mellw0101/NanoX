@@ -930,7 +930,8 @@ bool white_string(const char *restrict str) {
 
 /* ----------------------------- Get bracket match ----------------------------- */
 
-char get_bracket_match(const char ch) {
+_UNUSED
+static char get_bracket_match(const char ch) {
   switch (ch) {
     case '{': {
       return '}';

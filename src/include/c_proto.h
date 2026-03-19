@@ -1364,6 +1364,13 @@ void to_prev_anchor(void);
 /* ----------------------------- To next anchor ----------------------------- */
 void to_next_anchor_for(CTX_ARGS);
 void to_next_anchor(void);
+/* ----------------------------- Find a bracket ----------------------------- */
+bool find_a_bracket_for(bool reverse,
+  const char *const restrict bracket_pair, linestruct **const outline, Ulong *const outx);
+bool find_a_bracket(bool reverse, const char *const restrict bracket_pair);
+/* ----------------------------- Do find bracket ----------------------------- */
+void do_find_bracket_for(CTX_ARGS);
+void do_find_bracket(void);
 
 
 /* ---------------------------------------------------------- move.c ---------------------------------------------------------- */
@@ -1722,8 +1729,8 @@ Ulong editor_number_of_open_files(Editor *editor);
 
 void statusbar_init(void);
 void statusbar_free(void);
-void statusline_gui_timed(message_type type, double seconds, const char *format, ...);
-void statusline_gui_va(message_type type, const char *const restrict format, va_list ap);
+void statusline_gui_timed(message_type type, double seconds, const char *format, ...) _PRINTFLIKE(3, 4);
+void statusline_gui_va(message_type type, const char *const restrict format, va_list ap) _PRINTFLIKE(2, 0);
 void statusline_gui(message_type type, const char *format, ...) _PRINTFLIKE(2, 3);
 void statusbar_gui(const char *const restrict msg);
 void statusbar_count_frame(void);
@@ -1914,6 +1921,8 @@ void suspend_nano(int _UNUSED signal);
 void continue_nano(int _UNUSED signal);
 /* ----------------------------- Do suspend ----------------------------- */
 void do_suspend(void);
+/* ----------------------------- Do exit ----------------------------- */
+void do_exit(void);
 /* ----------------------------- Reconnect and store state ----------------------------- */
 void reconnect_and_store_state(void);
 /* ----------------------------- Handle hupterm ----------------------------- */
@@ -1929,7 +1938,7 @@ void unbound_key(int code);
 void close_and_go_for(openfilestruct **const start, openfilestruct **const open, int cols);
 void close_and_go(void);
 /* ----------------------------- Die ----------------------------- */
-void die(const char *const restrict format, ...) _NO_RETURN;
+void die(const char *const restrict format, ...) _NO_RETURN _PRINTFLIKE(1, 2);
 /* ----------------------------- Version ----------------------------- */
 void version(void) _NO_RETURN;
 /* ----------------------------- Usage ----------------------------- */
@@ -1955,7 +1964,6 @@ void syntax_check_file(openfilestruct *file);
 
 bool wanted_to_move(functionptrtype f);
 bool changes_something(functionptrtype f);
-void do_exit(void);
 
 void cleanup_event_handler(void);
 void shutdown_queue(void);
