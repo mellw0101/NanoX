@@ -26,8 +26,8 @@ static configfilestruct *configfile = NULL;
 
 /* Open a fd for file_path. */
 static int open_fd(const char *file_path, int fdflags, bool on_failure, mode_t permissions)  {
-  block_sigwinch(TRUE);
   int fd;
+  block_sigwinch(TRUE);
   if (!permissions) {
     fd = open(file_path, fdflags);
   }
@@ -161,6 +161,7 @@ static const coloroption coloropt_lookup_table[] {
   {        "bg-red", STRLTRLEN("bg-red"),         BG_VS_CODE_RED            },
   {       "bg-blue", STRLTRLEN("bg-blue"),        BG_VS_CODE_BLUE           },
   {      "bg-green", STRLTRLEN("bg-green"),       BG_VS_CODE_GREEN          },
+  {       S__LEN("bg-grey"), BG_GREY_80},
 };
 constexpr Ulong COLOROPT_LOOKUP_TABLE_SIZE = ARRAY_SIZE(coloropt_lookup_table);
 #define COLOROPT_LOOKUP_TABLE_SIZE COLOROPT_LOOKUP_TABLE_SIZE
@@ -200,7 +201,8 @@ static bool get_color_option(const char *data, const char *option, int *color_op
 }
 
 /* Fetch a binary opt, return`s value from file.  Or when not in file, then default_opt. */
-static _UNUSED bool get_binary_option(const char *data, const char *option, bool default_opt) {
+_UNUSED
+static bool get_binary_option(const char *data, const char *option, bool default_opt) {
   /* Fetch binary option str. */
   const char *opt = strstr(data, option);
   if (opt) {
@@ -255,7 +257,7 @@ static void get_linenumber_bar_option(const char *data) {
 static void load_colorfile(void) {
   /* Make sure the file always exists. */
   if (!file_exists(configfile->filepath)) {
-    lock_and_write(configfile->filepath, CONFIGFILE_DEFAULT_TEXT, STRLTRLEN(CONFIGFILE_DEFAULT_TEXT), OVERWRITE);
+    lock_and_write(configfile->filepath, S__LEN(CONFIGFILE_DEFAULT_TEXT), OVERWRITE);
   }
   /* Read the configfile. */
   Ulong file_size;
@@ -272,6 +274,10 @@ static void load_colorfile(void) {
   enqueue_callback(update_colorfile, configfile);
 }
 
+static void colorfile_listener_callback(void *_UNUSED data, Uint _UNUSED mask) {
+  load_colorfile();
+}
+
 /* Init NanoX config. */
 void init_cfg(void) {
   get_homedir();
@@ -283,14 +289,10 @@ void init_cfg(void) {
   if (!is_dir(configdir)) {
     mkdir(configdir, 0755);
   }
-  configfile = (configfilestruct *)xmalloc(sizeof(*configfile));
+  configfile           = (configfilestruct *)xmalloc(sizeof(*configfile));
   configfile->filepath = concatpath(configdir, COLORFILE_NAME);
   load_colorfile();
-  file_listener_t *colorfile_listener = file_listener.add_listener(configfile->filepath);
-  colorfile_listener->set_event_callback(IN_CLOSE_WRITE, NULL, FL_ACTION(
-    load_colorfile();
-  ));
-  colorfile_listener->start_listening();
+  file_listener_add_file(file_listener, configfile->filepath, colorfile_listener_callback, NULL, IN_CLOSE_WRITE);
 }
 
 void cleanup_cfg(void) /* _NOTHROW */ {

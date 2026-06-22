@@ -206,6 +206,8 @@ extern configstruct *config;
 extern syntaxtype *nanox_rc_live_syntax;
 extern syntaxtype *syntaxes;
 
+extern FILE_LISTENER file_listener;
+
 /* ----------------------------- files.c ----------------------------- */
 
 // /* static */ extern pid_t pid_of_command;
@@ -1634,27 +1636,27 @@ void chop_next_word(void);
 
 
 /* ----------------------------- Etb create ----------------------------- */
-EDITOR_TB etb_create(Editor *const editor);
+ETB etb_create(Editor *const editor);
 /* ----------------------------- Etb free ----------------------------- */
-void etb_free(EDITOR_TB etb);
+void etb_free(ETB etb);
 /* ----------------------------- Etb draw ----------------------------- */
-void etb_draw(EDITOR_TB etb);
+void etb_draw(ETB etb);
 /* ----------------------------- Etb active refresh needed ----------------------------- */
-void etb_active_refresh_needed(EDITOR_TB etb);
+void etb_active_refresh_needed(ETB etb);
 /* ----------------------------- Etb text refresh needed ----------------------------- */
-void etb_text_refresh_needed(EDITOR_TB etb);
+void etb_text_refresh_needed(ETB etb);
 /* ----------------------------- Etb entries refresh needed ----------------------------- */
-void etb_entries_refresh_needed(EDITOR_TB etb);
+void etb_entries_refresh_needed(ETB etb);
 /* ----------------------------- Etb show context menu ----------------------------- */
-void etb_show_context_menu(EDITOR_TB etb, Element *const from_element, bool show);
+void etb_show_context_menu(ETB etb, Element *const from_element, bool show);
 /* ----------------------------- Etb element is main ----------------------------- */
-bool etb_element_is_main(EDITOR_TB etb, Element *const e);
+bool etb_element_is_main(ETB etb, Element *const e);
 /* ----------------------------- Etb owns element ----------------------------- */
-bool etb_owns_element(EDITOR_TB etb, Element *const e);
+bool etb_owns_element(ETB etb, Element *const e);
 /* ----------------------------- Etb tab routine set active ----------------------------- */
-void etb_tab_routine_mouse_button_left_dn(EDITOR_TB etb, Element *const e);
+void etb_tab_routine_mouse_button_left_dn(ETB etb, Element *const e);
 /* ----------------------------- etb_tab_routine_mouse_pos ----------------------------- */
-void etb_tab_routine_mouse_held_left(EDITOR_TB etb, Element *e, float x, float y);
+void etb_tab_routine_mouse_held_left(ETB etb, Element *e, float x, float y);
 
 
 /* ---------------------------------------------------------- gui/editor/editor.c ---------------------------------------------------------- */
@@ -1861,6 +1863,8 @@ void gl_loop(void);
 /* static */ void signal_init(void);
 
 /* static */ void suck_up_input_and_paste_it(void);
+
+/* static */ bool scoop_stdin(void);
 
 /* ----------------------------- Make new node ----------------------------- */
 linestruct *make_new_node(linestruct *prevnode);

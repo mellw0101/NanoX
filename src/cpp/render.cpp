@@ -813,8 +813,7 @@ static void render_control_statements(Ulong index) {
  * do a fully avx based line reader.  This would be best done by adding a length to `linestruct` and always,
  * allocating to the next 32 byte factor when not empty.  This would mean we never do a scalar scan.
  */
-void
-apply_syntax_to_line(const int inrow, const char *inconverted, linestruct *in_line, Ulong infrom_col) {
+void apply_syntax_to_line(const int inrow, const char *inconverted, linestruct *in_line, Ulong infrom_col) {
   PROFILE_FUNCTION;
   row       = inrow;
   converted = inconverted;

@@ -1121,10 +1121,5 @@ void do_find_bracket_for(CTX_ARGS) {
 }
 
 void do_find_bracket(void) {
-  if (IN_GUI_CTX) {
-    do_find_bracket_for(GUI_CTX);
-  }
-  else {
-    do_find_bracket_for(TUI_CTX);
-  }
+  CTX_CALL(do_find_bracket_for);
 }

@@ -44,8 +44,7 @@ static Ulong last_poll = 0;
 /* The interval in frames between polling, based on the set framerate */
 static Ulong poll_interval_frames = FRAME_POLL_INTERVAL_FRAMES(60);
 /* The total ammount of elapsed time in `nano-seconds`. */
-static Llong elapsed_time = 0;
-
+static Llong __attribute((aligned(sizeof(Llong)))) elapsed_time = 0;
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
@@ -57,12 +56,12 @@ _NODISCARD
 static inline bool frame_samples_within_tolerance(void) {
   int  count;
   int *rates;
-  if (LLABS(frame_sample_0 - frame_sample_1) < FRAME_SAMPLE_TOLERANCE) {
+  if (llabs(frame_sample_0 - frame_sample_1) < FRAME_SAMPLE_TOLERANCE) {
     rates = monitor_refresh_rate_array(&count);
     for (int i=0; i<count; ++i) {
       /* Ensure the values are at least within our toleranse of any actual monitor's rate. */
-      if (LLABS(frame_sample_0 - FRAME_SWAP_RATE_TIME_NS_INT(rates[i])) < FRAME_SAMPLE_TOLERANCE
-      &&  LLABS(frame_sample_1 - FRAME_SWAP_RATE_TIME_NS_INT(rates[i])) < FRAME_SAMPLE_TOLERANCE)
+      if (llabs(frame_sample_0 - FRAME_SWAP_RATE_TIME_NS_INT(rates[i])) < FRAME_SAMPLE_TOLERANCE
+      &&  llabs(frame_sample_1 - FRAME_SWAP_RATE_TIME_NS_INT(rates[i])) < FRAME_SAMPLE_TOLERANCE)
       {
         return TRUE;
       }
@@ -126,7 +125,8 @@ void frame_end(void) {
     /* Calculate the total frametime after we sleept. */
     frametime = TIMESPEC_ELAPSED_NS(&t0, &t1);
   }
-  ATOMIC_STORE(elapsed_time, (elapsed_time + frametime));
+  elapsed_time += frametime;
+  // ATOMIC_STORE(elapsed_time, (elapsed_time + frametime));
   /* Incrament the total elapsed frames. */
   ++elapsed_frames;
 }
@@ -213,7 +213,7 @@ void frame_set_poll(void) {
 
 /* Returns the total number of currently elapsed frames. */
 Ulong frame_elapsed(void) {
-  return ATOMIC_FETCH(elapsed_frames);
+  return elapsed_frames;
 }
 
 /* ----------------------------- Frame should report ----------------------------- */
@@ -225,6 +225,6 @@ void frame_should_report(bool print_times) {
 /* ----------------------------- Frame elapsed time ----------------------------- */
 
 Llong frame_elapsed_time(void) {
-  return ATOMIC_FETCH(elapsed_time);
+  return elapsed_time;
 }
 

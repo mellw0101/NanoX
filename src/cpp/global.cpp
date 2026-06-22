@@ -207,7 +207,7 @@ syntaxtype *c_syntaxtype         = NULL;
 // const char *term = NULL;
 // const char *term_program = NULL;
 
-file_listener_handler_t file_listener;
+// file_listener_handler_t file_listener;
 
 HashMap *test_hashmap = NULL;
 

@@ -470,6 +470,14 @@ syntaxtype *nanox_rc_live_syntax = NULL;
 /* The global list of color syntaxes. */
 syntaxtype *syntaxes = NULL;
 
+/* ----------------------------- FILE_LISTENER ----------------------------- */
+
+/* TODO: Because this structure now will always only exist as a single thing, and because
+ * it now can scale for n files, this should be moved into `c/files.c` and be made static. */
+
+/* The manager that can listen to files, for any types of changes.  TODO: Finish this, so it handles all we need. */
+FILE_LISTENER file_listener = NULL;
+
 
 /* ---------------------------------------------------------- Function's ---------------------------------------------------------- */
 

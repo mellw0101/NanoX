@@ -362,6 +362,40 @@ static void die_curses(void) {
   }
 }
 
+/* ----------------------------- Scoop stdin ----------------------------- */
+
+/* Read whatever comes from standard input into a new buffer.  TODO: CONTEXT: Here we should maybe make a base func. */
+/* static */ bool scoop_stdin(void) {
+  FILE *stream;
+  const char *errno_str;
+  restore_terminal();
+  /* When input comes from a terminal, show a helpful message. */
+  if (isatty(STDIN_FILENO)) {
+    fprintf(stderr, _("Reading data from keyboard; type ^D or ^D^D to finish.\n"));
+  }
+  /* Open standard input. */
+  if (!(stream = fopen("/dev/stdin", "rb"))) {
+    errno_str = strerror(errno);
+    terminal_init();
+    doupdate();
+    statusline(ALERT, _("Failed to open stdin: %s"), errno_str);
+    return FALSE;
+  }
+  /* Set up a signal handler so that ^C will stop the reading. */
+  install_handler_for_Ctrl_C();
+  /* Read the input into a new buffer, undoably. */
+  make_new_buffer();
+  read_file(stream, 0, "stdin", FALSE);
+  /* TODO: SYNTAX: Here we should either change the called function, or we need to perform our routine here. */
+  find_and_prime_applicable_syntax();
+  /* Restore the original ^C handler. */
+  restore_handler_for_Ctrl_C();
+  if (!ISSET(VIEW_MODE) && CTX_OF->totsize > 0) {
+    set_modified();
+  }
+  return TRUE;
+}
+
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 

@@ -97,7 +97,7 @@
 #define BG_VS_CODE_BLUE                      39
 #define BG_VS_CODE_GREEN                     40
 /* Total elements. */
-#define NUMBER_OF_ELEMENTS  (41)
+#define NUMBER_OF_ELEMENTS  (42)
 
 
 /* Some gui colors, these will not be counted as 'elements'. */
@@ -151,8 +151,8 @@
 #define FG_VS_CODE_START   FG_VS_CODE_RED
 #define FG_VS_CODE_END     (BG_VS_CODE_RED - 1)
 
-#define BG_VS_CODE_START  BG_VS_CODE_RED
-#define BG_VS_CODE_END    BG_VS_CODE_GREEN
+// #define BG_VS_CODE_START  BG_VS_CODE_RED
+// #define BG_VS_CODE_END    BG_VS_CODE_GREEN
 
 // constexpr short color_array[] {
 //   VS_CODE_RED,

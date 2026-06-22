@@ -105,7 +105,8 @@ char *realloc_strcpy(char *dest, const char *const restrict src) {
   return realloc_strncpy(dest, src, strlen(src));
 }
 
-/* Return the user's home directory.  We use $HOME, and if that fails, we fall back on the home directory of the effective user ID. */
+/* Return the user's home directory.  We use $HOME, and if that
+ * fails, we fall back on the home directory of the effective user ID. */
 void get_homedir(void) {
   const char *homenv;
   const struct passwd *userage;
@@ -162,12 +163,7 @@ linestruct *line_from_number_for(openfilestruct *const file, long number) {
 
 /* Returns a `linestruct` pointer from the currently open file, while also ensuring context correct operation. */
 linestruct *line_from_number(long number) {
-  if (IN_GUI_CONTEXT) {
-    return line_from_number_for(openeditor->openfile, number);
-  }
-  else {
-    return line_from_number_for(openfile, number);
-  }
+  return line_from_number_for(CTX_OF, number);
 }
 
 /* Free the memory of the given array, which should contain len elements. */
@@ -332,7 +328,9 @@ bool mark_is_before_cursor(void) {
 /* ----------------------------- Get region ----------------------------- */
 
 /* Return in (top, top_x) and (bot, bot_x) the start and end "coordinates" of the marked region. */
-void get_region_for(openfilestruct *const file, linestruct **const top, Ulong *const top_x, linestruct **const bot, Ulong *const bot_x) {
+void get_region_for(openfilestruct *const file,
+  linestruct **const top, Ulong *const top_x, linestruct **const bot, Ulong *const bot_x)
+{
   ASSERT(file);
   ASSERT(top || top_x || bot || bot_x);
   if (mark_is_before_cursor_for(file)) {

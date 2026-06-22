@@ -462,7 +462,7 @@ void font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const
   FontVertex vertices[4];
   texture_glyph_t *glyph = font_get_glyph(f, current);
   if (prev) {
-    (*pen_x) += texture_glyph_get_kerning(glyph, prev);
+    *pen_x += texture_glyph_get_kerning(glyph, prev);
   }
   x0 = (int)((*pen_x) + glyph->offset_x);
   y0 = (int)((*pen_y) - glyph->offset_y);
@@ -487,7 +487,7 @@ void font_vertbuf_add_mbstr(Font *const f, vertex_buffer_t *buf, const char *str
   ASSERT(string);
   ASSERT(pen_x);
   ASSERT(pen_y);
-  const char *cur = string;
+  const char *cur  = string;
   const char *prev = previous;
   while (*cur && cur < (string + len)) {
     font_add_glyph(f, buf, cur, prev, color, pen_x, pen_y);
@@ -516,10 +516,10 @@ void font_upload_texture_atlas(Font *const f) {
 
 void font_add_cursor(Font *const f, vertex_buffer_t *const buf, long row, Uint color, float x, float rowzero_y) {
   ASSERT_FONT;
-  float x0 = ROUNDF(x);
-  float y0 = ROUNDF(GF_ROW_TOP(row) + rowzero_y);
+  float x0 = roundf(x);
+  float y0 = roundf(GF_ROW_TOP(row) + rowzero_y);
   float x1 = (x0 + 1);
-  float y1 = ROUNDF(GF_ROW_BOT(row) + rowzero_y);
+  float y1 = roundf(GF_ROW_BOT(row) + rowzero_y);
   /* We use the NULL texture of font to make the cursor. */
   texture_glyph_t *glyph = texture_font_get_glyph(f->font, NULL);
   UNPACK_FUINT_VARS(color, r,g,b,a);

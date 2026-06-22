@@ -417,9 +417,6 @@
 #define ESC_CODE  (0x1B)
 #define DEL_CODE  (0x7F)
 
-/* Total elements. */
-#define NUMBER_OF_ELEMENTS  (41)
-
 #define THE_DEFAULT  (-1)
 #define BAD_COLOR    (-2)
 
@@ -552,8 +549,9 @@
 #define BG_VS_CODE_RED                       38
 #define BG_VS_CODE_BLUE                      39
 #define BG_VS_CODE_GREEN                     40
+#define BG_GREY_80                           41
 /* Total elements. */
-#define NUMBER_OF_ELEMENTS  (41)
+#define NUMBER_OF_ELEMENTS  (42)
 
 /* Some color indexes. */
 #define COLOR_LAGOON                         38
@@ -626,13 +624,14 @@ static int encoded_idx_color[NUMBER_OF_ELEMENTS][2] = {
   { -1, ENCODE_RGB_VALUE(205,  49,  49) },
   { -1, ENCODE_RGB_VALUE( 36, 114, 200) },
   { -1, ENCODE_RGB_VALUE( 13, 188, 121) },
+  { -1, ENCODE_RGB_VALUE( 80,  80,  80) },
 };
 
 #define FG_VS_CODE_START   FG_VS_CODE_RED
 #define FG_VS_CODE_END     (BG_VS_CODE_RED - 1)
 
 #define BG_VS_CODE_START  BG_VS_CODE_RED
-#define BG_VS_CODE_END    BG_VS_CODE_GREEN
+#define BG_VS_CODE_END    BG_GREY_80
 
 static const short color_array[] = {
   VS_CODE_RED,
@@ -655,7 +654,8 @@ static const short color_array[] = {
 static const short bg_vs_code_color_array[] = {
   VS_CODE_RED,
   VS_CODE_BLUE,
-  VS_CODE_GREEN
+  VS_CODE_GREEN,
+  XTERM_GREY_1
 };
 #define BG_COLOR(index) bg_vs_code_color_array[index - BG_VS_CODE_START]
 
@@ -800,7 +800,7 @@ typedef struct Editor  Editor;
 /* ----------------------------- gui/editor/topbar.c ----------------------------- */
 
 // typedef struct EditorTb   EditorTb;
-typedef struct EDITOR_TB_T *  EDITOR_TB;
+typedef struct EditorTopBar *ETB;
 
 /* ----------------------------- gui/suggestmenu.c ----------------------------- */
 
@@ -1855,7 +1855,7 @@ struct Editor {
 
   Scrollbar *sb;  
   // EditorTb *tb;
-  EDITOR_TB tb;
+  ETB tb;
   
   int rows;
   int cols;

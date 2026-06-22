@@ -2270,7 +2270,7 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
       continue;
     }
     /* For any valid character, just copy its bytes. */
-    for (; charlength > 0; --charlength) {
+    for (; charlength>0; --charlength) {
       converted[index++] = *(text++);
     }
     /* If the codepoint is unassigned, assume a width of one. */
@@ -2322,6 +2322,8 @@ bool line_needs_update(Ulong old_column, Ulong new_column) {
   }
 }
 
+/* ----------------------------- Less then a screenful ----------------------------- */
+
 /* Return 'TRUE' if there are fewer than a screen's worth of lines between the line at line number
  * was_lineno (and column was_leftedge, if we're in softwrap mode) and the line at current[current_x]. */
 bool less_than_a_screenful_for(CTX_ARGS, Ulong was_lineno, Ulong was_leftedge) {
@@ -2349,6 +2351,8 @@ bool less_than_a_screenful(Ulong was_lineno, Ulong was_leftedge) {
     return less_than_a_screenful_for(TUI_CTX, was_lineno, was_leftedge);
   }
 }
+
+/* ----------------------------- Actual last column ----------------------------- */
 
 /* When in softwrap mode, and the given column is on or after the breakpoint of a softwrapped
  * chunk, shift it back to the last column before the breakpoint.  The given column is relative
@@ -2385,6 +2389,8 @@ Ulong actual_last_column(Ulong leftedge, Ulong column) {
   }
 }
 
+/* ----------------------------- Current is above screen ----------------------------- */
+
 /* Return TRUE if current[current_x] is before the viewport. */
 bool current_is_above_screen_for(openfilestruct *const file) {
   ASSERT(file);
@@ -2398,6 +2404,8 @@ bool current_is_above_screen_for(openfilestruct *const file) {
 bool current_is_above_screen(void) {
   return current_is_above_screen_for(CTX_OF);
 }
+
+/* ----------------------------- Current is below screen ----------------------------- */
 
 /* Return `TRUE` if `file->current[file->current_x]` is beyond the viewport. */
 bool current_is_below_screen_for(CTX_ARGS) {
@@ -2425,6 +2433,8 @@ bool current_is_below_screen(void) {
   }
 }
 
+/* ----------------------------- Current is offscreen ----------------------------- */
+
 /* Return TRUE if current[current_x] is outside the viewport. */
 bool current_is_offscreen_for(CTX_ARGS) {
   ASSERT(file);
@@ -2433,13 +2443,10 @@ bool current_is_offscreen_for(CTX_ARGS) {
 
 /* Return TRUE if current[current_x] is outside the viewport. */
 bool current_is_offscreen(void) {
-  if (IN_GUI_CTX) {
-    return current_is_offscreen_for(GUI_CTX);
-  }
-  else {
-    return current_is_offscreen_for(TUI_CTX);
-  }
+  RET_CTX_CALL(current_is_offscreen_for);
 }
+
+/* ----------------------------- Adjust viewport ----------------------------- */
 
 /* Move edittop so that current is on the screen.  manner says how:  STATIONARY means that the cursor
  * should stay on the same screen row, CENTERING means that current should end up in the middle of the
@@ -2470,6 +2477,8 @@ void adjust_viewport_for(CTX_ARGS, update_type manner) {
 void adjust_viewport(update_type manner) {
   CTX_CALL_WARGS(adjust_viewport_for, manner);
 }
+
+/* ----------------------------- Place the cursor ----------------------------- */
 
 /* Redetermine `cursor_row` from the position of current relative to
  * edittop, and put the cursor in the edit window at (cursor_row, "current_x"). */
@@ -2504,6 +2513,8 @@ void set_blankdelay_to_one(void) {
 Ulong waiting_keycodes(void) {
   return waiting_codes;
 }
+
+/* ----------------------------- Edit scroll ----------------------------- */
 
 /* Scroll the edit window one row in the given direction, and draw the relevant content on the resultant blank row. */
 void edit_scroll_for(openfilestruct *const file, bool direction) {
@@ -2605,12 +2616,7 @@ void edit_redraw_for(CTX_ARGS, linestruct *const old_current, update_type manner
 
 /* Update any lines between old_current and current that need to be updated.  Use this if we've moved without changing any text. */
 void edit_redraw(linestruct *const old_current, update_type manner) {
-  if (IN_GUI_CTX) {
-    edit_redraw_for(GUI_CTX, old_current, manner);
-  }
-  else { 
-    edit_redraw_for(TUI_CTX, old_current, manner);
-  }
+  CTX_CALL_WARGS(edit_redraw_for, old_current, manner);
 }
 
 /* ----------------------------- Edit refresh ----------------------------- */

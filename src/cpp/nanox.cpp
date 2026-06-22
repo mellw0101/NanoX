@@ -605,36 +605,36 @@ main_thread_t *main_thread = NULL;
 // }
 
 /* Read whatever comes from standard input into a new buffer. */
-static bool scoop_stdin(void) {
-  FILE *stream;
-  const char *errno_str;
-  restore_terminal();
-  /* When input comes from a terminal, show a helpful message. */
-  if (isatty(STDIN_FILENO)) {
-    fprintf(stderr, _("Reading data from keyboard; type ^D or ^D^D to finish.\n"));
-  }
-  /* Open standard input. */
-  stream = fopen("/dev/stdin", "rb");
-  if (!stream) {
-    errno_str = strerror(errno);
-    terminal_init();
-    doupdate();
-    statusline(ALERT, _("Failed to open stdin: %s"), errno_str);
-    return FALSE;
-  }
-  /* Set up a signal handler so that ^C will stop the reading. */
-  install_handler_for_Ctrl_C();
-  /* Read the input into a new buffer, undoably. */
-  make_new_buffer();
-  read_file(stream, 0, "stdin", FALSE);
-  find_and_prime_applicable_syntax();
-  /* Restore the original ^C handler. */
-  restore_handler_for_Ctrl_C();
-  if (!ISSET(VIEW_MODE) && openfile->totsize > 0) {
-    set_modified();
-  }
-  return TRUE;
-}
+// static bool scoop_stdin(void) {
+//   FILE *stream;
+//   const char *errno_str;
+//   restore_terminal();
+//   /* When input comes from a terminal, show a helpful message. */
+//   if (isatty(STDIN_FILENO)) {
+//     fprintf(stderr, _("Reading data from keyboard; type ^D or ^D^D to finish.\n"));
+//   }
+//   /* Open standard input. */
+//   stream = fopen("/dev/stdin", "rb");
+//   if (!stream) {
+//     errno_str = strerror(errno);
+//     terminal_init();
+//     doupdate();
+//     statusline(ALERT, _("Failed to open stdin: %s"), errno_str);
+//     return FALSE;
+//   }
+//   /* Set up a signal handler so that ^C will stop the reading. */
+//   install_handler_for_Ctrl_C();
+//   /* Read the input into a new buffer, undoably. */
+//   make_new_buffer();
+//   read_file(stream, 0, "stdin", FALSE);
+//   find_and_prime_applicable_syntax();
+//   /* Restore the original ^C handler. */
+//   restore_handler_for_Ctrl_C();
+//   if (!ISSET(VIEW_MODE) && openfile->totsize > 0) {
+//     set_modified();
+//   }
+//   return TRUE;
+// }
 
 /* Register half a dozen signal handlers. */
 // static void signal_init(void) _NOTHROW {
@@ -769,12 +769,12 @@ static void toggle_this(const int flag) {
   TOGGLE(flag);
   focusing = FALSE;
   switch (flag) {
-    case ZERO : {
+    case ZERO: {
       window_init();
       draw_all_subwindows();
       return;
     }
-    case NO_HELP : {
+    case NO_HELP: {
       if (LINES < (ISSET(ZERO) ? 3 : (ISSET(MINIBAR) ? 4 : 5))) {
         statusline(AHEM, _("Too tiny"));
         TOGGLE(flag);
@@ -789,7 +789,7 @@ static void toggle_this(const int flag) {
       draw_all_subwindows();
       break;
     }
-    case CONSTANT_SHOW : {
+    case CONSTANT_SHOW: {
       if (LINES == 1) {
         statusline(AHEM, _("Too tiny"));
         TOGGLE(flag);
@@ -803,25 +803,25 @@ static void toggle_this(const int flag) {
       }
       return;
     }
-    case SOFTWRAP : {
+    case SOFTWRAP: {
       if (!ISSET(SOFTWRAP)) {
         openfile->firstcolumn = 0;
       }
       refresh_needed = TRUE;
       break;
     }
-    case WHITESPACE_DISPLAY : {
+    case WHITESPACE_DISPLAY: {
       titlebar(NULL);
       refresh_needed = TRUE;
       break;
     }
-    case NO_SYNTAX : {
+    case NO_SYNTAX: {
       // precalc_multicolorinfo();
       TOGGLE(EXPERIMENTAL_FAST_LIVE_SYNTAX);
       refresh_needed = TRUE;
       break;
     }
-    case TABS_TO_SPACES : {
+    case TABS_TO_SPACES: {
       if (openfile->syntax && openfile->syntax->tabstring) {
         statusline(AHEM, _("Current syntax determines Tab"));
         TOGGLE(flag);
@@ -829,7 +829,7 @@ static void toggle_this(const int flag) {
       }
       break;
     }
-    case USE_MOUSE : {
+    case USE_MOUSE: {
       mouse_init();
       break;
     }
@@ -1569,8 +1569,8 @@ int main(int argc, char **argv) {
   Mlib::Profile::setupReportGeneration("/home/mellw/.NanoX.profile");
   LOUTPTR->setOutputFile("/home/mellw/.NanoX.log");
   logI("Starting NanoX");
-  term_env_var         = getenv("TERM");
-  term_program_env_var = getenv("TERM_PROGRAM");
+  term_env_var          = getenv("TERM");
+  term_program_env_var  = getenv("TERM_PROGRAM");
   const char *netlogger = getenv("NETLOGGER");
   if (netlogger) {
     NETLOGGERPTR->enable();
@@ -1612,6 +1612,7 @@ int main(int argc, char **argv) {
     NETLOG("\nExiting NanoX.\n");
     (unix_socket_fd < 0) ? 0 : close(unix_socket_fd);
   });
+  file_listener = file_listener_create();
   init_cfg();
   /* Check whether we're running on a Linux console. */
   on_a_vt = !ioctl(STDOUT_FILENO, VT_GETSTATE, &dummy);

@@ -168,7 +168,7 @@ extern main_thread_t         *main_thread;
 
 extern unordered_map<string, syntax_data_t> test_map;
 
-extern file_listener_handler_t file_listener;
+// extern file_listener_handler_t file_listener;
 
 // extern configstruct *config;
 
