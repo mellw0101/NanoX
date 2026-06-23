@@ -859,6 +859,11 @@ typedef void (*MenuAcceptFunc)(void *, const char *const restrict lable, int ind
 
 typedef void (*ElementExtraCallback)(Element *const, void *);
 
+/* ----------------------------- event.c ----------------------------- */
+
+typedef struct Event *EVENT;
+typedef void (*EVENT_CB)(void *);
+
 
 /*==============================================================================================================================*/
 /* ---------------------------------------------------------- Enum's ---------------------------------------------------------- */

@@ -204,7 +204,7 @@ struct main_thread_function {
     PROFILE_FUNCTION;
     dir_search_task_t *result = (dir_search_task_t *)arg;
     if (result->found == TRUE) {
-      pause_sub_threads_guard_t pause_guard;
+      // pause_sub_threads_guard_t pause_guard;
       LOUT_logI("Found file: '%s' in dir: '%s'.", result->find, result->dir);
     }
     free(result->find);

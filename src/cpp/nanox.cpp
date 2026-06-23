@@ -15,7 +15,7 @@
 /* Containers for the original and the temporary handler for SIGINT. */
 // static struct sigaction oldaction, newaction;
 
-main_thread_t *main_thread = NULL;
+// main_thread_t *main_thread = NULL;
 
 /* Create a new linestruct node.  Note that we do NOT set 'prevnode->next'. */
 // linestruct *make_new_node(linestruct *prevnode) _NOTHROW {
@@ -1379,7 +1379,8 @@ static void process_a_keystroke(void) {
 }
 
 static void tui_main_loop(void *arg) {
-  prosses_callback_queue();
+  // prosses_callback_queue();
+  event_process();
   confirm_margin();
   if (currmenu != MMAIN) {
     bottombars(MMAIN);
@@ -1565,7 +1566,8 @@ int main(int argc, char **argv) {
   fcio_set_die_callback(die);
   initcheck_utf8();
   init_queue_task();
-  init_event_handler();
+  // init_event_handler();
+  event_init();
   Mlib::Profile::setupReportGeneration("/home/mellw/.NanoX.profile");
   LOUTPTR->setOutputFile("/home/mellw/.NanoX.log");
   logI("Starting NanoX");
@@ -2086,7 +2088,8 @@ int main(int argc, char **argv) {
   margin = 12345;
   we_are_running = TRUE;
   if (ISSET(USING_GUI)) {
-    prosses_callback_queue();
+    // prosses_callback_queue();
+    event_process();
     restore_terminal();
     gl_loop();
     /* Should never be reached. */
@@ -2099,7 +2102,8 @@ int main(int argc, char **argv) {
   }
   /* This is the main loop of the cli-editor. */
   while (TRUE) {
-    prosses_callback_queue();
+    // prosses_callback_queue();
+    event_process();
     confirm_margin();
     if (on_a_vt && waiting_keycodes() == 0) {
       mute_modifiers = FALSE;
@@ -2157,7 +2161,5 @@ int main(int argc, char **argv) {
     /* Read in and interpret a single keystroke. */
     process_a_keystroke();
   }
-  cleanup_event_handler();
-  shutdown_queue();
   return 0;
 }

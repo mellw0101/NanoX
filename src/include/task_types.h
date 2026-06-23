@@ -38,22 +38,22 @@ typedef struct syntax_search_t {
 TASK_STRUCT(signal_payload_t, void (*func)(void *); void *arg;)
 TASK_STRUCT(main_thread_t, pthread_t thread; pid_t pid;)
 
-bool is_main_thread(void) _NOTHROW;
+// bool is_main_thread(void) _NOTHROW;
 void pause_all_sub_threads(bool pause) _NOTHROW;
 
-struct pause_sub_threads_guard_t {
-  bool from_main_thread;
-  explicit pause_sub_threads_guard_t(void)
-      : from_main_thread(is_main_thread()) {
-    if (from_main_thread) {
-      pause_all_sub_threads(TRUE);
-    }
-  }
-  ~pause_sub_threads_guard_t(void) {
-    if (from_main_thread) {
-      pause_all_sub_threads(FALSE);
-    }
-  }
-  pause_sub_threads_guard_t(const pause_sub_threads_guard_t &)            = delete;
-  pause_sub_threads_guard_t &operator=(const pause_sub_threads_guard_t &) = delete;
-};
+// struct pause_sub_threads_guard_t {
+//   bool from_main_thread;
+//   explicit pause_sub_threads_guard_t(void)
+//       : from_main_thread(is_main_thread()) {
+//     if (from_main_thread) {
+//       pause_all_sub_threads(TRUE);
+//     }
+//   }
+//   ~pause_sub_threads_guard_t(void) {
+//     if (from_main_thread) {
+//       pause_all_sub_threads(FALSE);
+//     }
+//   }
+//   pause_sub_threads_guard_t(const pause_sub_threads_guard_t &)            = delete;
+//   pause_sub_threads_guard_t &operator=(const pause_sub_threads_guard_t &) = delete;
+// };

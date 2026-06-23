@@ -1851,6 +1851,16 @@ void kb_char_input_prompt(const char *const restrict data, Ushort mod);
 void gl_loop(void);
 
 
+/* ---------------------------------------------------------- event.c ---------------------------------------------------------- */
+
+
+/* This must be called on the main thread. */
+void event_init(void);
+void event_free(void);
+void event_process(void);
+void event_enqueue(EVENT_CB callback, void *arg);
+
+
 /* ---------------------------------------------------------- nanox.c ---------------------------------------------------------- */
 
 
@@ -1969,7 +1979,7 @@ void syntax_check_file(openfilestruct *file);
 bool wanted_to_move(functionptrtype f);
 bool changes_something(functionptrtype f);
 
-void cleanup_event_handler(void);
+// void cleanup_event_handler(void);
 void shutdown_queue(void);
 void cleanup_cfg(void);
 

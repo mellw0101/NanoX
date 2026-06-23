@@ -1367,7 +1367,8 @@ void finish(void) {
     restore_terminal();
   }
   display_rcfile_errors();
-  cleanup_event_handler();
+  // cleanup_event_handler();
+  event_free();
   shutdown_queue();
   cleanup_cfg();
   exit(0);

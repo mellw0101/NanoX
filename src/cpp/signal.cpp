@@ -1,19 +1,19 @@
 #include "../include/prototypes.h"
 
 void send_SIGUSR1_to_main_thread(void) _NOTHROW {
-  pthread_kill(main_thread->thread, SIGUSR1);
+  // pthread_kill(main_thread->thread, SIGUSR1);
 }
 
 /* This function is called by the main thread when it recieves a signal. */
-static void handle_main_thread_signal(int sig, siginfo_t *si, void *context) _NOTHROW {
-  if (sig >= SIGRTMIN && sig <= SIGRTMAX) {
-    signal_payload_t *payload = (signal_payload_t *)si->si_value.sival_ptr;
-    if (payload && payload->func) {
-      payload->func(payload->arg);
-    }
-    free(payload);
-  }
-}
+// static void handle_main_thread_signal(int sig, siginfo_t *si, void *context) _NOTHROW {
+//   if (sig >= SIGRTMIN && sig <= SIGRTMAX) {
+//     signal_payload_t *payload = (signal_payload_t *)si->si_value.sival_ptr;
+//     if (payload && payload->func) {
+//       payload->func(payload->arg);
+//     }
+//     free(payload);
+//   }
+// }
 
 /* Send a function and arg to the main thread for direct handeling. */
 void send_signal_to_main_thread(void (*func)(void *), void *arg) _NOTHROW {
@@ -22,51 +22,51 @@ void send_signal_to_main_thread(void (*func)(void *), void *arg) _NOTHROW {
   payload->arg  = arg;
   union sigval sig_data;
   sig_data.sival_ptr = payload;
-  if (sigqueue(main_thread->pid, SIGRTMIN, sig_data) != 0) {
-    switch (errno) {
-      case EAGAIN : {
-        logE("The signal could not be queued due to lack of memory.");
-        break;
-      }
-      case EINVAL : {
-        logE("An invalid signal was specified.");
-        break;
-      }
-      case ESRCH : {
-        logE("The thread does not exist.");
-        break;
-      }
-      default : {
-        logE("sigqueue failed with errno: %d.  strerror: %s", errno, strerror(errno));
-      }
-    }
-  }
+  // if (sigqueue(main_thread->pid, SIGRTMIN, sig_data) != 0) {
+  //   switch (errno) {
+  //     case EAGAIN : {
+  //       logE("The signal could not be queued due to lack of memory.");
+  //       break;
+  //     }
+  //     case EINVAL : {
+  //       logE("An invalid signal was specified.");
+  //       break;
+  //     }
+  //     case ESRCH : {
+  //       logE("The thread does not exist.");
+  //       break;
+  //     }
+  //     default : {
+  //       logE("sigqueue failed with errno: %d.  strerror: %s", errno, strerror(errno));
+  //     }
+  //   }
+  // }
 }
 
 /* Init the main thread, then setup SIGRTMIN. */
-void init_main_thread(void) _NOTHROW {
-  if (main_thread) {
-    logE("main_thread should only be allocated once.");
-    return;
-  }
-  main_thread         = (main_thread_t *)nmalloc(sizeof(main_thread_t));
-  main_thread->thread = pthread_self();
-  main_thread->pid    = getpid();
-  struct sigaction sa;
-  sa.sa_flags     = SA_SIGINFO;
-  sa.sa_sigaction = handle_main_thread_signal;
-  sigemptyset(&sa.sa_mask);
-  sigaction(SIGRTMIN, &sa, NULL);
-  sigset_t set;
-  sigemptyset(&set);
-  sigaddset(&set, SIGRTMIN);
-  pthread_sigmask(SIG_UNBLOCK, &set, NULL);
-}
+// void init_main_thread(void) _NOTHROW {
+//   if (main_thread) {
+//     logE("main_thread should only be allocated once.");
+//     return;
+//   }
+//   main_thread         = (main_thread_t *)nmalloc(sizeof(main_thread_t));
+//   main_thread->thread = pthread_self();
+//   main_thread->pid    = getpid();
+//   struct sigaction sa;
+//   sa.sa_flags     = SA_SIGINFO;
+//   sa.sa_sigaction = handle_main_thread_signal;
+//   sigemptyset(&sa.sa_mask);
+//   sigaction(SIGRTMIN, &sa, NULL);
+//   sigset_t set;
+//   sigemptyset(&set);
+//   sigaddset(&set, SIGRTMIN);
+//   pthread_sigmask(SIG_UNBLOCK, &set, NULL);
+// }
 
 /* Free the ptr to the main thread. */
-void cleanup_main_thread(void) _NOTHROW {
-  free(main_thread);
-}
+// void cleanup_main_thread(void) _NOTHROW {
+//   free(main_thread);
+// }
 
 /* Setup 'SIGUSR1' and 'SIGUSR2' for subtread. to be used for pause then resume. */
 void setup_signal_handler_on_sub_thread(void (*handler)(int)) _NOTHROW {

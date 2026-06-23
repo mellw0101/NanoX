@@ -127,7 +127,8 @@ static void *worker_thread(void *arg) _NOTHROW {
     /* When we want a predefined function to run when this thread has finished
      * execution, we add the prefifined callback function to the callback queue. */
     if (task.callback) {
-      enqueue_callback(task.callback, result);
+      // enqueue_callback(task.callback, result);
+      event_enqueue(task.callback, task.arg);
     }
   }
   return NULL;

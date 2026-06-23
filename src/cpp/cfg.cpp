@@ -271,7 +271,8 @@ static void load_colorfile(void) {
   configfile->data.selectedtext_color  = (get_color_option(data, SELECTED_TEXT_OPT,      &color) ? color : SELECTED_TEXT);
   get_linenumber_bar_option(data);
   free(data);
-  enqueue_callback(update_colorfile, configfile);
+  // enqueue_callback(update_colorfile, configfile);
+  event_enqueue(update_colorfile, configfile);
 }
 
 static void colorfile_listener_callback(void *_UNUSED data, Uint _UNUSED mask) {

@@ -163,8 +163,8 @@ extern char *statedir;
 extern task_queue_t          *task_queue;
 extern pthread_t             *threads;
 extern volatile sig_atomic_t *stop_thread_flags;
-extern callback_queue_t      *callback_queue;
-extern main_thread_t         *main_thread;
+// extern callback_queue_t      *callback_queue;
+// extern main_thread_t         *main_thread;
 
 extern unordered_map<string, syntax_data_t> test_map;
 
@@ -750,9 +750,9 @@ Uchar thread_id_from_pthread(pthread_t *thread) _NOTHROW;
 bool is_main_thread(void) _NOTHROW;
 void send_SIGUSR1_to_main_thread(void) _NOTHROW;
 void send_signal_to_main_thread(callback_functionptr_t func, void *arg) _NOTHROW;
-void init_event_handler(void) _NOTHROW;
-void enqueue_callback(callback_functionptr_t callback, void *result) _NOTHROW;
-void prosses_callback_queue(void) _NOTHROW;
+// void init_event_handler(void) _NOTHROW;
+// void enqueue_callback(callback_functionptr_t callback, void *result) _NOTHROW;
+// void prosses_callback_queue(void) _NOTHROW;
 // void cleanup_event_handler(void) _NOTHROW;
 
 
@@ -766,7 +766,7 @@ void get_line_list_task(const char *path);
 /* ---------------------------------------------------------- signal.cpp ---------------------------------------------------------- */
 
 
-void init_main_thread(void) _NOTHROW;
+// void init_main_thread(void) _NOTHROW;
 void cleanup_main_thread(void) _NOTHROW;
 void setup_signal_handler_on_sub_thread(void (*handler)(int)) _NOTHROW;
 void block_pthread_sig(int sig, bool block) _NOTHROW;
