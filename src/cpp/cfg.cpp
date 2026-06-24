@@ -129,16 +129,15 @@ static char *lock_and_read(const char *file_path, Ulong *file_size) {
 }
 
 /* Callback that the main thread runs to update colors in a thread-safe manner. */
-static void update_colorfile(void *arg) {
-  configfilestruct *file = (configfilestruct *)arg;
+static void update_colorfile(configfilestruct *file) {
   /* Line configuration. */
   config->linenumber.color           = file->data.linenumber.color;
   config->linenumber.barcolor        = file->data.linenumber.barcolor;
   config->linenumber.verticalbar     = file->data.linenumber.verticalbar;
   config->linenumber.fullverticalbar = file->data.linenumber.fullverticalbar;
-  config->prompt.color       = file->data.prompt.color;
-  config->minibar_color      = file->data.minibar_color;
-  config->selectedtext_color = file->data.selectedtext_color;
+  config->prompt.color               = file->data.prompt.color;
+  config->minibar_color              = file->data.minibar_color;
+  config->selectedtext_color         = file->data.selectedtext_color;
   refresh_needed = TRUE;
 }
 
@@ -255,14 +254,15 @@ static void get_linenumber_bar_option(const char *data) {
 
 /* Load configfile with values from disk. */
 static void load_colorfile(void) {
+  int   color;
+  Ulong file_size;
+  char *data;
   /* Make sure the file always exists. */
   if (!file_exists(configfile->filepath)) {
     lock_and_write(configfile->filepath, S__LEN(CONFIGFILE_DEFAULT_TEXT), OVERWRITE);
   }
   /* Read the configfile. */
-  Ulong file_size;
-  char *data = lock_and_read(configfile->filepath, &file_size);
-  int color;
+  data = lock_and_read(configfile->filepath, &file_size);
   /* Get color opts, if any.  Otherwise, fall back to the default color. */
   configfile->data.linenumber.color    = (get_color_option(data, "linenumber:color=",    &color) ? color : LINE_NUMBER);
   configfile->data.linenumber.barcolor = (get_color_option(data, "linenumber:barcolor=", &color) ? color : LINE_NUMBER);
@@ -271,12 +271,23 @@ static void load_colorfile(void) {
   configfile->data.selectedtext_color  = (get_color_option(data, SELECTED_TEXT_OPT,      &color) ? color : SELECTED_TEXT);
   get_linenumber_bar_option(data);
   free(data);
-  // enqueue_callback(update_colorfile, configfile);
-  event_enqueue(update_colorfile, configfile);
+  /* TODO: Now that this works, and we can update live when any changes happen to the
+   * color file, from anywhere, we must also implement a way where all open files are
+   * also listened to, and we inform the user that the file has changed on disk. */
+  event_enqueue((EVENT_CB)update_colorfile, configfile);
+}
+
+/* TODO: Meybe make a new var that will be used only for forcing unblocking when in curses mode. */
+static void colorfile_signal_interupt(void *_UNUSED arg) {
+  the_window_resized = TRUE;
+  ungetch(KEY_FRESH);
 }
 
 static void colorfile_listener_callback(void *_UNUSED data, Uint _UNUSED mask) {
   load_colorfile();
+  if (IN_CURSES_CTX) {
+    event_enqueue_on_main_thread(colorfile_signal_interupt, NULL);
+  }
 }
 
 /* Init NanoX config. */

@@ -34,10 +34,10 @@ extern nwindow *tui_footwin;
 // extern linestruct *execute_history;
 // extern linestruct *searchtop;
 // extern linestruct *searchbot;
-extern linestruct *replacetop;
-extern linestruct *replacebot;
-extern linestruct *executetop;
-extern linestruct *executebot;
+// extern linestruct *replacetop;
+// extern linestruct *replacebot;
+// extern linestruct *executetop;
+// extern linestruct *executebot;
 // extern linestruct *cutbuffer;
 // extern linestruct *cutbottom;
 // extern linestruct *pletion_line;
@@ -131,7 +131,7 @@ extern int *bardata;
 // extern Ulong wrap_at;
 
 // extern long stripe_column;
-extern long tabsize;
+// extern long tabsize;
 
 // extern regex_t quotereg;
 
@@ -146,7 +146,7 @@ extern long tabsize;
 // extern int   hilite_attribute;
 // extern int   interface_color_pair[NUMBER_OF_ELEMENTS];
 // extern char *homedir;
-extern char *statedir;
+// extern char *statedir;
 // extern char *startup_problem;
 // extern char *custom_nanorc;
 // extern char *commandname;

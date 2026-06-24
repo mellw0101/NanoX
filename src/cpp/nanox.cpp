@@ -1178,6 +1178,7 @@ bool changes_something(functionptrtype f) {
 
 /* Read in a keystroke, and execute its command or insert it into the buffer. */
 static void process_a_keystroke(void) {
+  unix_socket_debug("%s\n", __func__);
   /* The keystroke we read in, this can be a char or a shortcut. */
   int input;
   /* The buffer to hold the actual chars. */
@@ -1567,7 +1568,7 @@ int main(int argc, char **argv) {
   initcheck_utf8();
   init_queue_task();
   // init_event_handler();
-  event_init();
+  // event_init();
   Mlib::Profile::setupReportGeneration("/home/mellw/.NanoX.profile");
   LOUTPTR->setOutputFile("/home/mellw/.NanoX.log");
   logI("Starting NanoX");
@@ -1614,8 +1615,6 @@ int main(int argc, char **argv) {
     NETLOG("\nExiting NanoX.\n");
     (unix_socket_fd < 0) ? 0 : close(unix_socket_fd);
   });
-  file_listener = file_listener_create();
-  init_cfg();
   /* Check whether we're running on a Linux console. */
   on_a_vt = !ioctl(STDOUT_FILENO, VT_GETSTATE, &dummy);
   /* Back up the terminal settings so that they can be restored. */
@@ -1657,6 +1656,9 @@ int main(int argc, char **argv) {
   }
   /* Handle all cli-arguments. */
   proccess_cli_arguments(&argc, argv);
+  event_init();
+  file_listener = file_listener_create();
+  init_cfg();
   /* Curses needs TERM; if it is unset, try falling back to a VT220. */
   if (!getenv("TERM")) {
     putenv((char *)"TERM=vt220");

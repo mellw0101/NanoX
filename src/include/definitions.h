@@ -756,8 +756,8 @@ typedef struct EditorText    EditorText;
 // typedef void (*guielement_callback)(guielement *self, guielement_callback_type type);
 typedef void (*GuiScrollbarUpdateFunc)(void *, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *top_offset, float *right_offset);
 typedef void (*GuiScrollbarMoveFunc)(void *, long);
-typedef void (*MenuPosFunc)(void *, vec2, vec2 *);
-typedef void (*MenuAcceptFunc)(void *, const char *const restrict, int index);
+// typedef void (*MenuPosFunc)(void *, vec2, vec2 *);
+// typedef void (*MenuAcceptFunc)(void *, const char *const restrict, int index);
 typedef void (*MenuHoverFunc)(void *, const char *const restrict, int index);
 
 /* Structure types. */

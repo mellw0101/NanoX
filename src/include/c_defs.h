@@ -788,6 +788,7 @@ typedef struct Scrollbar  Scrollbar;
 /* ----------------------------- gui/menu.c ----------------------------- */
 
 typedef struct Menu  Menu;
+typedef struct Menu *MENU;
 
 /* ----------------------------- gui/element.c ----------------------------- */
 

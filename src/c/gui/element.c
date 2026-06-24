@@ -426,6 +426,13 @@ void element_set_borders(Element *const e, float lsize, float tsize, float rsize
   e->border_color = color;
 }
 
+/* ----------------------------- Element set borders uniform ----------------------------- */
+
+void element_set_borders_uniform(Element *const e, float size, Uint color) {
+  ASSERT(e);
+  element_set_borders(e, size, size, size, size, color);
+}
+
 /* ----------------------------- Element set layers ----------------------------- */
 
 /* Set the event layer of `e`.  Note that this does not change drawing layer as that depends on the order of drawing. */

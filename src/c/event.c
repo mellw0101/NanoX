@@ -81,3 +81,16 @@ void event_enqueue(EVENT_CB callback, void *arg) {
     queue_push(queue, ev);
   );
 }
+
+/* Note that this uses signals to interupt the main thread. */
+void event_enqueue_on_main_thread(EVENT_CB callback, void *arg) {
+  ASSERT(callback);
+  union sigval data;
+  EVENT ev = xmalloc(sizeof(*ev));
+  ev->callback   = callback;
+  ev->arg        = arg;
+  data.sival_ptr = ev;
+  if (sigqueue(pid, SIGRTMIN, data) != 0) {
+    log_ERR_FA("Failed to enqueue event on main thread: %s", strerror(errno));
+  }
+}

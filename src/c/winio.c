@@ -161,7 +161,7 @@ static void read_keys_from(WINDOW *const frame) {
           }
           lastmessage = VACUUM;
           spotlighted = FALSE;
-          update_line_curses(openfile->current, openfile->current_x);
+          update_line_curses(TUI_OF->current, openfile->current_x);
           wnoutrefresh(midwin);
           curs_set(1);
         }

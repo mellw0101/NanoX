@@ -741,6 +741,8 @@ bool element_is_ancestor(Element *const e, Element *const ancestor);
 void element_set_lable(Element *const e, const char *const restrict lable, Ulong len);
 /* ----------------------------- Element set borders ----------------------------- */
 void element_set_borders(Element *const e, float lsize, float tsize, float rsize, float bsize, Uint color);
+/* ----------------------------- Element set borders uniform ----------------------------- */
+void element_set_borders_uniform(Element *const e, float size, Uint color);
 /* ----------------------------- Element set layers ----------------------------- */
 void element_set_layer(Element *const e, Ushort layer);
 /* ----------------------------- Element set parent ----------------------------- */
@@ -803,72 +805,78 @@ vertex_buffer_t *vertbuf_create(void);
 
 
 /* ----------------------------- Menu create ----------------------------- */
-Menu *menu_create(Element *const parent, Font *const font, void *data,
+MENU menu_create(Element *const parent, Font *const font, void *data,
   MenuPositionFunc position_routine, MenuAcceptFunc accept_routine);
 /* ----------------------------- Menuu create submenu ----------------------------- */
-Menu *menu_create_submenu(Menu *const parent, const char *const restrict lable, void *data, MenuAcceptFunc accept_routine);
+MENU menu_create_submenu(MENU const parent, const char *const restrict lable, void *data, MenuAcceptFunc accept_routine);
 /* ----------------------------- Menu free ----------------------------- */
-void menu_free(Menu *const menu);
+void menu_free(MENU const menu);
 /* ----------------------------- Menu get active ----------------------------- */
-Menu *menu_get_active(void);
+MENU menu_get_active(void);
 /* ----------------------------- Menu draw ----------------------------- */
-void menu_draw(Menu *const menu);
+void menu_draw(MENU const menu);
 /* ----------------------------- Menu push back ----------------------------- */
-void menu_push_back(Menu *const menu, const char *const restrict string);
+void menu_push_back(MENU const menu, const char *const restrict string);
 /* ----------------------------- Menu refresh pos ----------------------------- */
-void menu_refresh_pos(Menu *const menu);
+void menu_refresh_pos(MENU const menu);
 /* ----------------------------- Menu refresh text ----------------------------- */
-void menu_refresh_text(Menu *const menu);
+void menu_refresh_text(MENU const menu);
 /* ----------------------------- Menu refresh scrollbar ----------------------------- */
-void menu_refresh_scrollbar(Menu *const menu);
+void menu_refresh_scrollbar(MENU const menu);
 /* ----------------------------- Menu show ----------------------------- */
-void menu_show(Menu *const menu, bool show);
+void menu_show(MENU const menu, bool show);
 /* ----------------------------- Menu selected up ----------------------------- */
-void menu_selected_up(Menu *const menu);
+void menu_selected_up(MENU const menu);
 /* ----------------------------- Menu selected down ----------------------------- */
-void menu_selected_down(Menu *const menu);
+void menu_selected_down(MENU const menu);
 /* ----------------------------- Menu submenu exit ----------------------------- */
-void menu_submenu_exit(Menu *const menu);
+void menu_submenu_exit(MENU const menu);
 /* ----------------------------- Menu submenu enter ----------------------------- */
-void menu_submenu_enter(Menu *const menu);
+void menu_submenu_enter(MENU const menu);
 /* ----------------------------- Menu routine accept ----------------------------- */
-void menu_routine_accept(Menu *const menu);
+void menu_routine_accept(MENU const menu);
 /* ----------------------------- Menu routine hover ----------------------------- */
-void menu_routine_hover(Menu *const menu, float x_pos, float y_pos);
+void menu_routine_hover(MENU const menu, float x_pos, float y_pos);
 /* ----------------------------- Menu routine scroll ----------------------------- */
-void menu_routine_scroll(Menu *const menu, bool direction, float x_pos, float y_pos);
+void menu_routine_scroll(MENU const menu, bool direction, float x_pos, float y_pos);
 /* ----------------------------- Menu routine click ----------------------------- */
-void menu_routine_click(Menu *const menu, float x_pos, float y_pos);
+void menu_routine_click(MENU const menu, float x_pos, float y_pos);
 /* ----------------------------- Menu clear entries ----------------------------- */
-void menu_clear_entries(Menu *const menu);
+void menu_clear_entries(MENU const menu);
 /* ----------------------------- Menu set static width ----------------------------- */
-void menu_set_static_width(Menu *const menu, float width);
+void menu_set_static_width(MENU const menu, float width);
 /* ----------------------------- Menu behavior tab accept ----------------------------- */
-void menu_behavior_tab_accept(Menu *const menu, bool accept_on_tab);
+void menu_behavior_tab_accept(MENU const menu, bool accept_on_tab);
 /* ----------------------------- Menu behavior arrow depth navigation ----------------------------- */
-void menu_behavior_arrow_depth_navigation(Menu *const menu, bool enable_arrow_depth_navigation);
+void menu_behavior_arrow_depth_navigation(MENU const menu, bool enable_arrow_depth_navigation);
 /* ----------------------------- Menu set lable offset ----------------------------- */
-void menu_set_lable_offset(Menu *const menu, Ushort pixels);
+void menu_set_lable_offset(MENU const menu, Ushort pixels);
 /* ----------------------------- Menu owns element ----------------------------- */
-bool menu_owns_element(Menu *const menu, Element *const e);
+bool menu_owns_element(MENU const menu, Element *const e);
 /* ----------------------------- Menu element is main ----------------------------- */
-bool menu_element_is_main(Menu *const menu, Element *const e);
+bool menu_element_is_main(MENU const menu, Element *const e);
 /* ----------------------------- Menu allows accept on tab ----------------------------- */
-bool menu_allows_accept_on_tab(Menu *const menu);
+bool menu_allows_accept_on_tab(MENU const menu);
 /* ----------------------------- Menu allows arrow depth navigation ----------------------------- */
-bool menu_allows_arrow_depth_navigation(Menu *const menu);
+bool menu_allows_arrow_depth_navigation(MENU const menu);
 /* ----------------------------- Menu is ancestor ----------------------------- */
-bool menu_is_ancestor(Menu *const menu, Menu *const ancestor);
+bool menu_is_ancestor(MENU const menu, MENU const ancestor);
 /* ----------------------------- Menu is shown ----------------------------- */
-bool menu_is_shown(Menu *const menu);
+bool menu_is_shown(MENU const menu);
 /* ----------------------------- Menu get font ----------------------------- */
-Font *menu_get_font(Menu *const menu);
+Font *menu_get_font(MENU const menu);
 /* ----------------------------- Menu len ----------------------------- */
-int menu_len(Menu *const menu);
+int menu_len(MENU const menu);
 /* ----------------------------- Menu qsort cb strlen ----------------------------- */
 int menu_qsort_cb_strlen(const void *a, const void *b);
 /* ----------------------------- Menu qsort ----------------------------- */
-void menu_qsort(Menu *const menu, CmpFuncPtr cmp_func);
+void menu_qsort(MENU const menu, SIGTYPE_QSORT_CMP cmp_func);
+
+/* ----------------------------- Menu position routine mouse ----------------------------- */
+
+/* A standard callback to be used when the position routine of a menu should simply be the current mouse position. */
+void menu_position_routine_mouse(
+  void *arg, float _UNUSED width, float _UNUSED height, float *const x, float *const y);
 
 
 /* ---------------------------------------------------------- gui/frame.c ---------------------------------------------------------- */
@@ -1234,7 +1242,7 @@ void  report_cursor_position(void);
 /* ----------------------------- Curses ----------------------------- */
 
 void blank_row_curses(WINDOW *const window, int row);
-void statusline_curses_va(message_type type, const char *const restrict format, va_list ap);
+void statusline_curses_va(message_type type, const char *const restrict format, va_list ap) _PRINTFLIKE(2, 0);
 void statusline_curses(message_type type, const char *const restrict msg, ...) _PRINTFLIKE(2, 3);
 void statusbar_curses(const char *const restrict msg);
 void minibar(void);
@@ -1859,6 +1867,7 @@ void event_init(void);
 void event_free(void);
 void event_process(void);
 void event_enqueue(EVENT_CB callback, void *arg);
+void event_enqueue_on_main_thread(EVENT_CB callback, void *arg);
 
 
 /* ---------------------------------------------------------- nanox.c ---------------------------------------------------------- */
@@ -1932,7 +1941,7 @@ void handle_sigwinch(int signal);
 /* ----------------------------- Suspend nano ----------------------------- */
 void suspend_nano(int _UNUSED signal);
 /* ----------------------------- Continue nano ----------------------------- */
-void continue_nano(int _UNUSED signal);
+void continue_nanox(int _UNUSED signal);
 /* ----------------------------- Do suspend ----------------------------- */
 void do_suspend(void);
 /* ----------------------------- Do exit ----------------------------- */

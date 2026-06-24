@@ -775,7 +775,7 @@ void make_new_buffer_for(openfilestruct **const start, openfilestruct **const op
   if (!*open) {
     /* Make the first buffer the only element in the list. */
     CLIST_INIT(node);
-    (*start) = node;
+    *start = node;
   }
   else {
     /* Add the new buffer after the current one in the list. */
@@ -866,20 +866,20 @@ void make_new_buffer(void) {
 
 /* Return the given file name in a way that fits within the given space. */
 char *crop_to_fit(const char *const restrict name, Ulong room) {
-  char *clipped;
-  if (breadth(name) <= room) {
+  // char *clipped;
+  Ulong name_breadth = breadth(name);
+  if (name_breadth <= room) {
     return display_string(name, 0, room, FALSE, FALSE);
   }
   if (room < 4) {
-    return copy_of("_");
+    return COPY_OF("_");
   }
-  clipped = display_string(name, (breadth(name) - room + 3), room, FALSE, FALSE);
-  clipped = xrealloc(clipped, (strlen(clipped) + 4));
-  memmove((clipped + 3), clipped, (strlen(clipped) + 1));
-  clipped[0] = '.';
-  clipped[1] = '.';
-  clipped[2] = '.';
-  return clipped;
+  return xstrninj(display_string(name, (name_breadth - room + 3), room, FALSE, FALSE), S__LEN("..."), 0);
+  // clipped = display_string(name, (name_breadth - room + 3), room, FALSE, FALSE);
+  // clipped = xrealloc(clipped, (strlen(clipped) + 4));
+  // memmove((clipped + 3), clipped, (strlen(clipped) + 1));
+  // memcpy(clipped, S__LEN("..."));
+  // return clipped;
 }
 
 /* ----------------------------- Stat with alloc ----------------------------- */
@@ -951,7 +951,8 @@ void mention_name_and_linecount_for(openfilestruct *const file) {
     statusline(
       HUSH, P_("%s -- %zu line (%s)", "%s -- %zu lines (%s)", count),
       ((!*file->filename) ? _("New Buffer") : tail(file->filename)),
-      count, ((file->fmt == DOS_FILE) ? _("DOS") : _("Mac")));
+      count, ((file->fmt == DOS_FILE) ? _("DOS") : _("Mac"))
+    );
   }
   else {
     statusline(HUSH, P_("%s -- %zu line", "%s -- %zu lines", count), ((file->filename[0] == '\0') ? _("New Buffer") : tail(file->filename)), count);
@@ -1281,20 +1282,20 @@ char *check_writable_directory(const char *path) {
 
 /* Our sort routine for file listings.  Sort alphabetically and case-insensitively, and sort directories before filenames. */
 int diralphasort(const void *va, const void *vb) {
+  int         difference;
   struct stat fileinfo;
-  const char *a = *(const char *const *)va;
-  const char *b = *(const char *const *)vb;
-  bool aisdir = (stat(a, &fileinfo) != -1 && S_ISDIR(fileinfo.st_mode));
-  bool bisdir = (stat(b, &fileinfo) != -1 && S_ISDIR(fileinfo.st_mode));
+  const char *a      = *(const char *const *)va;
+  const char *b      = *(const char *const *)vb;
+  bool        aisdir = (stat(a, &fileinfo) != -1 && S_ISDIR(fileinfo.st_mode));
+  bool        bisdir = (stat(b, &fileinfo) != -1 && S_ISDIR(fileinfo.st_mode));
   if (aisdir && !bisdir) {
     return -1;
   }
   if (!aisdir && bisdir) {
     return 1;
   }
-  int difference = mbstrcasecmp(a, b);
   /* If two names are equivalent when ignoring case, compare them bytewise. */
-  if (!difference) {
+  if (!(difference = mbstrcasecmp(a, b))) {
     return strcmp(a, b);
   }
   else {

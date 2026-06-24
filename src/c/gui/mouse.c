@@ -296,6 +296,7 @@ void gl_mouse_routine_button_dn(Uchar button, Ushort _UNUSED mod, float x, float
     else if (menu_get_active() && e->dt == ELEMENT_DATA_MENU
     && menu_is_ancestor(e->dp_menu, menu_get_active()) && menu_element_is_main(e->dp_menu, e))
     {
+      log_INFO_0("Menu-Main");
       menu_routine_click(e->dp_menu, x, y);
     }
     /* Scrollbar-Base */

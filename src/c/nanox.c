@@ -239,7 +239,7 @@ static void print_opt(const char *const restrict sflag,
   deed.sa_handler = suspend_nano;
   sigaction(SIGTSTP, &deed, NULL);
   sigfillset(&deed.sa_mask);
-  deed.sa_handler = continue_nano;
+  deed.sa_handler = continue_nanox;
   sigaction(SIGCONT, &deed, NULL);
 # if !defined(DEBUG)
   /* For now we keep this as NANO_NOCATCH. */
@@ -847,7 +847,8 @@ void regenerate_screen(void) {
   }
   /* Reset the trigger. */
   the_window_resized = FALSE;
-  /* Leave and immediately reenter curses mode, so that ncurses notices the new screen dimensions and sets LINES and COLS accordingly. */
+  /* Leave and immediately reenter curses mode, so that ncurses
+   * notices the new screen dimensions and sets LINES and COLS accordingly. */
   endwin();
   refresh();
   sidebar     = ((ISSET(INDICATOR) && LINES > 5 && COLS > 9) ? 1 : 0);
@@ -900,10 +901,10 @@ void suspend_nano(int _UNUSED signal) {
   kill(0, SIGSTOP);
 }
 
-/* ----------------------------- Continue nano ----------------------------- */
+/* ----------------------------- Continue nanox ----------------------------- */
 
 /* Handler for SIGCONT (continue after suspend). */
-void continue_nano(int _UNUSED signal) {
+void continue_nanox(int _UNUSED signal) {
   if (ISSET(USE_MOUSE)) {
     enable_mouse_support();
   }
@@ -1077,7 +1078,8 @@ void inject_into_buffer(CTX_ARGS, char *burst, Ulong count) {
   /* When softwrapping and the number of chunks in the current line changed, or we were
    * on the last row of the edit window and moved to a new chunk, we need a full refresh. */
   if (ISSET(SOFTWRAP) && (extra_chunks_in(cols, file->current) != old_amount
-  || (file->cursor_row == (rows - 1) && chunk_for(cols, file->placewewant, file->current) > original_row))) {
+  || (file->cursor_row == (rows - 1) && chunk_for(cols, file->placewewant, file->current) > original_row)))
+  {
     refresh_needed = TRUE;
     focusing       = FALSE;
   }

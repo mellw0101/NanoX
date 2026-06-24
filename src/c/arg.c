@@ -194,7 +194,7 @@ static void consume_argument(int *const argc, char **argv, int i) {
   ASSERT(argc);
   ASSERT(argv);
   /* Consume the argument. */
-  MEMMOVE((argv + i), (argv + i + 1), (((*argc) - i - 1) * _PTRSIZE));
+  memmove((argv + i), (argv + i + 1), (((*argc) - i - 1) * _PTRSIZE));
   /* Decrament the total size. */
   --(*argc);
 }
