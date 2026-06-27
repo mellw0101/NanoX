@@ -188,19 +188,6 @@ static void etb_draw_entries(ETB etb) {
   );
 }
 
-/* ----------------------------- Etb button context menu pos ----------------------------- */
-
-/* The position routine for the button context menu of the editor topbar. */
-// static void etb_button_context_menu_pos(
-//   void *arg, float _UNUSED width, float _UNUSED height, float *const x, float *const y)
-// {
-//   ASSERT(arg);
-//   ASSERT(x);
-//   ASSERT(y);
-//   *x = gl_mouse_x();
-//   *y = gl_mouse_y();
-// }
-
 /* ----------------------------- Etb button context menu accept ----------------------------- */
 
 /* The accept routine for the button context menu of the editor topbar. */
@@ -231,6 +218,7 @@ static void etb_button_context_menu_accept(ETB etb, const char *const restrict e
       }
       /* Close All */
       case 2: {
+        statusline(ALERT, "NOT IMPLEMENTED YET");
         // gui_editor_close_all_files(file);
         break;
       }
@@ -238,17 +226,6 @@ static void etb_button_context_menu_accept(ETB etb, const char *const restrict e
     etb->context.clicked = NULL;
   }
 }
-
-/* ----------------------------- Etb context menu pos ----------------------------- */
-
-/* The position routine for the context menu of the editor topbar. */
-// static void etb_context_menu_pos(void *arg, float _UNUSED width, float _UNUSED height, float *const x, float *const y) {
-//   ASSERT(arg);
-//   ASSERT(x);
-//   ASSERT(y);
-//   *x = gl_mouse_x();
-//   *y = gl_mouse_y();
-// }
 
 /* ----------------------------- Etb context menu accept ----------------------------- */
 
@@ -260,6 +237,8 @@ static void etb_context_menu_accept(ETB etb, const char *const restrict entry_st
   if (etb->context.clicked && etb->context.clicked == etb->element && etb->context.clicked->dt == ELEMENT_DATA_EDITOR) {
     switch (index) {
       case 0: {
+        editor_set_open(etb->context.clicked->dp_editor);
+        editor_open_new_empty_buffer();
         // gui_editor_set_open(etb->context.clicked->ed_editor);
         // gui_editor_open_new_empty_buffer();
         break;
@@ -269,10 +248,18 @@ static void etb_context_menu_accept(ETB etb, const char *const restrict entry_st
   }
 }
 
+static void etb_context_menu_debug_accept(ETB etb, const char *const restrict entry_string, int _UNUSED index) {
+  ASSERT_ETB(etb);
+  ASSERT(entry_string);
+  unix_socket_debug("%s\n", entry_string);
+  etb->context.clicked = NULL;
+}
+
 /* ----------------------------- Etb context menu create ----------------------------- */
 
 static void etb_context_menu_create(ETB etb) {
   ASSERT_ETB(etb);
+  MENU debug_submenu;
   etb->context.clicked = NULL;
   etb->context.button_menu = menu_create(
     etb->element,
@@ -294,6 +281,17 @@ static void etb_context_menu_create(ETB etb) {
     (MenuAcceptFunc)etb_context_menu_accept
   );
   menu_push_back(etb->context.topbar_menu, "New Text File");
+  debug_submenu = menu_create_submenu(
+    etb->context.topbar_menu,
+    "DEBUG SUBMENU",
+    etb,
+    (MenuAcceptFunc)etb_context_menu_debug_accept
+  );
+  menu_push_back(debug_submenu, "TEST 1");
+  menu_push_back(debug_submenu, "TEST 2");
+  menu_push_back(debug_submenu, "TEST 3");
+  menu_push_back(debug_submenu, "TEST 4");
+  menu_push_back(debug_submenu, "TEST 5");
 }
 
 /* ----------------------------- Etb context menu free ----------------------------- */

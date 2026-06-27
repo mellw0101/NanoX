@@ -50,6 +50,7 @@ extern bool last_key_was_bracket;
 extern bool ignore_rcfiles;
 extern bool fill_used;
 extern bool st_marked;
+extern bool verticalbar;
 
 extern char last_bracket_char;
 
@@ -129,6 +130,11 @@ extern int shiftaltup;
 extern int shiftaltdown;
 extern int mousefocusin;
 extern int mousefocusout;
+extern int coloridx_linenumber;
+extern int coloridx_linenumber_bar;
+extern int coloridx_prompt;
+extern int coloridx_minibar;
+extern int coloridx_selected_text;
 
 extern int *bardata;
 
@@ -201,7 +207,7 @@ extern regmatch_t regmatches[10];
 
 extern message_type lastmessage;
 
-extern configstruct *config;
+// extern configstruct *config;
 
 extern syntaxtype *nanox_rc_live_syntax;
 extern syntaxtype *syntaxes;
@@ -239,7 +245,7 @@ _BEGIN_C_LINKAGE
 extern int unix_socket_fd;
 
 void unix_socket_connect(const char *path);
-void unix_socket_debug(const char *format, ...);
+void unix_socket_debug(const char *format, ...) _PRINTFLIKE(1, 2);
 
 /* This callback will be called upon when a fatal error occurs.
  * That means this function should terminate the application. */
@@ -584,7 +590,7 @@ void suggestmenu_run(void);
 /* ----------------------------- Suggestmenu draw ----------------------------- */
 void suggestmenu_draw(void);
 /* ----------------------------- Suggestmenu ----------------------------- */
-Menu *suggestmenu(void);
+MENU suggestmenu(void);
 
 
 /* ----------------------------------------------- csyntax.c ----------------------------------------------- */
@@ -1090,9 +1096,9 @@ char *abs_path(const char *const restrict path);
 void utf8_init(void);
 /* ----------------------------- Using utf8 ----------------------------- */
 bool using_utf8(void);
-bool is_language_word_char(const char *pointer, Ulong index);
 bool is_lang_word_char(openfilestruct *const file);
-bool is_cursor_language_word_char(void);
+// bool is_language_word_char(const char *pointer, Ulong index);
+// bool is_cursor_language_word_char(void);
 bool is_enclose_char(char ch);
 /* ----------------------------- Is alpha char ----------------------------- */
 bool is_alpha_char(const char *const restrict c);
@@ -1809,7 +1815,7 @@ int shader_get_location_font_projection(void);
 int shader_get_location_rect_projection(void);
 
 
-/* ----------------------------------------------------------  ---------------------------------------------------------- */
+/* ---------------------------------------------------------- gui/gl_window.c ---------------------------------------------------------- */
 
 
 /* ----------------------------- Gl window resize ----------------------------- */
@@ -1868,6 +1874,13 @@ void event_free(void);
 void event_process(void);
 void event_enqueue(EVENT_CB callback, void *arg);
 void event_enqueue_on_main_thread(EVENT_CB callback, void *arg);
+
+
+/* ---------------------------------------------------------- nxcfg.c ---------------------------------------------------------- */
+
+
+void nxcfg_init(void);
+void nxcfg_free(void);
 
 
 /* ---------------------------------------------------------- nanox.c ---------------------------------------------------------- */
@@ -1990,7 +2003,7 @@ bool changes_something(functionptrtype f);
 
 // void cleanup_event_handler(void);
 void shutdown_queue(void);
-void cleanup_cfg(void);
+// void cleanup_cfg(void);
 
 
 _END_C_LINKAGE

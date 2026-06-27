@@ -79,6 +79,8 @@ bool fill_used = FALSE;
 /* Whether or not the `(status/prompt)-bar` is currently marked. */
 bool st_marked = FALSE;
 
+bool verticalbar = FALSE;
+
 /* ----------------------------- char ----------------------------- */
 
 char last_bracket_char = NUL;
@@ -133,7 +135,7 @@ char *prompt = NULL;
 /* ----------------------------- char [] ----------------------------- */
 
 /* The buffer holding the current completion search string.  Note that this is for the `tui`. */
-char  suggest_buf[1024] = "";
+char suggest_buf[1024] = "";
 
 /* ----------------------------- const char * ----------------------------- */
 
@@ -294,6 +296,12 @@ int mousefocusin;
 /* Extended ncurses key code for mouse focus out. */
 int mousefocusout;
 
+int coloridx_linenumber     = LINE_NUMBER;
+int coloridx_linenumber_bar = LINE_NUMBER;
+int coloridx_prompt         = PROMPT_BAR;
+int coloridx_minibar        = MINI_INFOBAR;
+int coloridx_selected_text  = SELECTED_TEXT;
+
 /* ----------------------------- int * ----------------------------- */
 
 /* An array of characters that together depict the scrollbar. */
@@ -449,10 +457,6 @@ regex_t quotereg;
 /* The match positions for parenthetical subexpressions, 10 maximum, used in regular expression searches. */
 regmatch_t regmatches[10];
 
-/* ----------------------------- GLFWwindow * ----------------------------- */
-
-// GLFWwindow *gui_window = NULL;
-
 /* ----------------------------- message_type ----------------------------- */
 
 /* Messages of type HUSH should not overwrite type MILD nor ALERT. */
@@ -461,7 +465,7 @@ message_type lastmessage = VACUUM;
 /* ----------------------------- configstruct * ----------------------------- */
 
 /* Global config to store data retrieved from config file. */
-configstruct *config = NULL;
+// configstruct *config = NULL;
 
 /* ----------------------------- syntaxtype * ----------------------------- */
 

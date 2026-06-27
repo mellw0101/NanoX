@@ -230,7 +230,7 @@ int LanguageServer::index_file(const char *path, bool reindex) {
     }
     index.include[absolute_path].delete_data();
     index.include.erase(absolute_path);
-    if (/* openfile->type.is_set<BASH>() */ openfile->is_bash_file) {
+    if (OPENFILE_SYNTAX_IS(TUI_OF, BASH) /* openfile->type.is_set<BASH>() */ /* openfile->is_bash_file */) {
       index.bash_data.delete_data();
     }
   }
@@ -239,7 +239,7 @@ int LanguageServer::index_file(const char *path, bool reindex) {
   index.include[absolute_path] = idfile;
   free(absolute_path);
   FOR_EACH_LINE_NEXT(line, idfile.top()) {
-    if (/* openfile->type.is_set<C_CPP>() */ openfile->is_c_file || openfile->is_cxx_file) {
+    if (OPENFILE_SYNTAX_IS(openfile, C, CPP) /* openfile->type.is_set<C_CPP>() */ /* openfile->is_c_file || openfile->is_cxx_file */) {
       Parse::comment(line);
       // if (line->flags.is_set<BLOCK_COMMENT_START>() || line->flags.is_set<BLOCK_COMMENT_END>()
       // || line->flags.is_set<IN_BLOCK_COMMENT>() || line->flags.is_set<PP_LINE>()) {
@@ -256,7 +256,7 @@ int LanguageServer::index_file(const char *path, bool reindex) {
       }
       do_parse(&line, idfile.name());
     }
-    else if (/* openfile->type.is_set<BASH>() */ openfile->is_bash_file) {
+    else if (OPENFILE_SYNTAX_IS(TUI_OF, BASH) /* openfile->type.is_set<BASH>() */ /* openfile->is_bash_file */) {
       do_bash_parse(line, idfile.name());
     }
   }

@@ -377,18 +377,18 @@ static void syntaxfile_test_append_node(void *dst, void *src) {
 
 static void syntaxfile_test_read_one_file(const char *path, Ulong *nlines, Ulong *nobj) {
   ASSERT(path);
-  SyntaxFileError *err;
+  // SyntaxFileError *err;
   SyntaxFile *sfile = syntaxfile_create();
   syntaxfile_read(sfile, path);
   // process_syntaxfile_c(sfile);
   syntaxfile_parse_csyntax(sfile);
-  if (sfile->errtop) {
-    err = sfile->errtop;
-    while (err) {
-      writef("%s:[%d:%d]: %s\n", err->file, err->pos->row, err->pos->column, err->msg);
-      err = err->next;
-    }
-  }
+  // if (sfile->errtop) {
+  //   err = sfile->errtop;
+  //   while (err) {
+  //     writef("%s:[%d:%d]: %s\n", err->file, err->pos->row, err->pos->column, err->msg);
+  //     err = err->next;
+  //   }
+  // }
   ASSIGN_IF_VALID(nlines, sfile->filebot->lineno);
   ASSIGN_IF_VALID(nobj, hashmap_size(sfile->objects));
   hashmap_append_waction(globmap, sfile->objects, syntaxfile_test_append_node);

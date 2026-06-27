@@ -290,11 +290,11 @@ static int get_code_from_plantation(void) {
     else {
       length = strlen(plants_pointer);
     }
-    for (int index = (length - 1); index > 0; --index) {
+    for (int index=(length - 1); index>0; --index) {
       put_back((Uchar)plants_pointer[index]);
     }
     plants_pointer += length;
-    return ((firstbyte) ? firstbyte : ERR);
+    return PASS_IF_VALID(firstbyte, ERR);
   }
 }
 
@@ -2652,6 +2652,7 @@ void edit_refresh_for(CTX_ARGS) {
       row += update_line_curses_for(file, line, ((line == file->current) ? file->current_x : 0));
       DLIST_ADV_NEXT(line);
     }
+    unix_socket_debug("\nDEBUG\n\n");
     while (row < rows) {
       blank_row_curses(midwin, row);
       /* If full linenumber bar is enabled, then draw it. */
@@ -2902,7 +2903,7 @@ void minibar(void) {
     return;
   }
   /* Draw the colored bar over the full width of the screen. */
-  wattron(footwin, interface_color_pair[config->minibar_color]);
+  wattron(footwin, interface_color_pair[coloridx_minibar /* config->minibar_color */]);
   mvwprintw(footwin, 0, 0, "%*s", COLS, " ");
   if (*openfile->filename) {
     as_an_at = FALSE;
@@ -3005,7 +3006,7 @@ void minibar(void) {
     snprintf(location, 44, "%.1f%%", ((double)(100 * openfile->current->lineno) / openfile->filebot->lineno));
     mvwaddstr(footwin, 0, (COLS - 6 - padding), location);
   }
-  wattroff(footwin, interface_color_pair[config->minibar_color]);
+  wattroff(footwin, interface_color_pair[coloridx_minibar /* config->minibar_color */]);
   wrefresh(footwin);
   free(number_of_lines);
   free(hexadecimal);
@@ -3425,12 +3426,12 @@ void draw_row_marked_region_for_curses(openfilestruct *const file, int row, cons
       thetext = (converted + actual_x(converted, start_col));
       /* If the end of the mark if onscreen, compute how menu characters to paint.  Otherwise, just paint all. */
       if (bot_x < till_x) {
-        endcol = (wideness(line->data, bot_x) - from_col);
+        endcol   = (wideness(line->data, bot_x) - from_col);
         paintlen = actual_x(thetext, (endcol - start_col));
       }
-      wattron(midwin, interface_color_pair[config->selectedtext_color]);
+      wattron(midwin, interface_color_pair[coloridx_selected_text /* config->selectedtext_color */]);
       mvwaddnstr(midwin, row, (margin + start_col), thetext, paintlen);
-      wattroff(midwin, interface_color_pair[config->selectedtext_color]);
+      wattroff(midwin, interface_color_pair[coloridx_selected_text /* config->selectedtext_color */]);
     }
   }
 }

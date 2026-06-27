@@ -208,9 +208,9 @@ static void csyntaxmacro_parse(SyntaxFile *const sf, SyntaxFileLine **const outl
     syntaxfile_adderror(sf, line->lineno, (data - line->data), "Macro must have a name");
   }
   else {
-    writef("data:%s\n", data);
+    // writef("data:%s\n", data);
     endidx = wordendindex(data, 0, TRUE);
-    writef("endidx: %lu\n", endidx);
+    // writef("endidx: %lu\n", endidx);
     /* The macro's name is invalid. */
     if (!endidx) {
       syntaxfile_adderror(sf, line->lineno, (data - line->data), "Macro name is invalid");
@@ -225,7 +225,7 @@ static void csyntaxmacro_parse(SyntaxFile *const sf, SyntaxFileLine **const outl
       /* Allocate the name, so we can add it to the object map. */
       ptr = measured_copy(data, endidx);
       syntaxfile_addobject(sf, ptr, obj);
-      writef("name: %s\n", ptr);
+      // writef("name: %s\n", ptr);
       free(ptr);
       /* Adv data ptr. */
       data += endidx;
@@ -367,7 +367,7 @@ static void csyntaxstruct_parse(SyntaxFile *const sf, SyntaxFileLine **const out
       findnextchar(&line, &data);
       /* The strucure has a body. */
       if (*data == '{') {
-        writef("%s:[%d:%d]: Found struct decl: %s {}\n", sf->path, row, col, ptr);
+        // writef("%s:[%d:%d]: Found struct decl: %s {}\n", sf->path, row, col, ptr);
         csyntaxstruct_add_decl(sf, &line, &data, row, col, ptr);
         /* If we are not at the end bracket of the struct body, add a error. */
         if (*data != '}') {
@@ -408,7 +408,7 @@ static void csyntaxstruct_parse(SyntaxFile *const sf, SyntaxFileLine **const out
       }
       /* This structure declaration is a forward declaration. */
       else if (*data == ';') {
-        writef("%s:[%d:%d]: Found forward struct decl: %s;\n", sf->path, row, col, ptr);
+        // writef("%s:[%d:%d]: Found forward struct decl: %s;\n", sf->path, row, col, ptr);
         csyntaxstruct_add_forward_decl(sf, row, col, ptr);
         data += 1;
         findnextchar(&line, &data);
@@ -466,16 +466,16 @@ recheck:
         goto recheck;
       }
     }
-    else if (strncmp(data, S__LEN("typedef")) == 0 && isblankornulc(data + SLTLEN("typedef"))) {
-      data += SLTLEN("typedef");
-      findnextchar(&line, &data);
-      /* Typedef struct. */
-      if (strncmp(data, S__LEN("struct")) == 0 && isblankornulc(data + SLTLEN("struct"))) {
-        writef("%s:[%lu:%lu]: Found typedef struct: %s\n", sf->path, line->lineno, (data - line->data), data);
-      }
-      else if (strncmp(data, S__LEN("enum")) == 0 && isblankornulc(data + SLTLEN("enum"))) {
-        writef("%s:[%lu:%lu]: Found typedef enum: %s\n", sf->path, line->lineno, (data - line->data), data);
-      }
-    }
+    // else if (strncmp(data, S__LEN("typedef")) == 0 && isblankornulc(data + SLTLEN("typedef"))) {
+    //   data += SLTLEN("typedef");
+    //   findnextchar(&line, &data);
+    //   /* Typedef struct. */
+    //   if (strncmp(data, S__LEN("struct")) == 0 && isblankornulc(data + SLTLEN("struct"))) {
+    //     writef("%s:[%lu:%lu]: Found typedef struct: %s\n", sf->path, line->lineno, (data - line->data), data);
+    //   }
+    //   else if (strncmp(data, S__LEN("enum")) == 0 && isblankornulc(data + SLTLEN("enum"))) {
+    //     writef("%s:[%lu:%lu]: Found typedef enum: %s\n", sf->path, line->lineno, (data - line->data), data);
+    //   }
+    // }
   );
 }

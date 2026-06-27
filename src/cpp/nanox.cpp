@@ -1271,7 +1271,7 @@ static void process_a_keystroke(void) {
         }
         /* If '<' is pressed without being in a c/cpp file and at an include line, we simply do nothing. */
         else if (input == '<' && openfile->current->data[indent_length(openfile->current->data)] != '#'
-        && /* openfile->type.is_set<C_CPP>() */ (openfile->is_c_file || openfile->is_cxx_file))
+        && OPENFILE_SYNTAX_IS(TUI_OF, C, CPP) /* openfile->type.is_set<C_CPP>() */ /* (openfile->is_c_file || openfile->is_cxx_file) */)
         {
           ;
         }
@@ -1564,6 +1564,7 @@ int main(int argc, char **argv) {
   /* Whether the quoting regex was compiled successfully. */
   int quoterc;
   vt_stat dummy;
+  const char *spellenv;
   fcio_set_die_callback(die);
   initcheck_utf8();
   init_queue_task();
@@ -1580,8 +1581,6 @@ int main(int argc, char **argv) {
     NETLOGGERPTR->init(netlogger, 8080);
   }
   NETLOGGER.send_to_server("Starting NanoX.\n");
-  unix_socket_connect(UNIX_DOMAIN_SOCKET_PATH);
-  unix_socket_debug("Hello unix domain socket.\n");
   atexit([] {
     vector<string> gprof_report = GLOBALPROFILER->retrveFormatedStrVecStats();
     int i = 0;
@@ -1656,9 +1655,12 @@ int main(int argc, char **argv) {
   }
   /* Handle all cli-arguments. */
   proccess_cli_arguments(&argc, argv);
+  fcio_log_init();
+  unix_socket_connect(UNIX_DOMAIN_SOCKET_PATH);
   event_init();
   file_listener = file_listener_create();
-  init_cfg();
+  // init_cfg();
+  nxcfg_init();
   /* Curses needs TERM; if it is unset, try falling back to a VT220. */
   if (!getenv("TERM")) {
     putenv((char *)"TERM=vt220");
@@ -1711,12 +1713,10 @@ int main(int argc, char **argv) {
           fill = fill_cmdline;
         }
         if (backup_dir_cmdline) {
-          free(backup_dir);
-          backup_dir = backup_dir_cmdline;
+          backup_dir = free_and_assign(backup_dir, backup_dir_cmdline);
         }
         if (word_chars_cmdline) {
-          free(word_chars);
-          word_chars = word_chars_cmdline;
+          word_chars = free_and_assign(word_chars, word_chars_cmdline);
         }
         if (stripeclm_cmdline > 0) {
           stripe_column = stripeclm_cmdline;
@@ -1725,24 +1725,21 @@ int main(int argc, char **argv) {
           tabsize = tabsize_cmdline;
         }
         if (operating_dir_cmdline || ISSET(RESTRICTED)) {
-          free(operating_dir);
-          operating_dir = operating_dir_cmdline;
+          operating_dir = free_and_assign(operating_dir, operating_dir_cmdline);
         }
         if (quotestr_cmdline) {
-          free(quotestr);
-          quotestr = quotestr_cmdline;
+          quotestr = free_and_assign(quotestr, quotestr_cmdline);
         }
         if (alt_speller_cmdline) {
-          free(alt_speller);
-          alt_speller = alt_speller_cmdline;
+          alt_speller = free_and_assign(alt_speller, alt_speller_cmdline);
+          strip_leading_blanks_from(alt_speller);
         }
-        strip_leading_blanks_from(alt_speller);
         /* If an rcfile undid the default setting, copy it to the new flag. */
         if (!ISSET(NO_WRAP)) {
           SET(BREAK_LONG_LINES);
         }
         /* Simply OR the boolean flags from rcfile and command line. */
-        for (Ulong i = 0; i < (sizeof(flags) / sizeof(flags[0])); ++i) {
+        for (Ulong i=0; i<ARRAY_SIZE(flags); ++i) {
           flags[i] |= flags_cmdline[i];
         }
       }
@@ -1790,7 +1787,8 @@ int main(int argc, char **argv) {
   if (ISSET(POSITIONLOG)) {
     load_poshistory();
   }
-  /* If a backup directory was specified and we're not in restricted mode, verify it is an existing folder, so backup files can be saved there. */
+  /* If a backup directory was specified and we're not in restricted mode,
+   * verify it is an existing folder, so backup files can be saved there. */
   if (backup_dir && !ISSET(RESTRICTED)) {
     init_backup_dir();
   }
@@ -1808,7 +1806,7 @@ int main(int argc, char **argv) {
   quoterc = regcomp(&quotereg, quotestr, NANO_REG_EXTENDED);
   if (quoterc) {
     Ulong size = regerror(quoterc, &quotereg, NULL, 0);
-    char *message = (char *)nmalloc(size);
+    char *message = (char *)xmalloc(size);
     regerror(quoterc, &quotereg, message, size);
     die(_("Bad quoting regex \"%s\": %s\n"), quotestr, message);
   }
@@ -1818,11 +1816,8 @@ int main(int argc, char **argv) {
   /* If we don't have an alternative spell checker after reading the command line and/or rcfile(s), check
    * $SPELL for one, as Pico does (unless we're using restricted mode, in which case spell checking is
    * disabled, since it would allow reading from or writing to files not specified on the command line). */
-  if (!alt_speller && !ISSET(RESTRICTED)) {
-    const char *spellenv = getenv("SPELL");
-    if (spellenv) {
-      alt_speller = copy_of(spellenv);
-    }
+  if (!alt_speller && !ISSET(RESTRICTED) && (spellenv = getenv("SPELL"))) {
+    alt_speller = copy_of(spellenv);
   }
   /* If matchbrackets wasn't specified, set its default value. */
   if (!matchbrackets) {
@@ -1925,7 +1920,8 @@ int main(int argc, char **argv) {
   }
   /* Read the files mentioned on the command line into new buffers. */
   while (optind < argc && (!openfile || TRUE)) {
-    long  givenline = 0, givencol = 0;
+    long  givenline    = 0;
+    long  givencol     = 0;
     char *searchstring = NULL;
     /* If there's a +LINE[,COLUMN] argument here, eat it up. */
     if (optind < argc - 1 && argv[optind][0] == '+') {
@@ -2051,8 +2047,9 @@ int main(int argc, char **argv) {
       last_search  = searchstring;
       searchstring = NULL;
     }
-    else if (ISSET(POSITIONLOG) && openfile->filename[0]) {
-      long savedline, savedcol;
+    else if (ISSET(POSITIONLOG) && *openfile->filename) {
+      long savedline;
+      long savedcol;
       /* If edited before, restore the last cursor position. */
       if (has_old_position(argv[optind - 1], &savedline, &savedcol)) {
         goto_line_and_column(savedline, savedcol, FALSE, FALSE);
@@ -2072,9 +2069,13 @@ int main(int argc, char **argv) {
     UNSET(VIEW_MODE);
   }
   else {
-    openfile = openfile->next;
-    more_than_one    ? mention_name_and_linecount() : (void)0;
-    ISSET(VIEW_MODE) ? SET(MULTIBUFFER)             : 0;
+    CLIST_ADV_NEXT(openfile);
+    if (more_than_one) {
+      mention_name_and_linecount();
+    }
+    if (ISSET(VIEW_MODE)) {
+      SET(MULTIBUFFER);
+    }
   }
   if (optind < argc) {
     die(_("Can open just one file\n"));
@@ -2107,7 +2108,7 @@ int main(int argc, char **argv) {
     // prosses_callback_queue();
     event_process();
     confirm_margin();
-    if (on_a_vt && waiting_keycodes() == 0) {
+    if (on_a_vt && !waiting_keycodes()) {
       mute_modifiers = FALSE;
     }
     if (currmenu != MMAIN) {
@@ -2119,22 +2120,16 @@ int main(int argc, char **argv) {
       }
     }
     if (ISSET(MINIBAR) && !ISSET(ZERO) && (LINES > 1) && (lastmessage < REMARK)) {
-      if (ISSET(NO_NCURSES)) {
-        minibar();
-      }
-      else {
-        minibar();
-      }
+      minibar();
       if (suggest_on) {
         edit_refresh();
         do_suggestion();
       }
     }
-    else {
-      /* Update the displayed current cursor position only when there is no message and no keys are waiting in the input buffer. */
-      if (ISSET(CONSTANT_SHOW) && lastmessage == VACUUM && LINES > 1 && !ISSET(ZERO) && !waiting_keycodes()) {
-        report_cursor_position();
-      }
+    /* Update the displayed current cursor position only when there
+     * is no message and no keys are waiting in the input buffer. */
+    else if (ISSET(CONSTANT_SHOW) && lastmessage == VACUUM && LINES > 1 && !ISSET(ZERO) && !waiting_keycodes()) {
+      report_cursor_position();
     }
     as_an_at = TRUE;
     if ((refresh_needed && LINES > 1) || (LINES == 1 && lastmessage <= HUSH)) {

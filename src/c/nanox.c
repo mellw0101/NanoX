@@ -1372,7 +1372,8 @@ void finish(void) {
   // cleanup_event_handler();
   event_free();
   shutdown_queue();
-  cleanup_cfg();
+  // cleanup_cfg();
+  nxcfg_free();
   exit(0);
 }
 

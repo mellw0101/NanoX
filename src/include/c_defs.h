@@ -1550,16 +1550,52 @@ struct poshiststruct {
   poshiststruct *next; /* The next item of position history. */
 };
 
+typedef enum {
+  OPENFILE_SYNTAX_TYPE_NONE    = 0,
+  OPENFILE_SYNTAX_TYPE_C       = (1 << 0),
+  OPENFILE_SYNTAX_TYPE_CPP     = (1 << 1),
+  OPENFILE_SYNTAX_TYPE_NASM    = (1 << 2),
+  OPENFILE_SYNTAX_TYPE_ATNT    = (1 << 3),
+  OPENFILE_SYNTAX_TYPE_BASH    = (1 << 4),
+  OPENFILE_SYNTAX_TYPE_GLSL    = (1 << 5),
+  OPENFILE_SYNTAX_TYPE_SYSTEMD = (1 << 6),
+  OPENFILE_SYNTAX_TYPE_NANOX   = (1 << 7),
+  #define OPENFILE_SYNTAX_TYPE_NONE     OPENFILE_SYNTAX_TYPE_NONE
+  #define OPENFILE_SYNTAX_TYPE_C        OPENFILE_SYNTAX_TYPE_C
+  #define OPENFILE_SYNTAX_TYPE_CPP      OPENFILE_SYNTAX_TYPE_CPP
+  #define OPENFILE_SYNTAX_TYPE_NASM     OPENFILE_SYNTAX_TYPE_NASM
+  #define OPENFILE_SYNTAX_TYPE_ATNT     OPENFILE_SYNTAX_TYPE_ATNT
+  #define OPENFILE_SYNTAX_TYPE_BASH     OPENFILE_SYNTAX_TYPE_BASH
+  #define OPENFILE_SYNTAX_TYPE_GLSL     OPENFILE_SYNTAX_TYPE_GLSL
+  #define OPENFILE_SYNTAX_TYPE_SYSTEMD  OPENFILE_SYNTAX_TYPE_SYSTEMD
+  #define OPENFILE_SYNTAX_TYPE_NANOX    OPENFILE_SYNTAX_TYPE_NANOX
+
+  #define OF_T_(x)  OPENFILE_SYNTAX_TYPE_##x
+
+  #define OPENFILE_SYNTAX_1(a0)                      (OF_T_(a0))
+  #define OPENFILE_SYNTAX_2(a0, a1)                  (OF_T_(a0) | OF_T_(a1))
+  #define OPENFILE_SYNTAX_3(a0, a1, a2)              (OF_T_(a0) | OF_T_(a1) | OF_T_(a2))
+  #define OPENFILE_SYNTAX_4(a0, a1, a2, a3)          (OF_T_(a0) | OF_T_(a1) | OF_T_(a2) | OF_T_(a3))
+  #define OPENFILE_SYNTAX_5(a0, a1, a2, a3, a4)      (OF_T_(a0) | OF_T_(a1) | OF_T_(a2) | OF_T_(a3) | OF_T_(a4))
+  #define OPENFILE_SYNTAX_6(a0, a1, a2, a3, a4, a5)  (OF_T_(a0) | OF_T_(a1) | OF_T_(a2) | OF_T_(a3) | OF_T_(a4) | OF_T_(a5))
+
+  #define OPENFILE_SYNTAX(...)  VA_MACRO(OPENFILE_SYNTAX_, __VA_ARGS__)
+
+  #define OPENFILE_SYNTAX_IS(file, ...)  ((file)->syntax_type & OPENFILE_SYNTAX(__VA_ARGS__))
+} OPENFILE_SYNTAX_TYPE;
+
 struct openfilestruct {
+  Uint syntax_type;
+
   /* Boolian flags. */
-  bool is_c_file        : 1;
-  bool is_cxx_file      : 1;
-  bool is_nasm_file     : 1;
-  bool is_atnt_asm_file : 1;
-  bool is_bash_file     : 1;
-  bool is_glsl_file     : 1;
-  bool is_systemd_file  : 1;
-  bool is_nanox_file    : 1;
+  // bool is_c_file        : 1;
+  // bool is_cxx_file      : 1;
+  // bool is_nasm_file     : 1;
+  // bool is_atnt_asm_file : 1;
+  // bool is_bash_file     : 1;
+  // bool is_glsl_file     : 1;
+  // bool is_systemd_file  : 1;
+  // bool is_nanox_file    : 1;
 
 
 
@@ -1740,6 +1776,8 @@ struct SyntaxFile {
 
   /* Hash map that holds all objects parsed from the given file. */
   HashMap *objects;
+  // HMAP_PH objects;
+  // HMAP objects;
 };
 
 /* ----------------------------- csyntax.c ----------------------------- */

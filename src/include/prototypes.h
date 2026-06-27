@@ -1025,7 +1025,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
 
 
 bool lookup_coloropt(const char *color, int len, int *color_opt) _NOTHROW;
-void init_cfg(void);
+// void init_cfg(void);
 // void cleanup_cfg(void) _NOTHROW;
 
 /* bash_lsp.cpp */

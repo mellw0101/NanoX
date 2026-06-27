@@ -50,14 +50,14 @@ static void render_part(Ulong match_start, Ulong match_end, short color) {
 void render_line_text(int editrow, const char *str, linestruct *editline, Ulong from_editcol) _NOTHROW {
   PROFILE_FUNCTION;
   if (margin > 0) {
-    nanox_wcoloron(midwin, config->linenumber.color);
+    nanox_wcoloron(midwin, coloridx_linenumber /* config->linenumber.color */);
     if (ISSET(SOFTWRAP) && from_editcol) {
       nanox_mvwprintw(midwin, editrow, 0, "%*s", (margin - 1), " ");
     }
     else {
       nanox_mvwprintw(midwin, editrow, 0, "%*lu", (margin - 1), editline->lineno);
     }
-    nanox_wcoloroff(midwin, config->linenumber.color);
+    nanox_wcoloroff(midwin, coloridx_linenumber /* config->linenumber.color */);
     if (editline->has_anchor == TRUE && (from_editcol == 0 || !ISSET(SOFTWRAP))) {
       if (using_utf8()) {
         nanox_wprintw(midwin, "\xE2\xAC\xA5");
@@ -67,10 +67,10 @@ void render_line_text(int editrow, const char *str, linestruct *editline, Ulong 
       }
     }
     else {
-      if (config->linenumber.verticalbar || config->linenumber.fullverticalbar) {
-        nanox_wcoloron(midwin, config->linenumber.barcolor);
+      if (verticalbar /* config->linenumber.verticalbar || config->linenumber.fullverticalbar */) {
+        nanox_wcoloron(midwin, coloridx_linenumber_bar /* config->linenumber.barcolor */);
         waddch(midwin, ACS_VLINE);
-        nanox_wcoloroff(midwin, config->linenumber.barcolor);
+        nanox_wcoloroff(midwin, coloridx_linenumber_bar /* config->linenumber.barcolor */);
       }
       else {
         nanox_wprintw(midwin, " ");
@@ -819,7 +819,7 @@ void apply_syntax_to_line(const int inrow, const char *inconverted, linestruct *
   converted = inconverted;
   line      = in_line;
   from_col  = infrom_col;
-  if (/* openfile->type.is_set<C_CPP>() */ openfile->is_c_file || openfile->is_cxx_file) {
+  if (OPENFILE_SYNTAX_IS(TUI_OF, C, CPP) /* openfile->type.is_set<C_CPP>() */ /* openfile->is_c_file || openfile->is_cxx_file */) {
     render_bracket();
     render_comment();
     if (!in_line->data[0] || (block_comment_start == 0 && block_comment_end == till_x)) {
@@ -904,7 +904,7 @@ void apply_syntax_to_line(const int inrow, const char *inconverted, linestruct *
   }
   /* TODO: Fix bug where if '0.' is at end of line then we crash when trying to modify that
    * line, it`s weird tough as it only craches if this it the first action and not otherwise. */
-  else if (/* openfile->type.is_set<ASM>() */openfile->is_nasm_file) {
+  else if (OPENFILE_SYNTAX_IS(TUI_OF, NASM) /* openfile->type.is_set<ASM>() *//* openfile->is_nasm_file */) {
     if (!in_line->data[0]) {
       return;
     }
@@ -931,7 +931,7 @@ void apply_syntax_to_line(const int inrow, const char *inconverted, linestruct *
       free_node(node);
     }
   }
-  else if (/* openfile->type.is_set<BASH>() */ openfile->is_bash_file) {
+  else if (OPENFILE_SYNTAX_IS(TUI_OF, BASH) /* openfile->type.is_set<BASH>() */ /* openfile->is_bash_file */) {
     /* Return early when line is empty. */
     if (!*in_line->data) {
       return;
@@ -969,7 +969,7 @@ void apply_syntax_to_line(const int inrow, const char *inconverted, linestruct *
       free_node(node);
     }
   }
-  else if (/* openfile->type.is_set<GLSL>() */ openfile->is_glsl_file) {
+  else if (OPENFILE_SYNTAX_IS(TUI_OF, GLSL) /* openfile->type.is_set<GLSL>() */ /* openfile->is_glsl_file */) {
     if (!in_line->data[0]) {
       return;
     }
@@ -1014,7 +1014,7 @@ void apply_syntax_to_line(const int inrow, const char *inconverted, linestruct *
       free_node(node);
     }
   }
-  else if (/* openfile->type.is_set<SYSTEMD_SERVICE>() */ openfile->is_systemd_file) {
+  else if (OPENFILE_SYNTAX_IS(TUI_OF, SYSTEMD) /* openfile->type.is_set<SYSTEMD_SERVICE>() */ /* openfile->is_systemd_file */) {
     /* Return early on empty line. */
     if (!in_line->data[0]) {
       return;
@@ -1029,7 +1029,7 @@ void apply_syntax_to_line(const int inrow, const char *inconverted, linestruct *
       free_node(node);
     }
   }
-  else if (/* openfile->type.is_set<NANOX_CONFIG>() */ openfile->is_nanox_file) {
+  else if (OPENFILE_SYNTAX_IS(TUI_OF, NANOX) /* openfile->type.is_set<NANOX_CONFIG>() */ /* openfile->is_nanox_file */) {
     line_word_t *head = get_line_words(in_line->data, till_x);
     const char *comment = strstr(in_line->data, "//");
     if (comment) {

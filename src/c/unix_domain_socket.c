@@ -2,6 +2,10 @@
 
 int unix_socket_fd = -1;
 
+static void fcio_log_cb(FCIO_LOG_MSG msg) {
+  unix_socket_debug(FCIO_LOG_FMT, FCIO_LOG_FMT_ARGS(msg));
+}
+
 /* Connect to a unix domain socket and assign the fd to 'unix_socket_fd'.
  * Apon failure we assign '-1' to 'unix_socket_fd'. */
 void unix_socket_connect(const char *path) {
@@ -22,6 +26,9 @@ void unix_socket_connect(const char *path) {
   if (connect(unix_socket_fd, (struct sockaddr *)&sock, sizeof(sock)) < 0) {
     close(unix_socket_fd);
     unix_socket_fd = -1;
+  }
+  else {
+    fcio_log_add_callback(fcio_log_cb);
   }
 }
 

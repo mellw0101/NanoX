@@ -18,158 +18,160 @@
 #define TERMINATE TRUE
 #define DO_NOT_TERMINATE FALSE
 
-static char *configdir = NULL;
+// _UNUSED
+// static char *configdir = NULL;
 /* Holds data gathered from the config file. */
-static configfilestruct *configfile = NULL;
+// static configfilestruct *configfile = NULL;
 /* Global config to store data retrieved from config file. */
 // configstruct *config = NULL;
 
 /* Open a fd for file_path. */
-static int open_fd(const char *file_path, int fdflags, bool on_failure, mode_t permissions)  {
-  int fd;
-  block_sigwinch(TRUE);
-  if (!permissions) {
-    fd = open(file_path, fdflags);
-  }
-  else {
-    fd = open(file_path, fdflags, permissions);
-  }
-  block_sigwinch(FALSE);
-  if (fd < 0) {
-    /* Operation interupted. */
-    if (errno == EINTR || !errno) {
-      logI("Opening fd: '%s' was interupted.", file_path);
-      if (on_failure) {
-        exit(EINTR);
-      }
-    }
-    else {
-      int status = errno;
-      logE("Error opening fd: '%s': %s", file_path, strerror(errno));
-      if (on_failure) {
-        exit(status);
-      }
-    }
-  }
-  return fd;
-}
+// static int open_fd(const char *file_path, int fdflags, bool on_failure, mode_t permissions)  {
+//   int fd;
+//   block_sigwinch(TRUE);
+//   if (!permissions) {
+//     fd = open(file_path, fdflags);
+//   }
+//   else {
+//     fd = open(file_path, fdflags, permissions);
+//   }
+//   block_sigwinch(FALSE);
+//   if (fd < 0) {
+//     /* Operation interupted. */
+//     if (errno == EINTR || !errno) {
+//       logI("Opening fd: '%s' was interupted.", file_path);
+//       if (on_failure) {
+//         exit(EINTR);
+//       }
+//     }
+//     else {
+//       int status = errno;
+//       logE("Error opening fd: '%s': %s", file_path, strerror(errno));
+//       if (on_failure) {
+//         exit(status);
+//       }
+//     }
+//   }
+//   return fd;
+// }
 
-/* Lock a file.  Return`s FALSE on failure. */
-static bool lock_file(int fd, short type, long start, long len, flock *lock) {
-  lock->l_type   = type;     /* Lock type, i.e: F_WRLCK, F_RDLCK. */
-  lock->l_whence = SEEK_SET; /* Where start relates to. */
-  lock->l_start  = start;    /* Start offset. */
-  lock->l_len    = len;      /* Length of offset.  Zero means whole file. */
-  if (fcntl(fd, F_SETLKW, lock) == -1) {
-    logE("Failed to lock fd: %s", strerror(errno));
-    return FALSE;
-  }
-  return TRUE;
-}
+// /* Lock a file.  Return`s FALSE on failure. */
+// static bool lock_file(int fd, short type, long start, long len, flock *lock) {
+//   lock->l_type   = type;     /* Lock type, i.e: F_WRLCK, F_RDLCK. */
+//   lock->l_whence = SEEK_SET; /* Where start relates to. */
+//   lock->l_start  = start;    /* Start offset. */
+//   lock->l_len    = len;      /* Length of offset.  Zero means whole file. */
+//   if (fcntl(fd, F_SETLKW, lock) == -1) {
+//     logE("Failed to lock fd: %s", strerror(errno));
+//     return FALSE;
+//   }
+//   return TRUE;
+// }
 
-/* Unlock a file using lock struct that was used to lock. */
-static bool unlock_file(int fd, flock *lock) {
-  lock->l_type = F_UNLCK;
-  if (fcntl(fd, F_SETLK, lock) == -1) {
-    logE("Failed to unlock fd: %s", strerror(errno));
-    return FALSE;
-  }
-  return TRUE;
-}
+// /* Unlock a file using lock struct that was used to lock. */
+// static bool unlock_file(int fd, flock *lock) {
+//   lock->l_type = F_UNLCK;
+//   if (fcntl(fd, F_SETLK, lock) == -1) {
+//     logE("Failed to unlock fd: %s", strerror(errno));
+//     return FALSE;
+//   }
+//   return TRUE;
+// }
 
-/* Lock a file, then write data to it. */
-static void lock_and_write(const char *file, const void *data, Ulong len, kind_of_writing_type method) {
-  int fd =  open_fd(file, (O_WRONLY | O_CREAT | (method == APPEND ? O_APPEND : O_TRUNC)), TERMINATE, 0666);
-  flock lock;
-  if (!lock_file(fd, F_WRLCK, 0,  0, &lock)) {
-    close(fd);
-    exit(errno);
-  }
-  /* If there is any data then write it to the fd. */
-  if (data && write(fd, data, len) == -1) {
-    logE("Failed to write to fd: '%s': %s", file, strerror(errno));
-  }
-  unlock_file(fd, &lock);
-  close(fd);
-}
+// /* Lock a file, then write data to it. */
+// static void lock_and_write(const char *file, const void *data, Ulong len, kind_of_writing_type method) {
+//   int fd =  open_fd(file, (O_WRONLY | O_CREAT | (method == APPEND ? O_APPEND : O_TRUNC)), TERMINATE, 0666);
+//   flock lock;
+//   if (!lock_file(fd, F_WRLCK, 0,  0, &lock)) {
+//     close(fd);
+//     exit(errno);
+//   }
+//   /* If there is any data then write it to the fd. */
+//   if (data && write(fd, data, len) == -1) {
+//     logE("Failed to write to fd: '%s': %s", file, strerror(errno));
+//   }
+//   unlock_file(fd, &lock);
+//   close(fd);
+// }
 
-/* Lock a file, then read it. */
-static char *lock_and_read(const char *file_path, Ulong *file_size) {
-  int fd = open_fd(file_path, O_RDONLY, TERMINATE, 0);
-  flock lock;
-  if (!lock_file(fd, F_RDLCK, 0, 0, &lock)) {
-    close(fd);
-    exit(errno);
-  }
-  Ulong ret_len = 120;
-  char *ret = (char *)xmalloc(ret_len);
-  long byread = 0;
-  long len = 0;
-  char buffer[4096];
-  while ((len = read(fd, buffer, sizeof(buffer))) > 0) {
-    if (len == -1) {
-      logE("read failed.");
-      close(fd);
-      free(ret);
-      exit(errno);
-    }
-    if ((byread + len) >= (long)ret_len) {
-      ret_len = ((byread + len) * 2);
-      ret = arealloc(ret, ret_len);
-    }
-    memcpy((ret + byread), buffer, len);
-    byread += len;
-  }
-  ret = arealloc(ret, (byread + 1));
-  ret[byread] = '\0';
-  unlock_file(fd, &lock);
-  close(fd);
-  *file_size = byread;
-  return ret;
-}
+// /* Lock a file, then read it. */
+// static char *lock_and_read(const char *file_path, Ulong *file_size) {
+//   int fd = open_fd(file_path, O_RDONLY, TERMINATE, 0);
+//   flock lock;
+//   if (!lock_file(fd, F_RDLCK, 0, 0, &lock)) {
+//     close(fd);
+//     exit(errno);
+//   }
+//   Ulong ret_len = 120;
+//   char *ret = (char *)xmalloc(ret_len);
+//   long byread = 0;
+//   long len = 0;
+//   char buffer[4096];
+//   while ((len = read(fd, buffer, sizeof(buffer))) > 0) {
+//     if (len == -1) {
+//       logE("read failed.");
+//       close(fd);
+//       free(ret);
+//       exit(errno);
+//     }
+//     if ((byread + len) >= (long)ret_len) {
+//       ret_len = ((byread + len) * 2);
+//       ret = arealloc(ret, ret_len);
+//     }
+//     memcpy((ret + byread), buffer, len);
+//     byread += len;
+//   }
+//   ret = arealloc(ret, (byread + 1));
+//   ret[byread] = '\0';
+//   unlock_file(fd, &lock);
+//   close(fd);
+//   *file_size = byread;
+//   return ret;
+// }
 
 /* Callback that the main thread runs to update colors in a thread-safe manner. */
-static void update_colorfile(configfilestruct *file) {
-  /* Line configuration. */
-  config->linenumber.color           = file->data.linenumber.color;
-  config->linenumber.barcolor        = file->data.linenumber.barcolor;
-  config->linenumber.verticalbar     = file->data.linenumber.verticalbar;
-  config->linenumber.fullverticalbar = file->data.linenumber.fullverticalbar;
-  config->prompt.color               = file->data.prompt.color;
-  config->minibar_color              = file->data.minibar_color;
-  config->selectedtext_color         = file->data.selectedtext_color;
-  refresh_needed = TRUE;
-}
+// static void update_colorfile(configfilestruct *file) {
+//   /* Line configuration. */
+//   config->linenumber.color           = file->data.linenumber.color;
+//   config->linenumber.barcolor        = file->data.linenumber.barcolor;
+//   config->linenumber.verticalbar     = file->data.linenumber.verticalbar;
+//   config->linenumber.fullverticalbar = file->data.linenumber.fullverticalbar;
+//   config->prompt.color               = file->data.prompt.color;
+//   config->minibar_color              = file->data.minibar_color;
+//   config->selectedtext_color         = file->data.selectedtext_color;
+//   refresh_needed = TRUE;
+// }
 
 /* Lookup-table for available color opt`s. */
 static const coloroption coloropt_lookup_table[] {
-  {           "red", STRLTRLEN("red"),            FG_VS_CODE_RED            },
-  {         "green", STRLTRLEN("green"),          FG_VS_CODE_GREEN          },
-  {        "yellow", STRLTRLEN("yellow"),         FG_VS_CODE_YELLOW         },
-  {          "blue", STRLTRLEN("blue"),           FG_VS_CODE_BLUE           },
-  {       "magenta", STRLTRLEN("magenta"),        FG_VS_CODE_MAGENTA        },
-  {          "cyan", STRLTRLEN("cyan"),           FG_VS_CODE_CYAN           },
-  {         "white", STRLTRLEN("white"),          FG_VS_CODE_WHITE          },
-  {    "bright-red", STRLTRLEN("bright-red"),     FG_VS_CODE_BRIGHT_RED     },
-  {  "bright-green", STRLTRLEN("bright-green"),   FG_VS_CODE_BRIGHT_GREEN   },
-  { "bright-yellow", STRLTRLEN("bright-yellow"),  FG_VS_CODE_BRIGHT_YELLOW  },
-  {   "bright-blue", STRLTRLEN("bright-blue"),    FG_VS_CODE_BRIGHT_BLUE    },
-  {"bright-magenta", STRLTRLEN("bright-magenta"), FG_VS_CODE_BRIGHT_MAGENTA },
-  {   "bright-cyan", STRLTRLEN("bright-cyan"),    FG_VS_CODE_BRIGHT_CYAN    },
-  {          "grey", STRLTRLEN("grey"),           FG_SUGGEST_GRAY           },
-  {        "bg-red", STRLTRLEN("bg-red"),         BG_VS_CODE_RED            },
-  {       "bg-blue", STRLTRLEN("bg-blue"),        BG_VS_CODE_BLUE           },
-  {      "bg-green", STRLTRLEN("bg-green"),       BG_VS_CODE_GREEN          },
-  {       S__LEN("bg-grey"), BG_GREY_80},
+  {            "red", STRLTRLEN("red"),            FG_VS_CODE_RED            },
+  {          "green", STRLTRLEN("green"),          FG_VS_CODE_GREEN          },
+  {         "yellow", STRLTRLEN("yellow"),         FG_VS_CODE_YELLOW         },
+  {           "blue", STRLTRLEN("blue"),           FG_VS_CODE_BLUE           },
+  {        "magenta", STRLTRLEN("magenta"),        FG_VS_CODE_MAGENTA        },
+  {           "cyan", STRLTRLEN("cyan"),           FG_VS_CODE_CYAN           },
+  {          "white", STRLTRLEN("white"),          FG_VS_CODE_WHITE          },
+  {     "bright-red", STRLTRLEN("bright-red"),     FG_VS_CODE_BRIGHT_RED     },
+  {   "bright-green", STRLTRLEN("bright-green"),   FG_VS_CODE_BRIGHT_GREEN   },
+  {  "bright-yellow", STRLTRLEN("bright-yellow"),  FG_VS_CODE_BRIGHT_YELLOW  },
+  {    "bright-blue", STRLTRLEN("bright-blue"),    FG_VS_CODE_BRIGHT_BLUE    },
+  { "bright-magenta", STRLTRLEN("bright-magenta"), FG_VS_CODE_BRIGHT_MAGENTA },
+  {    "bright-cyan", STRLTRLEN("bright-cyan"),    FG_VS_CODE_BRIGHT_CYAN    },
+  {           "grey", STRLTRLEN("grey"),           FG_SUGGEST_GRAY           },
+  {         "bg-red", STRLTRLEN("bg-red"),         BG_VS_CODE_RED            },
+  {        "bg-blue", STRLTRLEN("bg-blue"),        BG_VS_CODE_BLUE           },
+  {       "bg-green", STRLTRLEN("bg-green"),       BG_VS_CODE_GREEN          },
+  {       S__LEN("bg-grey"),                       BG_GREY_80},
 };
 constexpr Ulong COLOROPT_LOOKUP_TABLE_SIZE = ARRAY_SIZE(coloropt_lookup_table);
 #define COLOROPT_LOOKUP_TABLE_SIZE COLOROPT_LOOKUP_TABLE_SIZE
 
 /* Optimized lookup for color opt.  Uses opt name len to minimize overhead. */
 bool lookup_coloropt(const char *color, int len, int *color_opt) _NOTHROW {
-  for (Ulong i = 0; i < COLOROPT_LOOKUP_TABLE_SIZE; ++i) {
+  for (Ulong i=0; i<COLOROPT_LOOKUP_TABLE_SIZE; ++i) {
     if (len == coloropt_lookup_table[i].name_len
-     && strncmp(color, coloropt_lookup_table[i].name, len) == 0) {
+    && strncmp(color, coloropt_lookup_table[i].name, len) == 0)
+    {
       *color_opt = coloropt_lookup_table[i].color_index;
       return TRUE;
     }
@@ -178,138 +180,139 @@ bool lookup_coloropt(const char *color, int len, int *color_opt) _NOTHROW {
 }
 
 /* Fetch the color for an option.  Return`s TRUE on success, otherwise FALSE. */
-static bool get_color_option(const char *data, const char *option, int *color_opt) {
-  /* Fetch the color data, if any. */
-  const char *opt = strstr(data, option);
-  if (opt) {
-    opt += const_strlen(option);
-    const char *end = opt;
-    ADV_PTR(end, (*end != ' ' && *end != '\t' && *end != '\n'));
-    /* If there is nothing after opt.  Return early. */
-    if (opt == end) {
-      return FALSE;
-    }
-    /* Otherwise, check if the str matches any of the available colors. */
-    if (lookup_coloropt(opt, (end - opt), color_opt)) {
-      return TRUE;
-    }
-    /* If not a valid color str, log an warning. */
-    logW("%s: Invalid color option: '%.*s'.", option, (int)(end - opt), opt);
-  }
-  return FALSE;
-}
+// static bool get_color_option(const char *data, const char *option, int *color_opt) {
+//   /* Fetch the color data, if any. */
+//   const char *opt = strstr(data, option);
+//   if (opt) {
+//     opt += const_strlen(option);
+//     const char *end = opt;
+//     ADV_PTR(end, (*end != ' ' && *end != '\t' && *end != '\n'));
+//     /* If there is nothing after opt.  Return early. */
+//     if (opt == end) {
+//       return FALSE;
+//     }
+//     /* Otherwise, check if the str matches any of the available colors. */
+//     if (lookup_coloropt(opt, (end - opt), color_opt)) {
+//       return TRUE;
+//     }
+//     /* If not a valid color str, log an warning. */
+//     logW("%s: Invalid color option: '%.*s'.", option, (int)(end - opt), opt);
+//   }
+//   return FALSE;
+// }
 
 /* Fetch a binary opt, return`s value from file.  Or when not in file, then default_opt. */
-_UNUSED
-static bool get_binary_option(const char *data, const char *option, bool default_opt) {
-  /* Fetch binary option str. */
-  const char *opt = strstr(data, option);
-  if (opt) {
-    opt += const_strlen(option);
-    const char *end = opt;
-    ADV_PTR(end, (*end != ' ' && *end != '\t' && *end != '\n'));
-    /* If there is no str after option, return early. */
-    if (opt == end) {
-      return default_opt;
-    }
-    /* Otherwise, check if the str is either "TRUE/true" or "FALSE/false". */
-    if ((end - opt) == STRLTRLEN("TRUE") || (end - opt) == STRLTRLEN("FALSE")) {
-      /* Set *binary_opt to TRUE. */
-      if (strncasecmp(opt, "TRUE", STRLTRLEN("TRUE")) == 0) {
-        return TRUE;
-      }
-      /* Set *binary_opt to FALSE. */
-      else if (strncasecmp(opt, "FALSE", STRLTRLEN("FALSE")) == 0) {
-        return FALSE;
-      }
-    }
-    /* Log a warning if the str was invalid. */
-    logW("%s: Invalid binary option: '%.*s'.  Valid values: 'TRUE/true', 'FALSE/false'.", option, (end - opt), opt);
-  }
-  return default_opt;
-}
-#define SET_BINARY_OPT(option) get_binary_option(data, option##_OPT, DEFAULT_CONFIG(option)) ? SETCONFIGFILE(option) : void()
+// _UNUSED
+// static bool get_binary_option(const char *data, const char *option, bool default_opt) {
+//   /* Fetch binary option str. */
+//   const char *opt = strstr(data, option);
+//   if (opt) {
+//     opt += const_strlen(option);
+//     const char *end = opt;
+//     ADV_PTR(end, (*end != ' ' && *end != '\t' && *end != '\n'));
+//     /* If there is no str after option, return early. */
+//     if (opt == end) {
+//       return default_opt;
+//     }
+//     /* Otherwise, check if the str is either "TRUE/true" or "FALSE/false". */
+//     if ((end - opt) == STRLTRLEN("TRUE") || (end - opt) == STRLTRLEN("FALSE")) {
+//       /* Set *binary_opt to TRUE. */
+//       if (strncasecmp(opt, "TRUE", STRLTRLEN("TRUE")) == 0) {
+//         return TRUE;
+//       }
+//       /* Set *binary_opt to FALSE. */
+//       else if (strncasecmp(opt, "FALSE", STRLTRLEN("FALSE")) == 0) {
+//         return FALSE;
+//       }
+//     }
+//     /* Log a warning if the str was invalid. */
+//     logW("%s: Invalid binary option: '%.*s'.  Valid values: 'TRUE/true', 'FALSE/false'.", option, (end - opt), opt);
+//   }
+//   return default_opt;
+// }
+// #define SET_BINARY_OPT(option) get_binary_option(data, option##_OPT, DEFAULT_CONFIG(option)) ? SETCONFIGFILE(option) : void()
 
-static void get_linenumber_bar_option(const char *data) {
-  configfile->data.linenumber.verticalbar     = FALSE;
-  configfile->data.linenumber.fullverticalbar = FALSE;
-  const char *opt = strstr(data, "linenumber:bar=");
-  if (opt) {
-    opt += STRLTRLEN("linenumber:bar=");
-    const char *end = opt;
-    ADV_PTR(end, (*end != ' ' && *end != '\t' && *end != '\n'));
-    if (end == opt) {
-      return;
-    }
-    else {
-      if (strncasecmp(opt, "TRUE", STRLTRLEN("TRUE")) == 0) {
-        configfile->data.linenumber.verticalbar = TRUE;
-      }
-      else if (strncasecmp(opt, "FULL", STRLTRLEN("FULL")) == 0) {
-        configfile->data.linenumber.fullverticalbar = TRUE;
-      }
-    }
-  }
-}
+// static void get_linenumber_bar_option(const char *data) {
+//   configfile->data.linenumber.verticalbar     = FALSE;
+//   configfile->data.linenumber.fullverticalbar = FALSE;
+//   const char *opt = strstr(data, "linenumber:bar=");
+//   if (opt) {
+//     opt += STRLTRLEN("linenumber:bar=");
+//     const char *end = opt;
+//     ADV_PTR(end, (*end != ' ' && *end != '\t' && *end != '\n'));
+//     if (end == opt) {
+//       return;
+//     }
+//     else {
+//       if (strncasecmp(opt, "TRUE", STRLTRLEN("TRUE")) == 0) {
+//         configfile->data.linenumber.verticalbar = TRUE;
+//       }
+//       else if (strncasecmp(opt, "FULL", STRLTRLEN("FULL")) == 0) {
+//         configfile->data.linenumber.fullverticalbar = TRUE;
+//       }
+//     }
+//   }
+// }
 
 /* Load configfile with values from disk. */
-static void load_colorfile(void) {
-  int   color;
-  Ulong file_size;
-  char *data;
-  /* Make sure the file always exists. */
-  if (!file_exists(configfile->filepath)) {
-    lock_and_write(configfile->filepath, S__LEN(CONFIGFILE_DEFAULT_TEXT), OVERWRITE);
-  }
-  /* Read the configfile. */
-  data = lock_and_read(configfile->filepath, &file_size);
-  /* Get color opts, if any.  Otherwise, fall back to the default color. */
-  configfile->data.linenumber.color    = (get_color_option(data, "linenumber:color=",    &color) ? color : LINE_NUMBER);
-  configfile->data.linenumber.barcolor = (get_color_option(data, "linenumber:barcolor=", &color) ? color : LINE_NUMBER);
-  configfile->data.prompt.color        = (get_color_option(data, "prompt:color=",        &color) ? color : PROMPT_BAR);
-  configfile->data.minibar_color       = (get_color_option(data, MINIBAR_OPT,            &color) ? color : MINI_INFOBAR);
-  configfile->data.selectedtext_color  = (get_color_option(data, SELECTED_TEXT_OPT,      &color) ? color : SELECTED_TEXT);
-  get_linenumber_bar_option(data);
-  free(data);
-  /* TODO: Now that this works, and we can update live when any changes happen to the
-   * color file, from anywhere, we must also implement a way where all open files are
-   * also listened to, and we inform the user that the file has changed on disk. */
-  event_enqueue((EVENT_CB)update_colorfile, configfile);
-}
+// static void load_colorfile(void) {
+//   int   color;
+//   Ulong file_size;
+//   char *data;
+//   /* Make sure the file always exists. */
+//   if (!file_exists(configfile->filepath)) {
+//     lock_and_write(configfile->filepath, S__LEN(CONFIGFILE_DEFAULT_TEXT), OVERWRITE);
+//   }
+//   /* Read the configfile. */
+//   data = lock_and_read(configfile->filepath, &file_size);
+//   /* Get color opts, if any.  Otherwise, fall back to the default color. */
+//   configfile->data.linenumber.color    = (get_color_option(data, "linenumber:color=",    &color) ? color : LINE_NUMBER);
+//   configfile->data.linenumber.barcolor = (get_color_option(data, "linenumber:barcolor=", &color) ? color : LINE_NUMBER);
+//   configfile->data.prompt.color        = (get_color_option(data, "prompt:color=",        &color) ? color : PROMPT_BAR);
+//   configfile->data.minibar_color       = (get_color_option(data, MINIBAR_OPT,            &color) ? color : MINI_INFOBAR);
+//   configfile->data.selectedtext_color  = (get_color_option(data, SELECTED_TEXT_OPT,      &color) ? color : SELECTED_TEXT);
+//   get_linenumber_bar_option(data);
+//   free(data);
+//   /* TODO: Now that this works, and we can update live when any changes happen to the
+//    * color file, from anywhere, we must also implement a way where all open files are
+//    * also listened to, and we inform the user that the file has changed on disk. */
+//   event_enqueue((EVENT_CB)update_colorfile, configfile);
+// }
 
 /* TODO: Meybe make a new var that will be used only for forcing unblocking when in curses mode. */
-static void colorfile_signal_interupt(void *_UNUSED arg) {
-  the_window_resized = TRUE;
-  ungetch(KEY_FRESH);
-}
+// static void colorfile_signal_interupt(void *_UNUSED arg) {
+//   the_window_resized = TRUE;
+//   ungetch(KEY_FRESH);
+// }
 
-static void colorfile_listener_callback(void *_UNUSED data, Uint _UNUSED mask) {
-  load_colorfile();
-  if (IN_CURSES_CTX) {
-    event_enqueue_on_main_thread(colorfile_signal_interupt, NULL);
-  }
-}
+// _UNUSED
+// static void colorfile_listener_callback(void *_UNUSED data, Uint _UNUSED mask) {
+//   load_colorfile();
+//   if (IN_CURSES_CTX) {
+//     event_enqueue_on_main_thread(colorfile_signal_interupt, NULL);
+//   }
+// }
 
 /* Init NanoX config. */
-void init_cfg(void) {
-  get_homedir();
-  if (!homedir) {
-    return;
-  }
-  config = (configstruct *)xmalloc(sizeof(*config));
-  configdir = concatpath(homedir, CONFIGDIR);
-  if (!is_dir(configdir)) {
-    mkdir(configdir, 0755);
-  }
-  configfile           = (configfilestruct *)xmalloc(sizeof(*configfile));
-  configfile->filepath = concatpath(configdir, COLORFILE_NAME);
-  load_colorfile();
-  file_listener_add_file(file_listener, configfile->filepath, colorfile_listener_callback, NULL, IN_CLOSE_WRITE);
-}
+// void init_cfg(void) {
+//   get_homedir();
+//   if (!homedir) {
+//     return;
+//   }
+//   config = (configstruct *)xmalloc(sizeof(*config));
+//   configdir = concatpath(homedir, CONFIGDIR);
+//   if (!is_dir(configdir)) {
+//     mkdir(configdir, 0755);
+//   }
+//   configfile           = (configfilestruct *)xmalloc(sizeof(*configfile));
+//   configfile->filepath = concatpath(configdir, COLORFILE_NAME);
+//   load_colorfile();
+//   file_listener_add_file(file_listener, configfile->filepath, colorfile_listener_callback, NULL, IN_CLOSE_WRITE);
+// }
 
-void cleanup_cfg(void) /* _NOTHROW */ {
-  free(configdir);
-  free(configfile->filepath);
-  free(configfile);
-  free(config);
-}
+// void cleanup_cfg(void) /* _NOTHROW */ {
+//   free(configdir);
+//   free(configfile->filepath);
+//   free(configfile);
+//   free(config);
+// }

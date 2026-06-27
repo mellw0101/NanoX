@@ -91,35 +91,41 @@ bool is_lang_word_char(openfilestruct *const file) {
   if (file->current->data[file->current_x]) {
     symlen = collect_char((file->current->data + file->current_x), symbol);
     symbol[symlen] = '\0';
+    if (OPENFILE_SYNTAX_IS(file, C, CPP)) {
+      return strstr("{}=|&!/", symbol);
+    }
+    else if (OPENFILE_SYNTAX_IS(file, ATNT)) {
+      return strstr("#", symbol);
+    }
     /* C/C++ */
-    if ((file->is_c_file || file->is_cxx_file) && strstr("{}=|&!/", symbol)) {
-      return TRUE;
-    }
-    /* AT&T Asm. */
-    else if (file->is_atnt_asm_file && strstr("#", symbol)) {
-      return TRUE;
-    }
+    // if ((file->is_c_file || file->is_cxx_file) && strstr("{}=|&!/", symbol)) {
+    //   return TRUE;
+    // }
+    // /* AT&T Asm. */
+    // else if (file->is_atnt_asm_file && strstr("#", symbol)) {
+    //   return TRUE;
+    // }
   }
   return FALSE;
 }
 
 /* Return 'TRUE' when for the openfile language this char represents a stopping point when doing prev/next word. */
-bool is_language_word_char(const char *pointer, Ulong index) {
-  /* C/C++ */
-  if ((openfile->is_c_file || openfile->is_cxx_file) && is_char_one_of(pointer, index, "{}=|&!/")) {
-    return TRUE;
-  }
-  /* AT&T Asm. */
-  else if (openfile->is_atnt_asm_file && is_char_one_of(pointer, index, "#")) {
-    return TRUE;
-  }
-  return FALSE;
-}
+// bool is_language_word_char(const char *pointer, Ulong index) {
+//   /* C/C++ */
+//   if ((openfile->is_c_file || openfile->is_cxx_file) && is_char_one_of(pointer, index, "{}=|&!/")) {
+//     return TRUE;
+//   }
+//   /* AT&T Asm. */
+//   else if (openfile->is_atnt_asm_file && is_char_one_of(pointer, index, "#")) {
+//     return TRUE;
+//   }
+//   return FALSE;
+// }
 
 /* Same as is_language_word_char().  But for the char at 'openfile->current->data+openfile->current_x'. */
-bool is_cursor_language_word_char(void) {
-  return is_language_word_char(openfile->current->data, openfile->current_x);
-}
+// bool is_cursor_language_word_char(void) {
+//   return is_language_word_char(openfile->current->data, openfile->current_x);
+// }
 
 /* Return 'TRUE' when 'ch' is a opening enclose char.  Meaning it`s a char that can be enclosed, for example: '"{(< */
 bool is_enclose_char(char ch) {

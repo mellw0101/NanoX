@@ -353,13 +353,13 @@ void gl_mouse_routine_button_dn(Uchar button, Ushort _UNUSED mod, float x, float
         promptmenu_close();
       }
     }
-    /* Clicked element is a child of an editor-tab-bar. */
+    /* Clicked element is a child of an editor-top-bar. */
     if (e && e->dt == ELEMENT_DATA_FILE && e->parent && e->parent->dt == ELEMENT_DATA_EDITOR
     && etb_element_is_main(e->parent->dp_editor->tb, e->parent))
     {
       etb_show_context_menu(e->parent->dp_editor->tb, e, TRUE);
     }
-    /* Clicked-element is any editor-tab-bar's main element. */
+    /* Clicked element is any editor-top-bar's main element. */
     else if (e && e->dt == ELEMENT_DATA_EDITOR && etb_element_is_main(e->dp_editor->tb, e)) {
       etb_show_context_menu(e->dp_editor->tb, e, TRUE);
     }

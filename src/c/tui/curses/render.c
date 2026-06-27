@@ -10,14 +10,14 @@ static void curses_render_line_text(int row, const char *const restrict data, li
   ASSERT(line);
   /* If line-numbers are enabled. */
   if (margin > 0) {
-    wattron(midwin, interface_color_pair[config->linenumber.color]);
+    wattron(midwin, interface_color_pair[coloridx_linenumber /* config->linenumber.color */]);
     if (ISSET(SOFTWRAP) && from_col) {
       mvwprintw(midwin, row, 0, "%*s", (margin - 1), " ");
     }
     else {
       mvwprintw(midwin, row, 0, "%*lu", (margin - 1), line->lineno);
     }
-    wattroff(midwin, interface_color_pair[config->linenumber.color]);
+    wattroff(midwin, interface_color_pair[coloridx_linenumber /* config->linenumber.color */]);
     if (line->has_anchor && (!from_col || !ISSET(SOFTWRAP))) {
       if (using_utf8()) {
         wprintw(midwin, "\xE2\xAC\xA5");
@@ -27,10 +27,10 @@ static void curses_render_line_text(int row, const char *const restrict data, li
       } 
     }
     else {
-      if (config->linenumber.verticalbar || config->linenumber.fullverticalbar) {
-        wattron(midwin, interface_color_pair[config->linenumber.barcolor]);
+      if (verticalbar /* config->linenumber.verticalbar || config->linenumber.fullverticalbar */) {
+        wattron(midwin, interface_color_pair[coloridx_linenumber_bar /* config->linenumber.barcolor */]);
         waddch(midwin, ACS_VLINE);
-        wattroff(midwin, interface_color_pair[config->linenumber.barcolor]);
+        wattroff(midwin, interface_color_pair[coloridx_linenumber_bar /* config->linenumber.barcolor */]);
       }
       else {
         wprintw(midwin, " ");

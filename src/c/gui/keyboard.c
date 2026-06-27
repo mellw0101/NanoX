@@ -38,7 +38,7 @@
 
 #define SHIFT_HELD(x)  DO_WHILE(shift_held = (x);)
 
-/* ----------------------------- Ignore modifier builder for `MOD_IG` ----------------------------- */
+/* ----------------------------- Ignore modifier builder for `MOD_IGNORE` ----------------------------- */
 
 #define IG_1(i)                       (M(i))
 #define IG_2(i0, i1)                  (M(i0) | M(i1))
@@ -73,26 +73,26 @@
 
 /* ----------------------------- Check N modifiers active, ignoring some ----------------------------- */
 
-#define MOD_IG_1(x, i, m)  \
+#define MOD_IGNORE_1(x, i, m)  \
   (((x) & (m)) && !((x) & ~((m) | (i))))
 
-#define MOD_IG_2(x, i, m0, m1)  \
+#define MOD_IGNORE_2(x, i, m0, m1)  \
   (((x) & (m0)) && ((x) & (m1)) && !((x) & ~((m0) | (m1) | (i))))
 
-#define MOD_IG_3(x, i, m0, m1, m2)  \
+#define MOD_IGNORE_3(x, i, m0, m1, m2)  \
   (((x) & (m0)) && ((x) & (m1)) && ((x) & (m2)) && !((x) & ~((m0) | (m1) | (m2) | (i))))
 
-#define MOD_IG_4(x, i, m0, m1, m2, m3)  \
+#define MOD_IGNORE_4(x, i, m0, m1, m2, m3)  \
   (((x) & (m0)) && ((x) & (m1)) && ((x) & (m2)) && ((x) & (m3)) && !((x) & ~((m0) | (m1) | (m2) | (m3) | (i))))
 
-#define MOD_IG(x, i, ...)   VA_MACRO_2ARG(MOD_IG_, x, i, __VA_ARGS__)
-#define MOD_IG_DEF(x, ...)  MOD_IG(x, IG(CAPS, SCROLL, NUM), __VA_ARGS__)
+#define MOD_IGNORE(x, i, ...)       VA_MACRO_2ARG(MOD_IGNORE_, x, i, __VA_ARGS__)
+#define MOD_IGNORE_DEFAULT(x, ...)  MOD_IGNORE(x, IG(CAPS, SCROLL, NUM), __VA_ARGS__)
 
 /* ----------------------------- Check no modifiers set ----------------------------- */
 
 #define MOD_NONE(x)  (!(x))
-#define MOD_NONE_IG(x, ...)  (!(x) || MOD(x, IG(__VA_ARGS__)))
-#define MOD_NONE_IG_DEF(x)   MOD_NONE_IG(x, CAPS, SCROLL, NUM)
+#define MOD_NONE_IGNORE(x, ...)  (!(x) || MOD(x, IG(__VA_ARGS__)))
+#define MOD_NONE_IGNORE_DEF(x)   MOD_NONE_IGNORE(x, CAPS, SCROLL, NUM)
 
 
 /* ---------------------------------------------------------- Enum's ---------------------------------------------------------- */
@@ -120,8 +120,8 @@ typedef enum {
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
-static inline void _UNUSED
-get_enclose_chars(const char ch, const char **const s1, const char **const s2) {
+_UNUSED
+static inline void get_enclose_chars(const char ch, const char **const s1, const char **const s2) {
   switch (ch) {
     case '"': {
       *s1 = *s2 = "\"";
@@ -157,24 +157,23 @@ get_enclose_chars(const char ch, const char **const s1, const char **const s2) {
 /* ----------------------------- Kb filter mod ----------------------------- */
 
 /* Returns a exclusive modifier type, so that we can switch case correctly on any combination, regardless of order. */
-static inline KbModType
-kb_filter_mod(Ushort mod) {
-  if (MOD_NONE_IG_DEF(mod)) {
+static inline KbModType kb_filter_mod(Ushort mod) {
+  if (MOD_NONE_IGNORE_DEF(mod)) {
     return KB_MOD_NONE;
   }
-  else if (MOD_IG_DEF(mod, M(SHIFT), M(CTRL))) {
+  else if (MOD_IGNORE_DEFAULT(mod, M(SHIFT), M(CTRL))) {
     return KB_MOD_SHIFT_CTRL;
   }
-  else if (MOD_IG_DEF(mod, M(SHIFT), M(ALT))) {
+  else if (MOD_IGNORE_DEFAULT(mod, M(SHIFT), M(ALT))) {
     return KB_MOD_SHIFT_ALT;
   }
-  else if (MOD_IG_DEF(mod, M(SHIFT))) {
+  else if (MOD_IGNORE_DEFAULT(mod, M(SHIFT))) {
     return KB_MOD_SHIFT;
   }
-  else if (MOD_IG_DEF(mod, M(CTRL))) {
+  else if (MOD_IGNORE_DEFAULT(mod, M(CTRL))) {
     return KB_MOD_CTRL;
   }
-  else if (MOD_IG_DEF(mod, M(ALT))) {
+  else if (MOD_IGNORE_DEFAULT(mod, M(ALT))) {
     return KB_MOD_ALT;
   }
   else {
@@ -188,8 +187,7 @@ kb_filter_mod(Ushort mod) {
 
 /* ----------------------------- Kb key pressed ----------------------------- */
 
-void
-kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
+void kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
   VoidFuncPtr func = NULL;
   linestruct *was_current;
   Ulong was_x;
@@ -296,9 +294,12 @@ kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
     case KB_MOD_SHIFT_CTRL: {
       switch (key) {
         case KC(A): {
-          if (GUI_OF->is_c_file || GUI_OF->is_cxx_file || GUI_OF->is_glsl_file) {
+          if (OPENFILE_SYNTAX_IS(GUI_OF, C, CPP, GLSL)) {
             func = do_block_comment;
           }
+          // if (GUI_OF->is_c_file || GUI_OF->is_cxx_file || GUI_OF->is_glsl_file) {
+          //   func = do_block_comment;
+          // }
           break;
         }
         case KC(N): {
@@ -631,15 +632,14 @@ kb_key_pressed(Uint key, Uint _UNUSED scan, Ushort mod, bool repeat) {
 /* ----------------------------- Kb char input ----------------------------- */
 
 /* TODO: Fix this shit. */
-void
-kb_char_input(const char *const restrict data, Ushort mod) {
+void kb_char_input(const char *const restrict data, Ushort mod) {
   Ulong len;
   char *burst;
   char ch;
   const char *s1;
   const char *s2;
   /* Only accept char input when no mods are set, ignoring CAPS, SCROLL and NUM. */
-  if (MOD_NONE_IG(mod, CAPS, NUM, SCROLL, SHIFT) && (len = STRLEN(data))) {
+  if (MOD_NONE_IGNORE(mod, CAPS, NUM, SCROLL, SHIFT) && (len = STRLEN(data))) {
     burst = measured_copy(data, len);
     /* Non ASCII */
     if (len != 1) {
@@ -710,13 +710,13 @@ kb_char_input(const char *const restrict data, Ushort mod) {
         }
         /* If '<' is pressed without being in a c/cpp file and at an include line, we simply do nothing. */
         else if (ch == '<' && GUI_OF->current->data[indentlen(GUI_OF->current->data)] != '#'
-        && (GUI_OF->is_c_file || GUI_OF->is_cxx_file) /* GUI_OF->type.is_set<C_CPP>() */)
+        && OPENFILE_SYNTAX_IS(GUI_OF, C, CPP) /* (GUI_OF->is_c_file || GUI_OF->is_cxx_file) */ /* GUI_OF->type.is_set<C_CPP>() */)
         {
           ;
         }
         else {
-          ch == '"'  ? s1 = "\"", s2 = s1 :
-          ch == '\'' ? s1 = "'",  s2 = s1 :
+          ch == '"'  ? s1 = "\"", s2 = s1  :
+          ch == '\'' ? s1 = "'",  s2 = s1  :
           ch == '('  ? s1 = "(",  s2 = ")" :
           ch == '{'  ? s1 = "{",  s2 = "}" :
           ch == '['  ? s1 = "[",  s2 = "]" :
@@ -751,8 +751,7 @@ kb_char_input(const char *const restrict data, Ushort mod) {
 
 /* ----------------------------- Kb prompt key pressed ----------------------------- */
 
-void
-kb_key_pressed_prompt(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED repeat) {
+void kb_key_pressed_prompt(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED repeat) {
   if (promptmenu_yn_mode()) {
     switch (kb_filter_mod(mod)) {
       case KB_MOD_NONE:
@@ -782,7 +781,7 @@ kb_key_pressed_prompt(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED repe
     } 
   }
   else {
-    SHIFT_HELD(FALSE);
+    shift_held = FALSE;
     switch (kb_filter_mod(mod)) {
       case KB_MOD_NOT_SUPPORTED: {
         break;
@@ -903,12 +902,11 @@ kb_key_pressed_prompt(Uint key, Uint _UNUSED scan, Ushort mod, bool _UNUSED repe
 /* ----------------------------- Kb prompt char input ----------------------------- */
 
 /* Handle char input when the `prompt-menu` is active. */
-void
-kb_char_input_prompt(const char *const restrict data, Ushort mod) {
+void kb_char_input_prompt(const char *const restrict data, Ushort mod) {
   Ulong len;
   char *burst;
   /* Only ever perform any action when no modifiers (excluding CAPS, SCROLL and NUM). */
-  if ((len = STRLEN(data)) && MOD_NONE_IG(mod, CAPS, NUM, SCROLL, SHIFT)) {
+  if ((len = strlen(data)) && MOD_NONE_IGNORE(mod, CAPS, NUM, SCROLL, SHIFT)) {
     if (promptmenu_yn_mode()) {
       if (len == 1) {
         /* Yes */

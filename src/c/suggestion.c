@@ -82,9 +82,12 @@ static char *suggestmenu_copy_completion(char *const restrict text) {
 
 void do_suggestion(void) {
   /* For now only c/cpp is supported. */
-  if (!openfile->is_c_file && !openfile->is_cxx_file) {
+  if (!OPENFILE_SYNTAX_IS(openfile, C, CPP)) {
     return;
   }
+  // if (!openfile->is_c_file && !openfile->is_cxx_file) {
+  //   return;
+  // }
   suggest_str = NULL;
   if (suggestwin) {
     delwin(suggestwin);
@@ -438,7 +441,7 @@ void suggestmenu_draw(void) {
 /* ----------------------------- Suggestmenu ----------------------------- */
 
 /* Returns the internal menu of the suggest structure. */
-Menu *suggestmenu(void) {
+MENU suggestmenu(void) {
   ASSERT_SM;
   return suggest->menu;
 }

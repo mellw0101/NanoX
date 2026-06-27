@@ -373,7 +373,7 @@ void editor_switch_openfile_to_next(void) {
 
 /* ----------------------------- Editor set open ----------------------------- */
 
-/* Set `openedit` to editor, if its not already. */
+/* Set `openeditor` to `editor`, if its not already. */
 void editor_set_open(Editor *const editor) {
   ASSERT_EDITOR(openeditor);
   ASSERT_EDITOR(editor);
@@ -382,9 +382,9 @@ void editor_set_open(Editor *const editor) {
     return;
   }
   /* Ensure the global ptr's to the openfile and startfile are set as the new open editor. */
-  openfile  = editor->openfile;
-  startfile = editor->startfile;
-  openeditor  = editor;
+  openfile   = editor->openfile;
+  startfile  = editor->startfile;
+  openeditor = editor;
   editor_redecorate(editor);
   editor_resize(editor);
 }

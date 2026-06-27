@@ -2900,15 +2900,24 @@ char *get_comment_seq_for(openfilestruct *const file) {
     ret = copy_of(file->syntax->comment);
   }
   /* C derived file. */
-  else if (file->is_c_file || file->is_cxx_file || file->is_nanox_file) {
+  else if (OPENFILE_SYNTAX_IS(file, C, CPP, NANOX)) {
     ret = COPY_OF("//");
   }
-  else if (file->is_nasm_file) {
+  else if (OPENFILE_SYNTAX_IS(file, NASM)) {
     ret = COPY_OF(";");
   }
   else {
     ret = COPY_OF(GENERAL_COMMENT_CHARACTER);
   }
+  // else if (file->is_c_file || file->is_cxx_file || file->is_nanox_file) {
+  //   ret = COPY_OF("//");
+  // }
+  // else if (file->is_nasm_file) {
+  //   ret = COPY_OF(";");
+  // }
+  // else {
+  //   ret = COPY_OF(GENERAL_COMMENT_CHARACTER);
+  // }
   return ret;
 }
 

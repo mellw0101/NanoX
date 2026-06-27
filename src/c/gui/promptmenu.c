@@ -188,7 +188,7 @@ static void promptmenu_dir_search(void) {
     /* else {
       dirpath = getpwd();
       directory_get(dirpath, &dir);
-      FREE(dirpath);
+      free(dirpath);
     }
      * TODO: This needs some attention, as we need to add the non absolute paths to the completions. */
     if (dir.len) {
@@ -482,7 +482,7 @@ void promptmenu_routine_enter(void) {
           }
           promptmenu_close();
         }
-        FREE(full_path);
+        free(full_path);
       }
       break;
     }
@@ -512,7 +512,7 @@ void promptmenu_routine_enter(void) {
           else {
             editor_open_buffer(answer);
           }
-          FREE(pwd);
+          free(pwd);
         }
         promptmenu_close();
       }
@@ -530,23 +530,23 @@ void promptmenu_routine_enter(void) {
         log_INFO_0("Hello");
         break;
       }
-      slash = STRRCHR(full_path, '/');
+      slash = strrchr(full_path, '/');
       if (!slash) {
-        FREE(full_path);
+        free(full_path);
         break;
       }
       log_INFO_0("%s", full_path);
       dir = measured_copy(full_path, ((slash - full_path) + 1));
-      FREE(full_path);
+      free(full_path);
       writable_dir = check_writable_directory(dir);
       if (!writable_dir) {
         statusline(AHEM, _("Cannot write to directory: %s"), dir);
-        FREE(dir);
+        free(dir);
         break;
       }
       else {
-        FREE(dir);
-        FREE(writable_dir);
+        free(dir);
+        free(writable_dir);
         /* The given filename does not yet exist. */
         if (!file_exists(answer)) {
           log_INFO_0("Writing out name-less file as %s before closing", answer);
