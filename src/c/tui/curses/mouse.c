@@ -162,27 +162,26 @@ static void tui_curses_mouse_routine_position(int x, int y) {
 
 void tui_curses_mouse_handle_events(void) {
   MEVENT ev;
-  if (getmouse(&ev) == ERR) {
-    return;
-  }
-  if (ev.bstate & (BUTTON1_PRESSED | BUTTON2_PRESSED)) {
-    FCIO_LOG_INFO("(BUTTON1_PRESSED | BUTTON2_PRESSED)");
-    tui_curses_mouse_update_state(TRUE, ((ev.bstate & BUTTON1_PRESSED) ? 1 : 2));
-    tui_curses_mouse_routine_button_dn(((ev.bstate & BUTTON1_PRESSED) ? 1 : 2), ev.x, ev.y);
-  }
-  /* These seam to be when a button is pressed and then released very
-   * fast, this probebly has something to do with 'mouseinterval(*ms*)'. */
-  if (ev.bstate & (BUTTON1_CLICKED | BUTTON2_CLICKED)) {
-    FCIO_LOG_INFO("(BUTTON1_CLICKED | BUTTON2_CLICKED)");
-  }
-  if (ev.bstate & (BUTTON1_RELEASED | BUTTON2_RELEASED)) {
-    FCIO_LOG_INFO("(BUTTON1_RELEASED | BUTTON2_RELEASED)");
-    tui_curses_mouse_update_state(FALSE, ((ev.bstate & BUTTON1_RELEASED) ? 1 : 2));
-    tui_curses_mouse_routine_button_up(((ev.bstate & BUTTON1_RELEASED) ? 1 : 2), ev.x, ev.y);
-  }
-  if (ev.bstate & REPORT_MOUSE_POSITION) {
-    FCIO_LOG_INFO("REPORT_MOUSE_POSITION");
-    tui_curses_mouse_update_pos(ev.x, ev.y);
-    tui_curses_mouse_routine_position(ev.x, ev.y);
+  while (getmouse(&ev) != ERR) {
+    if (ev.bstate & (BUTTON1_PRESSED | BUTTON2_PRESSED)) {
+      FCIO_LOG_INFO("(BUTTON1_PRESSED | BUTTON2_PRESSED)");
+      tui_curses_mouse_update_state(TRUE, ((ev.bstate & BUTTON1_PRESSED) ? 1 : 2));
+      tui_curses_mouse_routine_button_dn(((ev.bstate & BUTTON1_PRESSED) ? 1 : 2), ev.x, ev.y);
+    }
+    /* These seam to be when a button is pressed and then released very
+    * fast, this probebly has something to do with 'mouseinterval(*ms*)'. */
+    if (ev.bstate & (BUTTON1_CLICKED | BUTTON2_CLICKED)) {
+      FCIO_LOG_INFO("(BUTTON1_CLICKED | BUTTON2_CLICKED)");
+    }
+    if (ev.bstate & (BUTTON1_RELEASED | BUTTON2_RELEASED)) {
+      FCIO_LOG_INFO("(BUTTON1_RELEASED | BUTTON2_RELEASED)");
+      tui_curses_mouse_update_state(FALSE, ((ev.bstate & BUTTON1_RELEASED) ? 1 : 2));
+      tui_curses_mouse_routine_button_up(((ev.bstate & BUTTON1_RELEASED) ? 1 : 2), ev.x, ev.y);
+    }
+    if (ev.bstate & REPORT_MOUSE_POSITION) {
+      FCIO_LOG_INFO("REPORT_MOUSE_POSITION");
+      tui_curses_mouse_update_pos(ev.x, ev.y);
+      tui_curses_mouse_routine_position(ev.x, ev.y);
+    }
   }
 }
