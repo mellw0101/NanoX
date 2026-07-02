@@ -98,6 +98,8 @@ static void tui_curses_mouse_update_state(bool press, int button) {
 }
 
 static void tui_curses_mouse_routine_button_dn(int button, int x, int y) {
+  Ulong st;
+  Ulong end;
   if (button == 1) {
     /* Edit-Window */
     if (wenclose(midwin, y, x)) {
@@ -119,9 +121,23 @@ static void tui_curses_mouse_routine_button_dn(int button, int x, int y) {
       SET_PWW(TUI_OF);
       if (MOUSE_ISSET(MOUSE_PRESS_WAS_DOUBLE)) {
         FCIO_LOG_INFO("Double");
+        st  = wordstartindex(TUI_OF->current->data, TUI_OF->current_x, FALSE);
+        end = wordendindex(  TUI_OF->current->data, TUI_OF->current_x, FALSE);
+        /* Click inside, or at the start of a word. */
+        if (end != TUI_OF->current_x) {
+          TUI_OF->mark_x    = st;
+          TUI_OF->current_x = end;
+        }
+        /* Click at the end of a word. */
+        else if (st != TUI_OF->current_x && end == TUI_OF->current_x) {
+          TUI_OF->mark_x = st;
+        }
       }
+      /* On a triple click, select the entire line. */
       else if (MOUSE_ISSET(MOUSE_PRESS_WAS_TRIPPLE)) {
         FCIO_LOG_INFO("Triple");
+        TUI_OF->mark_x    = 0;
+        TUI_OF->current_x = strlen(TUI_OF->current->data);
       }
       refresh_needed = TRUE;
     }
@@ -138,6 +154,8 @@ static void tui_curses_mouse_routine_button_up(int button, int x, int y) {
 }
 
 static void tui_curses_mouse_routine_position(int x, int y) {
+  Ulong st;
+  Ulong end;
   if (MOUSE_ISSET(MOUSE_BUTTON_HELD_LEFT)) {
     if (wenclose(midwin, y, x)) {
       x -= margin;
@@ -151,6 +169,48 @@ static void tui_curses_mouse_routine_position(int x, int y) {
         )
       );
       TUI_OF->current_x = actual_x(TUI_OF->current->data, x);
+      if (MOUSE_ISSET(MOUSE_PRESS_WAS_DOUBLE)) {
+        st  = wordstartindex(TUI_OF->mark->data, TUI_OF->mark_x, TRUE);
+        end = wordendindex(  TUI_OF->mark->data, TUI_OF->mark_x, TRUE);
+        /* Cursor is on the same line as the word. */
+        if (TUI_OF->current == TUI_OF->mark) {
+          /* Cursor is inside the word, mark the entire word. */
+          if (TUI_OF->current_x >= st && TUI_OF->current_x <= end) {
+            TUI_OF->mark_x    = st;
+            TUI_OF->current_x = end;
+          }
+          /* Cursor is before the start of the word. */
+          else if (TUI_OF->current_x < st) {
+            TUI_OF->mark_x = end;
+          }
+          /* Cursor is after the end of the word. */
+          else if (TUI_OF->current_x > end) {
+            TUI_OF->mark_x = st;
+          }
+        }
+        else if (TUI_OF->current->lineno < TUI_OF->mark->lineno) {
+          TUI_OF->mark_x = end;
+        }
+        else {
+          TUI_OF->mark_x = st;
+        }
+      }
+      else if (MOUSE_ISSET(MOUSE_PRESS_WAS_TRIPPLE)) {
+        st  = 0;
+        end = strlen(TUI_OF->mark->data);
+        /* The cursor is on the original line. */
+        if (TUI_OF->mark == TUI_OF->current) {
+          TUI_OF->mark_x    = st;
+          TUI_OF->current_x = end;
+        }
+        else if (TUI_OF->current->lineno < TUI_OF->mark->lineno) {
+          TUI_OF->mark_x = end;
+        }
+        else {
+          TUI_OF->mark_x = st;
+        }
+      }
+      SET_PWW(TUI_OF);
       refresh_needed = TRUE;
     }
   }
@@ -162,23 +222,19 @@ static void tui_curses_mouse_routine_position(int x, int y) {
 
 void tui_curses_mouse_handle_events(void) {
   MEVENT ev;
+  /* Drain all available events. */
   while (getmouse(&ev) != ERR) {
     if (ev.bstate & (BUTTON1_PRESSED | BUTTON2_PRESSED)) {
       FCIO_LOG_INFO("(BUTTON1_PRESSED | BUTTON2_PRESSED)");
       tui_curses_mouse_update_state(TRUE, ((ev.bstate & BUTTON1_PRESSED) ? 1 : 2));
       tui_curses_mouse_routine_button_dn(((ev.bstate & BUTTON1_PRESSED) ? 1 : 2), ev.x, ev.y);
     }
-    /* These seam to be when a button is pressed and then released very
-    * fast, this probebly has something to do with 'mouseinterval(*ms*)'. */
-    if (ev.bstate & (BUTTON1_CLICKED | BUTTON2_CLICKED)) {
-      FCIO_LOG_INFO("(BUTTON1_CLICKED | BUTTON2_CLICKED)");
-    }
-    if (ev.bstate & (BUTTON1_RELEASED | BUTTON2_RELEASED)) {
+    else if (ev.bstate & (BUTTON1_RELEASED | BUTTON2_RELEASED)) {
       FCIO_LOG_INFO("(BUTTON1_RELEASED | BUTTON2_RELEASED)");
       tui_curses_mouse_update_state(FALSE, ((ev.bstate & BUTTON1_RELEASED) ? 1 : 2));
       tui_curses_mouse_routine_button_up(((ev.bstate & BUTTON1_RELEASED) ? 1 : 2), ev.x, ev.y);
     }
-    if (ev.bstate & REPORT_MOUSE_POSITION) {
+    else if (ev.bstate & REPORT_MOUSE_POSITION) {
       FCIO_LOG_INFO("REPORT_MOUSE_POSITION");
       tui_curses_mouse_update_pos(ev.x, ev.y);
       tui_curses_mouse_routine_position(ev.x, ev.y);

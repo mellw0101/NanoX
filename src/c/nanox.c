@@ -70,6 +70,9 @@
 #define MODERNBINDINGS_OPT_STR  "-/",              "--modernbindings",          N_("Use better-known key bindings")
 
 
+#define BUTTON_CLICKED  (BUTTON1_CLICKED | BUTTON2_CLICKED | BUTTON3_CLICKED | BUTTON4_CLICKED | BUTTON5_CLICKED)
+
+
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
 
 
@@ -146,8 +149,8 @@ static void disable_mouse_support(void) {
 /* Enable mouse support for `curses-mode`. */
 static void enable_mouse_support(void) {
   if (IN_CURSES_CTX) {
-    mousemask((ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION), NULL);
-    oldinterval = mouseinterval(50);
+    mousemask(((ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION) & ~BUTTON_CLICKED), NULL);
+    oldinterval = mouseinterval(1);
     printf(ESC_CODE_MOUSE_MOVEMENT_EVENTS(TRUE));
   }
 }
