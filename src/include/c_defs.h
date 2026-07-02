@@ -131,8 +131,8 @@
 
 /* These are used when building context-less functions, as these
  * ensure there is no confusion about the use of the parameters */
-#define CTX_ARG_OF      openfilestruct *const file
-#define CTX_ARG_REF_OF  openfilestruct **const file
+#define CTX_ARG_OF      OPENFILE const file
+#define CTX_ARG_REF_OF  OPENFILE *const file
 
 #define CTX_ARG_ROWS    int rows
 #define CTX_ARG_COLS    int cols
@@ -142,7 +142,7 @@
 #define CTX_ARGS         CTX_ARG_OF,     CTX_ARG_ROWS, CTX_ARG_COLS
 #define CTX_ARGS_REF_OF  CTX_ARG_REF_OF, CTX_ARG_ROWS, CTX_ARG_COLS
 
-#define FULL_CTX_ARGS    openfilestruct **const start, openfilestruct **const open, int rows, int cols
+#define FULL_CTX_ARGS    OPENFILE *const start, OPENFILE *const open, int rows, int cols
 
 #define CTX_PARAMS       CTX_ARG_OF,     CTX_ARG_ROWS, CTX_ARG_COLS
 
@@ -332,7 +332,8 @@
 
 /* Macros for flags, indexing each bit in a small array. */
 #define FLAGS(flag)     flags[((flag) / (sizeof(Ulong) * 8))]
-#define FLAGMASK(flag)  ((Ulong)1 << ((flag) % (sizeof(Ulong) * 8)))
+// #define FLAGMASK(flag)  ((Ulong)1 << ((flag) % (sizeof(Ulong) * 8)))
+#define FLAGMASK(flag)  ((Ulong)1 << ((flag) & ((sizeof(Ulong) * 8) - 1)))
 #define SET(flag)       FLAGS(flag) |= FLAGMASK(flag)
 #define UNSET(flag)     FLAGS(flag) &= ~FLAGMASK(flag)
 #define ISSET(flag)     ((FLAGS(flag) & FLAGMASK(flag)) != 0)
@@ -760,6 +761,11 @@ typedef struct keystruct             keystruct;
 typedef struct funcstruct            funcstruct;
 typedef struct completionstruct      completionstruct;
 
+typedef struct openfilestruct   *OPENFILE;
+typedef struct linestruct       *LINE;
+typedef const struct linestruct *CLINE;
+typedef struct undostruct       *UNDO;
+
 /* ----------------------------- synx.c ----------------------------- */
 
 /* A structure that reprecents a position inside a `SyntaxFile` structure. */
@@ -793,10 +799,12 @@ typedef struct Menu *MENU;
 /* ----------------------------- gui/element.c ----------------------------- */
 
 typedef struct Element  Element;
+typedef struct Element *ELEMENT;
 
 /* ----------------------------- gui/editor/editor.c ----------------------------- */
 
 typedef struct Editor  Editor;
+typedef struct Editor *EDITOR;
 
 /* ----------------------------- gui/editor/topbar.c ----------------------------- */
 

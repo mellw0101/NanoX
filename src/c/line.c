@@ -8,20 +8,20 @@
 
 
 /* Return 'TRUE' when 'line' is part of the marked region. */
-bool line_in_marked_region_for(openfilestruct *const file, linestruct *const line) {
+bool line_in_marked_region_for(OPENFILE const file, LINE const line) {
   ASSERT(file);
   ASSERT(line);
   return (file->mark
-   && ((line->lineno >= file->mark->lineno && line->lineno <= file->current->lineno)
-   || (line->lineno <= file->mark->lineno && line->lineno >= file->current->lineno)));
+  && ((line->lineno >= file->mark->lineno && line->lineno <= file->current->lineno)
+  || (line->lineno <= file->mark->lineno && line->lineno >= file->current->lineno)));
 }
 
 /* Return 'TRUE' when 'line' is part of the marked region. */
-bool line_in_marked_region(linestruct *const line) {
+bool line_in_marked_region(LINE const line) {
   return line_in_marked_region_for(CTX_OF, line);
 }
 
-char *line_last_mbchr(const linestruct *const line) {
+char *line_last_mbchr(CLINE const line) {
   ASSERT(line);
   return (line->data + step_left(line->data, strlen(line->data)));
 }
@@ -29,8 +29,8 @@ char *line_last_mbchr(const linestruct *const line) {
 /* ----------------------------- Move line ----------------------------- */
 
 /* Move a single line up/down by simply swapping data ptrs. */
-void move_line_data(linestruct *const line, bool up) {
-  DLIST_SAFE_ATOMIC_SWAP_FIELD(line, data, up);
+void move_line_data(LINE const line, bool up) {
+  DLIST_SWAP_FIELD(line, data, up);
   // /* Up */
   // if (up && line->prev) {
   //   DLIST_ATOMIC_SWAP_FIELD_PREV(line, data);
@@ -44,10 +44,10 @@ void move_line_data(linestruct *const line, bool up) {
 /* ----------------------------- Move lines up ----------------------------- */
 
 /* Call function to move lines up one line, either one line, or all selected lines in `file`. */
-void move_lines_up_for(openfilestruct *const file) {
+void move_lines_up_for(OPENFILE const file) {
   ASSERT(file);
-  linestruct *top;
-  linestruct *bot;
+  LINE top;
+  LINE bot;
   /* Multi-line move. */
   if (file->mark && file->current != file->mark) {
     /* Mark is top. */
@@ -102,10 +102,10 @@ void move_lines_up(void) {
 /* ----------------------------- Move lines down ----------------------------- */
 
 /* Call function to move lines down one line, either one line, or all selected lines in `file`. */
-void move_lines_down_for(openfilestruct *const file) {
+void move_lines_down_for(OPENFILE const file) {
   ASSERT(file);
-  linestruct *top;
-  linestruct *bot;
+  LINE top;
+  LINE bot;
   /* Multi-line move. */
   if (file->mark && file->mark != file->current) {
     /* Mark is top. */

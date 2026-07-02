@@ -3,7 +3,7 @@
 int unix_socket_fd = -1;
 
 static void fcio_log_cb(FCIO_LOG_MSG msg) {
-  unix_socket_debug(FCIO_LOG_FMT, FCIO_LOG_FMT_ARGS(msg));
+  unix_socket_debug(FCIO_LOG_MSG_FMT_ARGS_COLOR(msg));
 }
 
 /* Connect to a unix domain socket and assign the fd to 'unix_socket_fd'.

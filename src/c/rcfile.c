@@ -1260,8 +1260,9 @@ void parse_binding(char *ptr, bool dobind) {
 
 /* Verify that the user has not unmapped every shortcut function we consider `vital` (sush as `do_exit`). */
 void check_vitals_mapped(void) {
-  void (*vitals[VITALS])(void) = { do_exit, do_exit,  do_exit, do_cancel };
-  int inmenus[VITALS]          = { MMAIN,   MBROWSER, MHELP,   MYESNO    };
+  // void (*vitals[VITALS])(void) = { do_exit, do_exit,  do_exit, do_cancel };
+  voidfunc vitals[VITALS]  = { do_exit, do_exit,  do_exit, do_cancel };
+  int      inmenus[VITALS] = { MMAIN,   MBROWSER, MHELP,   MYESNO    };
   for (Uint i=0; i<VITALS; ++i) {
     DLIST_FOR_NEXT(allfuncs, f) {
       if (f->func == vitals[i] && (f->menus & inmenus[i])) {
@@ -1279,11 +1280,12 @@ void check_vitals_mapped(void) {
 
 /* ----------------------------- Strtosc ----------------------------- */
 
-/* Interpret a function string given in the rc file, and return a shortcut record with the corresponding function filled in. */
+/* Interpret a function string given in the rc file, and return
+ * a shortcut record with the corresponding function filled in. */
 keystruct *strtosc(const char *const restrict input) {
-  keystruct *ret = xmalloc(sizeof(*ret));
-  int toggle = 0;
-  VoidFuncPtr func = sc_from_str(input);
+  keystruct *ret    = xmalloc(sizeof(*ret));
+  int        toggle = 0;
+  voidfunc   func   = sc_from_str(input);
   if (func) {
     ret->func = func;
   }
@@ -1300,18 +1302,23 @@ keystruct *strtosc(const char *const restrict input) {
 
 /* ----------------------------- Parse rcfile ----------------------------- */
 
-/* Parse the rcfile, once it has been opened successfully at rcstream, and close it afterwards.
- * If just_syntax is TRUE, allow the file to to contain only color syntax commands. */
+/* Parse the rcfile, once it has been opened successfully at rcstream, and close it
+ * afterwards.  If just_syntax is TRUE, allow the file to to contain only color syntax commands. */
 void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
   char *buffer = NULL;
   Ulong size   = 0;
   long  length = 0;
+  char *ptr;
+  char *keyword;
+  char *option;
+  char *argument;
+  bool  drop_open;
+  int   set;
+  Ulong i;
   while ((length = getline(&buffer, &size, rcstream)) > 0) {
-    char *ptr, *keyword, *option, *argument;
-    bool  drop_open = FALSE;
-    int   set       = 0;
-    Ulong i;
-    nanox_rc_lineno++;
+    drop_open = FALSE;
+    set       = 0;
+    ++nanox_rc_lineno;
     /* If doing a full parse, skip to after the 'syntax' command. */
     if (just_syntax && !intros_only && nanox_rc_lineno <= nanox_rc_live_syntax->lineno) {
       continue;
@@ -1325,7 +1332,7 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
     }
     ptr = buffer;
     while (isblank((Uchar)*ptr)) {
-      ptr++;
+      ++ptr;
     }
     /* If the line is empty or a comment, skip to next line. */
     if (!*ptr || *ptr == '#') {
@@ -1336,7 +1343,8 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
     ptr     = parse_next_word(ptr);
     /* Handle extending first... */
     if (!just_syntax && strcmp(keyword, "extendsyntax") == 0) {
-      augmentstruct *newitem, *extra;
+      augmentstruct *newitem;
+      augmentstruct *extra;
       char          *syntaxname = ptr;
       syntaxtype    *sntx;
       check_for_nonempty_syntax();
@@ -1590,6 +1598,7 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
 /* Process the nanorc file that was specified on the command line (if any),
  * and otherwise the system-wide rcfile followed by the user's rcfile. */
 void do_rcfiles(void) {
+  const char *xdgconfdir;
   if (custom_nanorc) {
     nanox_rc_path = get_full_path(custom_nanorc);
     if (!nanox_rc_path || access(nanox_rc_path, F_OK) != 0) {
@@ -1603,10 +1612,13 @@ void do_rcfiles(void) {
     parse_one_nanorc();
   }
   if (!custom_nanorc) {
-    const char *xdgconfdir = getenv("XDG_CONFIG_HOME");
+    xdgconfdir = getenv("XDG_CONFIG_HOME");
     get_homedir();
-    /* Now try to find a nanorc file in the user's home directory or in the XDG configuration directories, and process the first one found. */
-    if (have_nanorc(homedir, "/" HOME_RC_NAME) || have_nanorc(xdgconfdir, "/nano/" RCFILE_NAME) || have_nanorc(homedir, "/.config/nano/" RCFILE_NAME)) {
+    /* Now try to find a nanorc file in the user's home directory or in
+     * the XDG configuration directories, and process the first one found. */
+    if (have_nanorc(homedir, "/" HOME_RC_NAME)
+    || have_nanorc(xdgconfdir, "/nano/" RCFILE_NAME) || have_nanorc(homedir, "/.config/nano/" RCFILE_NAME))
+    {
       parse_one_nanorc();
     }
     else if (!homedir && !xdgconfdir) {

@@ -216,7 +216,7 @@ static char **filename_completion(const char *const restrict morsel, Ulong *cons
 /* Create a backup of an existing file.  If the user did not request backups,
  * make a temporary one.  (trying first in the directory of the original file,
  * then in the user's home directory).  Return 'TRUE' if the save can proceed. */
-static bool make_backup_of_for(openfilestruct *const file, char *realname) {
+static bool make_backup_of_for(OPENFILE const file, char *realname) {
   ASSERT(file);
   ASSERT(realname);
   struct timespec filetime[2];
@@ -768,10 +768,10 @@ static void insert_a_file_or(bool execute) {
 
 /* Add an item to the circular list of openfile structs ensuring correctness
  * by passing a ptr to the start ptr in the list and the currently open one. */
-void make_new_buffer_for(openfilestruct **const start, openfilestruct **const open) {
+void make_new_buffer_for(OPENFILE *const start, OPENFILE *const open) {
   ASSERT(start);
   ASSERT(open);
-  openfilestruct *node = xmalloc(sizeof(*node));
+  OPENFILE node = xmalloc(sizeof(*node));
   if (!*open) {
     /* Make the first buffer the only element in the list. */
     CLIST_INIT(node);
@@ -820,7 +820,7 @@ void make_new_buffer(void) {
   else {
     make_new_buffer_for(&TUI_SF, &TUI_OF);
   }
-  // openfilestruct *newnode = xmalloc(sizeof(*newnode));
+  // OPENFILE newnode = xmalloc(sizeof(*newnode));
   // if (!openfile) {
   //   /* Make the first buffer the only element in the list. */
   //   CLIST_INIT(newnode);
@@ -897,7 +897,7 @@ void stat_with_alloc(const char *filename, struct stat **pstat) {
 /* ----------------------------- Prepare for display ----------------------------- */
 
 /* Update the title-bar and multiline cache to match `file`. */
-void prepare_for_display_for(openfilestruct *const file) {
+void prepare_for_display_for(OPENFILE const file) {
   ASSERT(file);
   /* Only perform any action when in curses-mode. */
   if (IN_CURSES_CTX) {
@@ -936,7 +936,7 @@ void prepare_for_display(void) {
 /* ----------------------------- Mention name and linecount ----------------------------- */
 
 /* Show name of current buffer and its number of lines on the status bar. */
-void mention_name_and_linecount_for(openfilestruct *const file) {
+void mention_name_and_linecount_for(OPENFILE const file) {
   ASSERT(file);
   Ulong count = (file->filebot->lineno - !*file->filebot->data);
   if (ISSET(MINIBAR)) {
@@ -1107,7 +1107,7 @@ bool has_valid_path(const char *const restrict filename) {
   return validity;
 }
 
-void free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestruct **start) {
+void free_one_buffer(OPENFILE orphan, OPENFILE *open, OPENFILE *start) {
   /* If the buffer to free is the start buffer, advance the start buffer. */
   if (orphan == *start) {
     CLIST_ADV_NEXT(*start);
@@ -1138,7 +1138,7 @@ void free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestru
 
 /* ----------------------------- Close buffer ----------------------------- */
 
-void close_buffer_for(openfilestruct *const orphan, openfilestruct **const start, openfilestruct **const open) {
+void close_buffer_for(OPENFILE const orphan, OPENFILE *const start, OPENFILE *const open) {
   ASSERT(orphan);
   ASSERT(start);
   ASSERT(open);
@@ -1170,7 +1170,8 @@ void close_buffer_for(openfilestruct *const orphan, openfilestruct **const start
   }
 }
 
-/* Remove the current buffer from the circular list of buffers.  When just one buffer remains open, show "Exit" in the help lines. */
+/* Remove the current buffer from the circular list of buffers.
+ * When just one buffer remains open, show "Exit" in the help lines. */
 void close_buffer(void) {
   if (IN_GUI_CTX) {
     close_buffer_for(GUI_OF, &GUI_SF, &GUI_OF);
@@ -1182,7 +1183,8 @@ void close_buffer(void) {
 
 /* ----------------------------- Real dir from tilde ----------------------------- */
 
-/* Convert the tilde notation when the given path begins with ~/ or ~user/. Return an allocated string containing the expanded path. */
+/* Convert the tilde notation when the given path begins with ~/ or
+ * ~user/. Return an allocated string containing the expanded path. */
 char *real_dir_from_tilde(const char *const restrict path) {
   char *tilded;
   char *ret;
@@ -1280,7 +1282,8 @@ char *check_writable_directory(const char *path) {
 
 /* ----------------------------- Diralphasort ----------------------------- */
 
-/* Our sort routine for file listings.  Sort alphabetically and case-insensitively, and sort directories before filenames. */
+/* Our sort routine for file listings.  Sort alphabetically
+ * and case-insensitively, and sort directories before filenames. */
 int diralphasort(const void *va, const void *vb) {
   int         difference;
   struct stat fileinfo;
@@ -1307,7 +1310,7 @@ int diralphasort(const void *va, const void *vb) {
 
 /* Mark `file` as modified if it isn't already, and then update the title-bar to
  * display the buffer's new status.  As well as re-writing the lockfile it there is one. */
-void set_modified_for(openfilestruct *const file) {
+void set_modified_for(OPENFILE const file) {
   ASSERT(file);
   if (file->modified) {
     return;
@@ -1321,7 +1324,8 @@ void set_modified_for(openfilestruct *const file) {
   }
 }
 
-/* Mark the `openfile` buffer as modified if it isn't already, and then update the title bar to display the buffer's new status. */
+/* Mark the `openfile` buffer as modified if it isn't already,
+ * and then update the title bar to display the buffer's new status. */
 void set_modified(void) {
   set_modified_for(CTX_OF);
 }
@@ -1355,8 +1359,8 @@ void init_operating_dir(void) {
  * incomplete names that can grow into matches for the operating directory
  * are considered to be inside, so that tab completion will work. */
 bool outside_of_confinement(const char *const restrict somepath, bool tabbing) {
-  bool is_inside;
-  bool begins_to_be;
+  bool  is_inside;
+  bool  begins_to_be;
   char *fullpath;
   if (!operating_dir) {
     return FALSE;
@@ -1395,8 +1399,8 @@ void init_backup_dir(void) {
  * read error, and a positive number on write error.  File inn is always
  * closed by this function, out is closed  only if close_out is TRUE. */
 int copy_file(FILE *inn, FILE *out, bool close_out) {
-  int retval = 0;
-  char buf[BUFSIZ];
+  int   retval = 0;
+  char  buf[BUFSIZ];
   Ulong charsread;
   int (*flush_out_fnc)(FILE *) = ((close_out) ? fclose : fflush);
   do {
@@ -1424,7 +1428,7 @@ int copy_file(FILE *inn, FILE *out, bool close_out) {
 /* Create, safely, a temporary file in the standard temp directory.
  * On success, return the malloc()ed filename, plus the corresponding
  * file stream opened in read-write mode.  On error, return 'NULL'. */
-char *safe_tempfile_for(openfilestruct *const file, FILE **const stream) {
+char *safe_tempfile_for(OPENFILE const file, FILE **const stream) {
   ASSERT(file);
   ASSERT(stream);
   const char *envdir = getenv("TMPDIR");
@@ -1452,7 +1456,7 @@ char *safe_tempfile_for(openfilestruct *const file, FILE **const stream) {
   }
   /* Create the temp-file-path based on the temp-dir we got. */
   tmpfile = fmtstrcat(tmpdir, "nano.XXXXXX%s", ext);
-  fd = mkstemps(tmpfile, strlen(ext));
+  fd  = mkstemps(tmpfile, strlen(ext));
   /* If we sucessfully open the file-descriptor. */
   if (fd > 0) {
     *stream = fdopen(fd, "r+b");
@@ -1510,7 +1514,7 @@ char *safe_tempfile(FILE **const stream) {
 /* ----------------------------- Redecorate after switch ----------------------------- */
 
 /* Update title-bar and such after switching to another buffer. */
-void redecorate_after_switch_for(openfilestruct *const file, int cols) {
+void redecorate_after_switch_for(OPENFILE const file, int cols) {
   ASSERT(file);
   /* Only perform any action when in curses-mode. */
   if (IN_CURSES_CTX) {
@@ -1579,7 +1583,7 @@ void redecorate_after_switch(void) {
 
 /* Switch `*file` to the previous entry in the circular list of
  * buffers.  TODO: Implement the redecorating for the editor as well. */
-void switch_to_prev_buffer_for(openfilestruct **const open, int cols) {
+void switch_to_prev_buffer_for(OPENFILE *const open, int cols) {
   ASSERT(open);
   ASSERT(*open);
   DLIST_ADV_PREV(*open);
@@ -1600,8 +1604,9 @@ void switch_to_prev_buffer(void) {
 
 /* ----------------------------- Switch to next buffer ----------------------------- */
 
-/* Switch `*file` to the next entry in the circular list of buffers.  TODO: Implement the redecorating for the editor as well. */
-void switch_to_next_buffer_for(openfilestruct **const open, int cols) {
+/* Switch `*file` to the next entry in the circular list of
+ * buffers.  TODO: Implement the redecorating for the editor as well. */
+void switch_to_next_buffer_for(OPENFILE *const open, int cols) {
   ASSERT(open);
   ASSERT(*open);
   DLIST_ADV_NEXT(*open);
@@ -1921,9 +1926,7 @@ void read_file(FILE *f, int fd, const char *const restrict filename, bool undoab
 
 /* This does one of three things.  If the filename is "", it just creates a new empty buffer.  When the filename
  * is not empty, it reads that file into a new buffer when requested, otherwise into the existing buffer. */
-bool open_buffer_for(openfilestruct **const start, openfilestruct **const open,
-  int rows, int cols, const char *const restrict path, bool new_one)
-{
+bool open_buffer_for(FULL_CTX_ARGS, const char *const restrict path, bool new_one) {
   ASSERT(start);
   ASSERT(open);
   /* The filename after tilde expansion. */
@@ -2027,7 +2030,7 @@ void open_buffer_browser_for(FULL_CTX_ARGS) {
   ASSERT(*start);
   ASSERT(*open);
   char *file;
-  openfilestruct *was_open;
+  OPENFILE was_open;
   /* Let the user pick a file using the browser. */
   if (IN_CURSES_CTX && ((file = browse_in(*(*open)->filename ? (*open)->filename : "./")))) {
     /* Save the currently open buffer. */
@@ -2049,7 +2052,7 @@ void open_buffer_browser(void) {
 /* ----------------------------- Open new empty buffer ----------------------------- */
 
 /* Open a new empty buffer. */
-void open_new_empty_buffer_for(openfilestruct **const start, openfilestruct **const open) {
+void open_new_empty_buffer_for(OPENFILE *const start, OPENFILE *const open) {
   make_new_buffer_for(start, open);
   refresh_needed = TRUE;
 }
@@ -2232,11 +2235,12 @@ char *input_tab(char *morsel, Ulong *const place, functionptrtype refresh_func, 
 
 /* ----------------------------- Write file ----------------------------- */
 
-/* Write `file` to disk.  If `thefile` isn't `NULL`, we write to a temporary file that is already open.  If `normal` is `FALSE`
- * (for a spellcheck or an emergency save, for example), we don't make a backup and don't give feedback.  If `method` is `APPEND`
- * or `PREPEND`, it means we will be appending or prepending instead of owerwriting the given file.  If `annotate` is `TRUE` and
- * when writing a `normal` file, we set the current filename and stat info.  Returns `TRUE` on success, and `FALSE` otherwise. */
-bool write_file_for(openfilestruct *const file, const char *const restrict name,
+/* Write `file` to disk.  If `thefile` isn't `NULL`, we write to a temporary file that is already open.
+ * If `normal` is `FALSE` (for a spellcheck or an emergency save, for example), we don't make a backup
+ * and don't give feedback.  If `method` is `APPEND` or `PREPEND`, it means we will be appending or
+ * prepending instead of owerwriting the given file.  If `annotate` is `TRUE` and when writing a `normal`
+ * file, we set the current filename and stat info. Returns `TRUE` on success, and `FALSE` otherwise. */
+bool write_file_for(OPENFILE const file, const char *const restrict name,
   FILE *thefile, bool normal, kind_of_writing_type method, bool annotate)
 {
   ASSERT(file);
@@ -2524,14 +2528,18 @@ bool write_file_for(openfilestruct *const file, const char *const restrict name,
  * don't give feedback.  If `method` is `APPEND` or `PREPEND`, it means we will be appending or prepending instead
  * of owerwriting the given file.  If `annotate` is `TRUE` and when writing a `normal` file, we set the current
  * filename and stat info.  Returns `TRUE` on success, and `FALSE` otherwise.  Note that this is `context-safe`. */
-bool write_file(const char *const restrict name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate) {
+bool write_file(const char *const restrict name,
+  FILE *thefile, bool normal, kind_of_writing_type method, bool annotate)
+{
   return write_file_for(CTX_OF, name, thefile, normal, method, annotate);
 }
 
 /* ----------------------------- Write region to file ----------------------------- */
 
 /* Write the marked region of `file` out to disk.  Returns `TRUE` on success and `FALSE` on error. */
-bool write_region_to_file_for(openfilestruct *const file, const char *const restrict name, FILE *stream, bool normal, kind_of_writing_type method) {
+bool write_region_to_file_for(OPENFILE const file,
+  const char *const restrict name, FILE *stream, bool normal, kind_of_writing_type method)
+{
   ASSERT(file);
   linestruct *birthline;
   linestruct *top;
@@ -2585,7 +2593,7 @@ bool write_region_to_file(const char *const restrict name, FILE *stream, bool no
  * Do not ask for a name when `withprompt` is `FALSE`.  Nor when doing a save-on-exit and the buffer
  * already has a name. If `withprompt` is `TRUE`, then ask for (confirmation of) the filename.  Returns
  * `0` if the operation is cancelled, `1` if the buffer is saved and `2` if the buffer is discarded. */
-int write_it_out_for(openfilestruct *const file, bool exiting, bool withprompt) {
+int write_it_out_for(OPENFILE const file, bool exiting, bool withprompt) {
   ASSERT(file);
   /* The filename we offer, or what the user typed so far. */
   char *given;
@@ -2824,7 +2832,7 @@ int write_it_out(bool exiting, bool withprompt) {
 /* ----------------------------- Do writeout ----------------------------- */
 
 /* Write `*open` to disk, or discard it. */
-void do_writeout_for(openfilestruct **const start, openfilestruct **const open, int cols) {
+void do_writeout_for(OPENFILE *const start, OPENFILE *const open, int cols) {
   ASSERT(start);
   ASSERT(open);
   ASSERT(*start);
@@ -2848,7 +2856,7 @@ void do_writeout(void) {
 /* ----------------------------- Do savefile ----------------------------- */
 
 /* If it has a name, write `*open` to disk without prompting. */
-void do_savefile_for(openfilestruct **const start, openfilestruct **const open, int cols) {
+void do_savefile_for(OPENFILE *const start, OPENFILE *const open, int cols) {
   ASSERT(start);
   ASSERT(open);
   ASSERT(*start);

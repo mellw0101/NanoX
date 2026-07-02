@@ -93,7 +93,9 @@ void do_suggestion(void) {
     delwin(suggestwin);
     suggestwin = NULL;
   }
-  if (!openfile->current_x || (!is_word_char(&openfile->current->data[openfile->current_x - 1], FALSE) && openfile->current->data[openfile->current_x - 1] != '_')) {
+  if (!openfile->current_x || (!is_word_char(&openfile->current->data[openfile->current_x - 1], FALSE)
+  && openfile->current->data[openfile->current_x - 1] != '_'))
+  {
     clear_suggestion();
     return;
   }
@@ -263,7 +265,7 @@ void draw_suggest_win(void) {
       }
       completion = list_of_completions;
       /* Calculate width and height of the entire window. */
-      for (Uint i = 0; i < height; ++i) {
+      for (Uint i=0; i<height; ++i) {
         wordlen = (breadth(completion->word) + 2);
         if (wordlen > width) {
           width = wordlen;

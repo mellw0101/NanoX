@@ -482,7 +482,14 @@ linestruct *editor_get_text_line(Editor *const editor, float y_pos) {
   ASSERT(editor->openfile->edittop);
   long row;
   font_row_from_pos(textfont, editor->text->y, (editor->text->y + editor->text->height), y_pos, &row);
-  return line_from_number_for(editor->openfile, lclamp((editor->openfile->edittop->lineno + row), editor->openfile->edittop->lineno, editor->openfile->filebot->lineno));
+  return line_from_number_for(
+    editor->openfile,
+    lclamp(
+      (editor->openfile->edittop->lineno + row),
+      editor->openfile->edittop->lineno,
+      editor->openfile->filebot->lineno
+    )
+  );
 }
 
 /* ----------------------------- Editor get text index ----------------------------- */

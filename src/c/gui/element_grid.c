@@ -178,13 +178,13 @@ void element_grid_remove(Element *const e) {
 
 /* ----------------------------- Element grid get ----------------------------- */
 
-Element *element_grid_get(float x, float y) {
+ELEMENT element_grid_get(float x, float y) {
   ASSERT(element_grid);
   ElementGridpos gridpos = element_gridpos_get(x, y);
-  Ulong key = element_gridpos_xy_hash(gridpos.x, gridpos.y);
-  HNMAP cellmap = hnmap_get(element_grid->map, key);
-  GetPackage *p;
-  Element *ret;
+  Ulong          key     = element_gridpos_xy_hash(gridpos.x, gridpos.y);
+  HNMAP          cellmap = hnmap_get(element_grid->map, key);
+  GetPackage    *p;
+  ELEMENT        ret;
   if (!cellmap) {
     return NULL;
   }

@@ -26,7 +26,7 @@
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
-static inline undostruct *undostruct_create_for(openfilestruct *const file, undo_type *const action) {
+static inline UNDO undostruct_create_for(OPENFILE const file, undo_type *const action) {
   undostruct *u = xmalloc(sizeof(*u));
   u->type        = *action;
   u->strdata     = NULL;
@@ -60,7 +60,7 @@ static inline undostruct *undostruct_create_for(openfilestruct *const file, undo
 /* ----------------------------- Undo cut ----------------------------- */
 
 /* Undo a cut, or redo a paste. */
-static void undo_cut_for(openfilestruct *const file, int rows, undostruct *const u) {
+static void undo_cut_for(OPENFILE const file, int rows, UNDO const u) {
   ASSERT(file);
   ASSERT(u);
   goto_line_posx_for(file, rows, u->head_lineno, ((u->xflags & WAS_WHOLE_LINE) ? 0 : u->head_x));
@@ -96,7 +96,7 @@ static void undo_cut_for(openfilestruct *const file, int rows, undostruct *const
 /* ----------------------------- Redo cut ----------------------------- */
 
 /* Redo a cut, or undo a paste. */
-static void redo_cut_for(CTX_ARGS, undostruct *const u) {
+static void redo_cut_for(CTX_ARGS, UNDO const u) {
   ASSERT(file);
   ASSERT(u);
   /* Save the cutbuffer. */
@@ -116,7 +116,7 @@ static void redo_cut_for(CTX_ARGS, undostruct *const u) {
 
 /* Undo a move_line(s)_(up/down). */
 _UNUSED
-static void undo_move_line_for(openfilestruct *const file, undostruct *const u) {
+static void undo_move_line_for(OPENFILE const file, UNDO const u) {
   ASSERT(file);
   ASSERT(u);
   linestruct *top;
@@ -160,7 +160,7 @@ static void undo_move_line_for(openfilestruct *const file, undostruct *const u) 
 
 /* Redo a move_line(s)_(up/down). */
 _UNUSED
-static void redo_move_line_for(openfilestruct *const file, undostruct *const u) {
+static void redo_move_line_for(OPENFILE const file, UNDO const u) {
   ASSERT(file);
   ASSERT(u);
   linestruct *top;
@@ -204,12 +204,12 @@ static void redo_move_line_for(openfilestruct *const file, undostruct *const u) 
 }
 
 /* Undo a move_line(s)_(up/down). */
-static void handle_move_line_action_for(openfilestruct *const file, undostruct *const u, bool undoing) {
+static void handle_move_line_action_for(OPENFILE const file, UNDO const u, bool undoing) {
   ASSERT(file);
   ASSERT(u);
-  linestruct *top;
-  linestruct *bot;
-  int offset = (undoing ? 0 : ((u->type == MOVE_LINE_UP) ? -1 : 1));
+  LINE top;
+  LINE bot;
+  int  offset    = (undoing ? 0 : ((u->type == MOVE_LINE_UP) ? -1 : 1));
   bool direction = ((undoing ^ (u->type == MOVE_LINE_UP)) ? DOWN : UP);
   /* Single-line move. */
   if (u->head_lineno == u->tail_lineno) {
@@ -251,7 +251,7 @@ static void handle_move_line_action_for(openfilestruct *const file, undostruct *
 /* ----------------------------- Undo enclose ----------------------------- */
 
 /* Undo a enclose. */
-static void undo_enclose_for(openfilestruct *const file, undostruct *const u) {
+static void undo_enclose_for(OPENFILE const file, UNDO const u) {
   ASSERT(file);
   ASSERT(u);
   char *s1;
@@ -277,7 +277,7 @@ static void undo_enclose_for(openfilestruct *const file, undostruct *const u) {
 }
 
 /* Redo a enclose. */
-static void redo_enclose_for(openfilestruct *const file, undostruct *const u) {
+static void redo_enclose_for(OPENFILE const file, UNDO const u) {
   ASSERT(file);
   ASSERT(u);
   char *s1;
@@ -312,7 +312,7 @@ static void redo_enclose_for(openfilestruct *const file, undostruct *const u) {
 /* ----------------------------- Undo auto bracket ----------------------------- */
 
 /* Undo a auto bracket. */
-static void undo_auto_bracket_for(openfilestruct *const file, undostruct *const u) {
+static void undo_auto_bracket_for(OPENFILE const file, UNDO const u) {
   ASSERT(file);
   ASSERT(u);
   /* Restore the state of the cursor. */
@@ -332,7 +332,7 @@ static void undo_auto_bracket_for(openfilestruct *const file, undostruct *const 
 /* ----------------------------- Handle zap replace action ----------------------------- */
 
 /* Hande a zap-replace undo-redo action. */
-static void handle_zap_replace_action(CTX_ARGS, undostruct *const u, bool undoing) {
+static void handle_zap_replace_action(CTX_ARGS, UNDO const u, bool undoing) {
   ASSERT(file);
   ASSERT(u);
   linestruct *was_cutbuffer;
@@ -375,7 +375,7 @@ static void handle_zap_replace_action(CTX_ARGS, undostruct *const u, bool undoin
 /* ----------------------------- Undo insert empty line ----------------------------- */
 
 /* Undo a insert empty line. */
-static void undo_insert_empty_line_for(openfilestruct *const file, int rows, undostruct *const u) {
+static void undo_insert_empty_line_for(OPENFILE const file, int rows, UNDO const u) {
   ASSERT(file);
   ASSERT(u);
   /* Restore the cursor and mark in `file`. */
@@ -398,7 +398,7 @@ static void undo_insert_empty_line_for(openfilestruct *const file, int rows, und
 /* ----------------------------- Handle tab auto indent ----------------------------- */
 
 /* Undo-redo handler for `tab-auto-indent`. */
-static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const u, bool undoing) {
+static void handle_tab_auto_indent(OPENFILE const file, UNDO const u, bool undoing) {
   ASSERT(file);
   ASSERT(u);
   linestruct *line;
@@ -470,7 +470,7 @@ static void copy_character(char **const from, char **const to) {
 /* In the given `line`, replace any series of blanks with a single space, but keep two
  * spaces (if if there are two) after any closing punctuation, and remove all blanks
  * from the end of the line.  Leave the first skip number of characters untreated. */
-static void squeeze(linestruct *const line, Ulong skip) {
+static void squeeze(LINE const line, Ulong skip) {
   ASSERT(line);
   char *start = (line->data + skip);
   char *from  = start;
@@ -621,9 +621,9 @@ static bool fix_spello_for(CTX_ARGS, const char *const restrict word) {
 
 /* Concatenate into a single line all the lines of the paragraph that starts at `line` and
  * consists of `count` lines, skipping the quoting and indentation of all lines after the first. */
-static void concat_paragraph_for(openfilestruct *const file, linestruct *const line, Ulong count) {
+static void concat_paragraph_for(OPENFILE const file, LINE const line, Ulong count) {
   ASSERT(line);
-  linestruct *next;
+  LINE  next;
   Ulong quot_len;
   Ulong lead_len;
   Ulong len;
@@ -649,8 +649,8 @@ static void concat_paragraph_for(openfilestruct *const file, linestruct *const l
 
 /* Rewrap the given line (that starts with the given lead string which is of
  * the given length), into lines that fit within the target width (wrap_at). */
-static void rewrap_paragraph_for(openfilestruct *const file, int rows,
-  linestruct **const line, const char *const restrict lead_str, Ulong lead_len)
+static void rewrap_paragraph_for(OPENFILE const file, int rows,
+  LINE *const line, const char *const restrict lead_str, Ulong lead_len)
 {
   ASSERT(line);
   ASSERT(lead_str);
@@ -709,10 +709,10 @@ static void rewrap_paragraph_for(openfilestruct *const file, int rows,
 
 /* Justify the lines of the given paragraph (that starts at `*line`, and consitis of `count` lines)
  * so they all fit within the target width (`wrap at`) and have their whitespaces normalized. */
-static void justify_paragraph_for(openfilestruct *const file, int rows, linestruct **const line, Ulong count) {
+static void justify_paragraph_for(OPENFILE const file, int rows, LINE *const line, Ulong count) {
   ASSERT(line);
   /* The line from which the indentation is copied. */
-  linestruct *sample;
+  LINE sample;
   /* Length of the quote part. */
   Ulong quot_len;
   /* Length of the quote part plus the indentation part. */
@@ -1402,8 +1402,8 @@ char *line_indent_plus_tab(const char *const restrict data, Ulong *const outlen)
 /* ----------------------------- Set marked region ----------------------------- */
 
 /* Set the cursor and mark of file, using ptrs. */
-void set_marked_region_for(openfilestruct *const file, linestruct *const top,
-  Ulong top_x, linestruct *const bot, Ulong bot_x, bool cursor_at_head)
+void set_marked_region_for(OPENFILE const file, LINE const top,
+  Ulong top_x, LINE const bot, Ulong bot_x, bool cursor_at_head)
 {
   ASSERT(file);
   ASSERT(top);
@@ -1492,10 +1492,10 @@ Ulong quote_length(const char *const restrict line) {
 /* ----------------------------- Add undo ----------------------------- */
 
 /* Add a new undo item of the given type to the top of the current pile for `file`. */
-void add_undo_for(openfilestruct *const file, undo_type action, const char *const restrict message) {
+void add_undo_for(OPENFILE const file, undo_type action, const char *const restrict message) {
   ASSERT(file);
-  linestruct *thisline = file->current;
-  undostruct *u = undostruct_create_for(file, &action);
+  LINE thisline = file->current;
+  UNDO u        = undostruct_create_for(file, &action);
   /* Record the info needed to be able to undo each possible action. */
   switch (u->type) {
     case ADD: {
@@ -1509,7 +1509,8 @@ void add_undo_for(openfilestruct *const file, undo_type action, const char *cons
       break;
     }
     case BACK: {
-      /* If the next line is the magic line, don't ever undo this backspace, as it won't actually have deleted anything. */
+      /* If the next line is the magic line, don't ever undo
+       * this backspace, as it won't actually have deleted anything. */
       if (thisline->next == file->filebot && thisline->data[0]) {
         u->xflags |= WAS_BACKSPACE_AT_EOF;
       }
@@ -1676,7 +1677,7 @@ void add_undo(undo_type action, const char *const restrict message) {
 /* ----------------------------- Update undo ----------------------------- */
 
 /* Update an undo item with (among other things) the file size and cursor position after the given action. */
-void update_undo_for(openfilestruct *const restrict file, undo_type action) {
+void update_undo_for(OPENFILE const restrict file, undo_type action) {
   ASSERT(file);
   undostruct *u = file->undotop;
   Ulong datalen;
@@ -1830,10 +1831,10 @@ void update_undo(undo_type action) {
 
 /* Update a multiline undo item.  This should be called once for each line, affected by a multiple-line-altering
  * feature.  The indentation that is added or removed is saved, separately for each line in the undo item. */
-void update_multiline_undo_for(openfilestruct *const file, long lineno, const char *const restrict indentation) {
+void update_multiline_undo_for(OPENFILE const file, long lineno, const char *const restrict indentation) {
   ASSERT(file);
   ASSERT(indentation);
-  undostruct *u = file->current_undo;
+  UNDO         u = file->current_undo;
   groupstruct *born;
   /* The number of lines. */
   Ulong nol;
@@ -1924,10 +1925,10 @@ long break_line(const char *textstart, long goal, bool snap_at_nl) {
 
 /* When the current line is overlong, hard-wrap it at the furthest possible whitespace character,
  * and prepend the excess part to an "overflow" line (when it already exists, otherwise create one). */
-void do_wrap_for(openfilestruct *const file, int cols) {
+void do_wrap_for(OPENFILE const file, int cols) {
   ASSERT(file);
   /* The line to be wrapped, if needed and possible. */
-  linestruct *line = file->current;
+  LINE line = file->current;
   /* The length of this line. */
   Ulong line_len = strlen(line->data);
   /* The length of the quoting part of this line. */
@@ -2055,7 +2056,7 @@ void do_wrap(void) {
 /* ----------------------------- Do mark ----------------------------- */
 
 /* Toggle the mark for `file`. */
-void do_mark_for(openfilestruct *const file) {
+void do_mark_for(OPENFILE const file) {
   ASSERT(file);
   if (!file->mark) {
     file->mark     = file->current;
@@ -2078,10 +2079,11 @@ void do_mark(void) {
 /* ----------------------------- Discard until ----------------------------- */
 
 /* Discard `undo-items` that are newer then `thisitem` in `buffer`, or all if `thisitem` is `NULL`. */
-void discard_until_for(openfilestruct *const file, const undostruct *const thisitem) {
+void discard_until_for(OPENFILE const file, const undostruct *const thisitem) {
   ASSERT(file);
-  undostruct  *dropit = file->undotop;
-  groupstruct *group, *next;
+  UNDO dropit = file->undotop;
+  groupstruct *group;
+  groupstruct *next;
   while (dropit && dropit != thisitem) {
     file->undotop = dropit->next;
     free(dropit->strdata);
@@ -2110,7 +2112,7 @@ void discard_until(const undostruct *thisitem) {
 /* ----------------------------- Begpar ----------------------------- */
 
 /* Return TRUE when the given line is the beginning of a paragraph (BOP). */
-bool begpar(const linestruct *const line, int depth) {
+bool begpar(CLINE const line, int depth) {
   Ulong quot_len      = 0;
   Ulong indent_len    = 0;
   Ulong prev_dent_len = 0;
@@ -2153,7 +2155,7 @@ bool begpar(const linestruct *const line, int depth) {
 
 /* Return TRUE when the given line is part of a paragraph.  A line is part of a
  * paragraph if it contains something more than quoting and leading whitespace. */
-bool inpar(const linestruct *const line) {
+bool inpar(CLINE const line) {
   Ulong quot_len   = quote_length(line->data);
   Ulong indent_len = indent_length(line->data + quot_len);
   return (line->data[quot_len + indent_len]);
@@ -2162,7 +2164,7 @@ bool inpar(const linestruct *const line) {
 /* ----------------------------- Do block comment ----------------------------- */
 
 /* This is a shortcut to make marked area a block comment in `file`. */
-void do_block_comment_for(openfilestruct *const file) {
+void do_block_comment_for(OPENFILE const file) {
   ASSERT(file);
   enclose_marked_region_for(file, "/* ", " */");
   keep_mark = TRUE;
@@ -2178,7 +2180,7 @@ void do_block_comment(void) {
 /* ----------------------------- Length of white ----------------------------- */
 
 /* Return the number of bytes of whitespace at the start of the given text, but at most a tab's worth. */
-Ulong length_of_white_for(openfilestruct *const file, const char *text) {
+Ulong length_of_white_for(OPENFILE const file, const char *text) {
   ASSERT(file);
   ASSERT(text);
   Ulong white_count = 0;
@@ -2217,7 +2219,7 @@ Ulong length_of_white(const char *text) {
 /* ----------------------------- Compensate leftward ----------------------------- */
 
 /* Adjust the positions of mark and cursor of `file` when they are on the given `line`. */
-void compensate_leftward_for(openfilestruct *const file, linestruct *const line, Ulong leftshift) {
+void compensate_leftward_for(OPENFILE const file, LINE const line, Ulong leftshift) {
   ASSERT(file);
   ASSERT(line);
   /* The file's mark is on line. */
@@ -2243,14 +2245,14 @@ void compensate_leftward_for(openfilestruct *const file, linestruct *const line,
 }
 
 /* Adjust the positions of mark and cursor when they are on the given line. */
-void compensate_leftward(linestruct *const line, Ulong leftshift) {
+void compensate_leftward(LINE const line, Ulong leftshift) {
   compensate_leftward_for(CTX_OF, line, leftshift);
 }
 
 /* ----------------------------- Unindent a line ----------------------------- */
 
 /* Remove an indent from the given line, in `file`. */
-void unindent_a_line_for(openfilestruct *const file, linestruct *const line, Ulong indent_len) {
+void unindent_a_line_for(OPENFILE const file, LINE const line, Ulong indent_len) {
   ASSERT(file);
   ASSERT(line); 
   /* If the indent is empty, don't change the line. */
@@ -2265,14 +2267,14 @@ void unindent_a_line_for(openfilestruct *const file, linestruct *const line, Ulo
 }
 
 /* Remove an indent from the given line, in `file`. */
-void unindent_a_line(linestruct *const line, Ulong indent_len) {
+void unindent_a_line(LINE const line, Ulong indent_len) {
   unindent_a_line_for(CTX_OF, line, indent_len);
 }
 
 /* ----------------------------- Do unindent ----------------------------- */
 
 /* Unindent the current line (or the marked lines) by tabsize columns.  The removed indent can be a mixture of spaces plus at most one tab. */
-void do_unindent_for(openfilestruct *const file, int cols) {
+void do_unindent_for(OPENFILE const file, int cols) {
   ASSERT(file);
   linestruct *top;
   linestruct *bot;
@@ -2316,7 +2318,7 @@ void do_unindent(void) {
 /* ----------------------------- Restore undo posx and mark ----------------------------- */
 
 /* Restore the cursor and mark in `file`, from a undostruct. */
-void restore_undo_posx_and_mark_for(openfilestruct *const file, int rows, undostruct *const u) {
+void restore_undo_posx_and_mark_for(OPENFILE const file, int rows, UNDO const u) {
   ASSERT(file);
   ASSERT(u);
   /* Restore the mark if it was set. */
@@ -2338,7 +2340,7 @@ void restore_undo_posx_and_mark_for(openfilestruct *const file, int rows, undost
 }
 
 /* Restore the cursor and mark in the currently open file, from a undostruct. */
-void restore_undo_posx_and_mark(undostruct *const u) {
+void restore_undo_posx_and_mark(UNDO const u) {
   if (IN_GUI_CTX) {
     restore_undo_posx_and_mark_for(GUI_OF, GUI_ROWS, u);
   }
@@ -2350,16 +2352,16 @@ void restore_undo_posx_and_mark(undostruct *const u) {
 /* ----------------------------- Insert empty line ----------------------------- */
 
 /* Insert a new empty line, either `above` or `below` `line`.  */
-void insert_empty_line_for(openfilestruct *const file, linestruct *const line, bool above, bool autoindent) {
+void insert_empty_line_for(OPENFILE const file, LINE const line, bool above, bool autoindent) {
   ASSERT(file);
   ASSERT(line);
-  linestruct *topline;
-  linestruct *newline;
+  LINE  topline;
+  LINE  newline;
   Ulong indent_len;
   /* Inserting a empty line above. */
   if (above) {
     if (!line->prev) {
-      newline = make_new_node(NULL);
+      newline       = make_new_node(NULL);
       newline->next = line;
       line->prev    = newline;
       if (line == file->filetop) {
@@ -2401,14 +2403,14 @@ void insert_empty_line_for(openfilestruct *const file, linestruct *const line, b
 }
 
 /* Insert a new empty line, either `above` or `below` `line`.  */
-void insert_empty_line(linestruct *const line, bool above, bool autoindent) {
+void insert_empty_line(LINE const line, bool above, bool autoindent) {
   insert_empty_line_for(CTX_OF, line, above, autoindent);
 }
 
 /* ----------------------------- Do insert empty line above ----------------------------- */
 
 /* Insert a new empty line above `file->current`, and add an undo-item to the undo-stack. */
-void do_insert_empty_line_above_for(openfilestruct *const file) {
+void do_insert_empty_line_above_for(OPENFILE const file) {
   ASSERT(file);
   add_undo_for(file, INSERT_EMPTY_LINE, NULL);
   insert_empty_line_for(file, file->current, TRUE, TRUE);
@@ -2428,7 +2430,7 @@ void do_insert_empty_line_above(void) {
 /* ----------------------------- Do insert empty line below ----------------------------- */
 
 /* Insert a new empty line below `file->current`, and add an undo-item to the `undo-stack`. */
-void do_insert_empty_line_below_for(openfilestruct *const file) {
+void do_insert_empty_line_below_for(OPENFILE const file) {
   ASSERT(file);
   add_undo_for(file, INSERT_EMPTY_LINE, NULL);
   insert_empty_line_for(file, file->current, FALSE, TRUE);
@@ -2447,7 +2449,7 @@ void do_insert_empty_line_below(void) {
 /* ----------------------------- Cursor is between brackets ----------------------------- */
 
 /* Returns `TRUE` when `file->current->data[file->current_x]` is between a bracket pair, `{}`, `[]` or `()`. */
-bool cursor_is_between_brackets_for(openfilestruct *const file) {
+bool cursor_is_between_brackets_for(OPENFILE const file) {
   return is_curs_between_any_pair_for(file, (const char *[]){"{}", "[]", "()", NULL}, NULL);
 }
 
@@ -2471,7 +2473,7 @@ Ulong indent_length(const char *const restrict line) {
 /* ----------------------------- Indent a line ----------------------------- */
 
 /* Add an indent to the given line.  TODO: Make the mark and curren x positions move exactly like vs-code. */
-void indent_a_line_for(openfilestruct *const file, linestruct *const line, const char *const restrict indentation) {
+void indent_a_line_for(OPENFILE const file, LINE const line, const char *const restrict indentation) {
   ASSERT(file);
   ASSERT(line);
   ASSERT(indentation);
@@ -2496,7 +2498,7 @@ void indent_a_line_for(openfilestruct *const file, linestruct *const line, const
 }
 
 /* Add an indent to the given line. */
-void indent_a_line(linestruct *const line, const char *const restrict indentation) { 
+void indent_a_line(LINE const line, const char *const restrict indentation) { 
   indent_a_line_for(CTX_OF, line, indentation);
 }
 
@@ -2504,7 +2506,7 @@ void indent_a_line(linestruct *const line, const char *const restrict indentatio
 
 /* Indent the current line (or the marked lines) of `file` by tabsize columns.  This inserts either tab
  * character or a tab's worth of spaces, depending on whether the `TABS_TO_SPACES` flag is in effect. */
-void do_indent_for(openfilestruct *const file, int cols) {
+void do_indent_for(OPENFILE const file, int cols) {
   ASSERT(file);
   linestruct *top; 
   linestruct *bot;
@@ -2556,11 +2558,11 @@ void do_indent(void) {
 /* ----------------------------- Handle indent action ----------------------------- */
 
 /* Perform an undo or redo for an indent or unindent action. */
-void handle_indent_action_for(openfilestruct *const file, int rows, undostruct *const u, bool undoing, bool add_indent) {
+void handle_indent_action_for(OPENFILE const file, int rows, UNDO const u, bool undoing, bool add_indent) {
   ASSERT(file);
   char *blanks;
   groupstruct *group = u->grouping;
-  linestruct  *line  = line_from_number_for(file, group->top_line);
+  LINE         line  = line_from_number_for(file, group->top_line);
   /* When redoing, reposition the cursor and let the indenter adjust it. */
   if (!undoing) {
     restore_undo_posx_and_mark_for(file, rows, u);
@@ -2584,7 +2586,7 @@ void handle_indent_action_for(openfilestruct *const file, int rows, undostruct *
 }
 
 /* Perform an undo or redo for an indent or unindent action. */
-void handle_indent_action(undostruct *const u, bool undoing, bool add_indent) {
+void handle_indent_action(UNDO const u, bool undoing, bool add_indent) {
   if (IN_GUI_CTX) {
     handle_indent_action_for(GUI_OF, GUI_ROWS, u, undoing, add_indent);
   }
@@ -2672,7 +2674,7 @@ void enclose_str_decode(const char *const restrict str, char **const p1, char **
 
 /* If `file` currently has a marked region, enclose that region where `p1` will
  * be placed on the top/start and `p2` at the bottom/end of the marked region. */
-void enclose_marked_region_for(openfilestruct *const file, const char *const restrict p1, const char *const restrict p2) {
+void enclose_marked_region_for(OPENFILE const file, const char *const restrict p1, const char *const restrict p2) {
   ASSERT(file);
   ASSERT(p1);
   ASSERT(p2);
@@ -2680,8 +2682,8 @@ void enclose_marked_region_for(openfilestruct *const file, const char *const res
   Ulong len;
   Ulong top_x;
   Ulong bot_x;
-  linestruct *top;
-  linestruct *bot;
+  LINE  top;
+  LINE  bot;
   /* If there is no mark, just return. */
   if (!file->mark) {
     return;
@@ -2735,14 +2737,15 @@ void enclose_marked_region(const char *const restrict p1, const char *const rest
 
 /* ----------------------------- Auto bracket ----------------------------- */
 
-/* Auto insert a empty line between '{' and '}', as well as indenting the line once and setting openfile->current to it. */
-void auto_bracket_for(openfilestruct *const file, linestruct *const line, Ulong posx) {
+/* Auto insert a empty line between '{' and '}', as well as
+ * indenting the line once and setting openfile->current to it. */
+void auto_bracket_for(OPENFILE const file, LINE const line, Ulong posx) {
   ASSERT(file);
   ASSERT(line);
   Ulong indentlen;
   Ulong lenleft;
-  linestruct *middle = make_new_node(line);
-  linestruct *end    = make_new_node(middle);
+  LINE middle = make_new_node(line);
+  LINE end    = make_new_node(middle);
   splice_node_for(file, line, middle);
   splice_node_for(file, middle, end);
   renumber_from(middle);
@@ -2780,15 +2783,16 @@ void auto_bracket_for(openfilestruct *const file, linestruct *const line, Ulong 
   // file->current_x = (indentlen + tablen);
 }
 
-/* Auto insert a empty line between '{' and '}', as well as indenting the line once and setting openfile->current to it. */
-void auto_bracket(linestruct *const line, Ulong posx) {
+/* Auto insert a empty line between '{' and '}', as well as
+ * indenting the line once and setting openfile->current to it. */
+void auto_bracket(LINE const line, Ulong posx) {
   auto_bracket_for(CTX_OF, line, posx);
 }
 
 /* ----------------------------- Do auto bracket for ----------------------------- */
 
 /* Do auto bracket at current position. */
-void do_auto_bracket_for(openfilestruct *const file) {
+void do_auto_bracket_for(OPENFILE const file) {
   ASSERT(file);
   Ulong indentlen;
   add_undo_for(file, AUTO_BRACKET, NULL);
@@ -2799,7 +2803,8 @@ void do_auto_bracket_for(openfilestruct *const file) {
   set_modified_for(file);
 }
 
-/* Do auto bracket at current position.  TODO: Implement this so that it correctly indents to the next `tab-stop` when using `TABS_TO_SPACES` and not. */
+/* Do auto bracket at current position.  TODO: Implement this so that it
+ * correctly indents to the next `tab-stop` when using `TABS_TO_SPACES` and not. */
 void do_auto_bracket(void) {
   do_auto_bracket_for(CTX_OF);
 }
@@ -2809,7 +2814,7 @@ void do_auto_bracket(void) {
 /* Test whether the given line can be uncommented, or add or remove a comment, depending on action.
  * Return TRUE if the line is uncommentable, or when anything was added or removed; FALSE otherwise.
  * ADDED: Also takes indentation into account. */
-bool comment_line_for(openfilestruct *const file, undo_type action, linestruct *const line, const char *const restrict comment_seq) {
+bool comment_line_for(OPENFILE const file, undo_type action, LINE const line, const char *const restrict comment_seq) {
   ASSERT(file);
   ASSERT(line);
   ASSERT(comment_seq);
@@ -2850,7 +2855,9 @@ bool comment_line_for(openfilestruct *const file, undo_type action, linestruct *
     return TRUE;
   }
   /* If the line is commented, report it as uncommentable, or uncomment it. */
-  if (strncmp((line->data + indent_len), comment_seq, pre_len) == 0 && (!post_len || strcmp((line->data + line_len - post_len), post_seq) == 0)) {
+  if (strncmp((line->data + indent_len), comment_seq, pre_len) == 0
+  && (!post_len || strcmp((line->data + line_len - post_len), post_seq) == 0))
+  {
     /* If this was just a checking call, then return `TRUE` directly. */
     if (action == PREFLIGHT) {
       return TRUE;
@@ -2885,14 +2892,14 @@ bool comment_line_for(openfilestruct *const file, undo_type action, linestruct *
 /* Test whether the given line can be uncommented, or add or remove a comment, depending on action.
  * Return TRUE if the line is uncommentable, or when anything was added or removed; FALSE otherwise.
  * ADDED: Also takes indentation into account. */
-bool comment_line(undo_type action, linestruct *const line, const char *const restrict comment_seq) {
+bool comment_line(undo_type action, LINE const line, const char *const restrict comment_seq) {
   return comment_line_for(CTX_OF, action, line, comment_seq);
 }
 
 /* ----------------------------- Get comment seq ----------------------------- */
 
 /* Returns an allocated string containing the correct comment sequence based on `file`. */
-char *get_comment_seq_for(openfilestruct *const file) {
+char *get_comment_seq_for(OPENFILE const file) {
   ASSERT(file);
   char *ret;
   /* If the file has a set comment string. */
@@ -2930,7 +2937,7 @@ char *get_comment_seq(void) {
 /* ----------------------------- Do comment ----------------------------- */
 
 /* Comment or uncomment the current line or the marked lines. */
-void do_comment_for(openfilestruct *const file, int cols) {
+void do_comment_for(OPENFILE const file, int cols) {
   ASSERT(file);
   char *comment_seq = get_comment_seq_for(file);
   undo_type action = UNCOMMENT;
@@ -2997,11 +3004,11 @@ void do_comment(void) {
 /* ----------------------------- Handle comment action ----------------------------- */
 
 /* Perform an undo or redo for a comment or uncomment action. */
-void handle_comment_action_for(openfilestruct *const file, int rows, undostruct *const u, bool undoing, bool add_comment) {
+void handle_comment_action_for(OPENFILE const file, int rows, UNDO const u, bool undoing, bool add_comment) {
   ASSERT(file);
   ASSERT(u);
   groupstruct *group = u->grouping;
-  linestruct *line;
+  LINE         line;
   /* When redoing, reposition the cursor and let the commenter adjust it. */
   if (!undoing) {
     restore_undo_posx_and_mark_for(file, rows, u);
@@ -3022,7 +3029,7 @@ void handle_comment_action_for(openfilestruct *const file, int rows, undostruct 
 }
 
 /* Perform an undo or redo for a comment or uncomment action. */
-void handle_comment_action(undostruct *const u, bool undoing, bool add_comment) {
+void handle_comment_action(UNDO const u, bool undoing, bool add_comment) {
   if (IN_GUI_CTX) {
     handle_comment_action_for(GUI_OF, GUI_ROWS, u, undoing, add_comment);
   }
@@ -3053,13 +3060,13 @@ char *copy_completion(const char *restrict text) {
 /* ----------------------------- Do enter ----------------------------- */
 
 /* Break the current line at the cursor position. */
-void do_enter_for(openfilestruct *const file) {
+void do_enter_for(OPENFILE const file) {
   ASSERT(file);
-  bool do_another_indent;
-  bool allblanks = FALSE;
-  linestruct *newnode;
-  linestruct *sampleline = file->current;
-  linestruct *another_indent_line;
+  bool  do_another_indent;
+  bool  allblanks = FALSE;
+  LINE  newnode;
+  LINE  sampleline = file->current;
+  LINE  another_indent_line;
   Ulong extra = 0;
   /* Check if cursor is between two brackets.  TODO: Create get_next_char() to perform the
    * same operation as get_previous_char() and then remake this to perform a mush better check. */
@@ -3067,7 +3074,8 @@ void do_enter_for(openfilestruct *const file) {
     do_auto_bracket_for(file);
     return;
   }
-  /* If the previous char is an opening bracket, or a lable, and we are not on the same line, we should indent once more. */
+  /* If the previous char is an opening bracket, or a lable,
+   * and we are not on the same line, we should indent once more. */
   do_another_indent = (
     is_previous_char_one_of(file->current, file->current_x, "{[(:", &another_indent_line, NULL)
     /* For now when on the same line only allow doing another indent when at the end of the line. */
@@ -3076,7 +3084,8 @@ void do_enter_for(openfilestruct *const file) {
   );
   newnode = make_new_node(file->current);
   if (ISSET(AUTOINDENT)) {
-    /* When doing automatic long-line wrapping and the next line is in this same paragraph, use its indentation as the model. */
+    /* When doing automatic long-line wrapping and the next line
+     * is in this same paragraph, use its indentation as the model. */
     if (ISSET(BREAK_LONG_LINES) && sampleline->next && inpar(sampleline->next) && !begpar(sampleline->next, 0)) {
       DLIST_ADV_NEXT(sampleline);
     }
@@ -3120,7 +3129,10 @@ void do_enter_for(openfilestruct *const file) {
   }
   /* When approptiet, add another indent. */
   if (do_another_indent) {
-    file->current->data = free_and_assign(file->current->data, line_indent_plus_tab(another_indent_line->data, &file->current_x));
+    file->current->data = free_and_assign(
+      file->current->data,
+      line_indent_plus_tab(another_indent_line->data, &file->current_x)
+    );
     /* Add only the diffrence between the current cursor position minus where the cursor was at. */
     file->totsize += (file->current_x - extra);
     /* If the indent of the new line is the same as the line we came from.  I.E: Autoindent is turned on. */
@@ -3146,10 +3158,10 @@ void do_enter(void) {
 /* Undo the last thing(s) we did in `file`. */
 void do_undo_for(CTX_ARGS) {
   ASSERT(file);
-  undostruct *u = file->current_undo;
-  linestruct *was_cutbuffer;
-  linestruct *intruder;
-  linestruct *line = NULL;
+  UNDO  u = file->current_undo;
+  LINE  was_cutbuffer;
+  LINE  intruder;
+  LINE  line = NULL;
   Ulong data_len;
   Ulong original_x;
   Ulong regain_from_x;
@@ -3392,14 +3404,14 @@ void do_undo(void) {
 /* Redo the last thing(s) we undid in `file`. */
 void do_redo_for(CTX_ARGS) {
   ASSERT(file);
-  undostruct *u = file->undotop;
-  linestruct *line = NULL;
-  linestruct *intruder;
-  bool suppress_modification = FALSE;
+  UNDO  u = file->undotop;
+  LINE  line = NULL;
+  LINE  intruder;
+  bool  suppress_modification = FALSE;
   char *redidmsg = NULL;
   char *data;
   Ulong data_len;
-  int offset;
+  int   offset;
   /* If there has been no undo(s) done, or we have reached the end. */
   if (!u || u == file->current_undo) {
     statusline(AHEM, _("Nothing to redo"));
@@ -3624,17 +3636,17 @@ void do_redo(void) {
 
 /* Our own version of `wc`.  Note that the character count is in
  * multibyte characters instead of signle byte ascii characters. */
-void count_lines_words_and_characters_for(openfilestruct *const file) {
+void count_lines_words_and_characters_for(OPENFILE const file) {
   ASSERT(file);
-  linestruct *was_current = file->current;
-  linestruct *top;
-  linestruct *bot;
+  LINE  was_current = file->current;
+  LINE  top;
+  LINE  bot;
   Ulong was_x = file->current_x;
   Ulong words = 0;
   Ulong chars = 0;
   Ulong top_x;
   Ulong bot_x;
-  long lines = 0;
+  long  lines = 0;
   /* The file has a marked region. */
   if (file->mark) {
     get_region_for(file, &top, &top_x, &bot, &bot_x);
@@ -4276,17 +4288,17 @@ void complete_a_word(void) {
 
 /* Find the first occurring paragraph in the forward direction.  Return `TRUE` when a paragraph was found,
  * and `FALSE` otherwise.  Furthermore, return the first line and the number of lines of the paragraph. */
-bool find_paragraph(linestruct **const first, Ulong *const count) {
+bool find_paragraph(LINE *const first, Ulong *const count) {
   ASSERT(first);
   ASSERT(count);
-  linestruct *line = (*first);
+  LINE line = *first;
   /* When not currently in a paragraph, move forward until that is. */
   while (!inpar(line) && line->next) {
     PREFETCH(line->next, 0, 3);
     PREFETCH(line->next->next, 0, 3);
     DLIST_ADV_NEXT(line);
   }
-  (*first) = line;
+  *first = line;
   /* Move down to the last line of the paragraph (if any). */
   do_para_end(&line);
   /* When not in a paragraph now, there aren't any paragraphs left. */
@@ -4350,7 +4362,7 @@ void do_verbatim_input(void) {
  * zero-width.  If `xpos` is at the start of `line`, move to the previous line and continue searching
  * from its end.  Continue across lines until a non-blank, non-zero-width character is found, or return
  * `NULL` at buffer start. The function advances `line` and `xpos` as needed to traverse backward. */
-char *get_previous_char(linestruct *line, Ulong xpos, linestruct **const outline, Ulong *const outxpos) {
+char *get_previous_char(LINE line, Ulong xpos, LINE *const outline, Ulong *const outxpos) {
   ASSERT(line);
   while (1) {
     /* We are at the start of the line. */
@@ -4388,7 +4400,7 @@ char *get_previous_char(linestruct *line, Ulong xpos, linestruct **const outline
  * start.  Continue across lines until a non-blank, non-zero-width character is found, or return `NULL` at
  * buffer end.  The function advances `line` and `xpos` as needed to traverse forward.  Also note that both
  * `outline` and `outxpos` can be `NULL`, if they are not, the position we ended up in will be assigned to them. */
-char *get_next_char(linestruct *line, Ulong xpos, linestruct **const outline, Ulong *const outxpos) {
+char *get_next_char(LINE line, Ulong xpos, LINE *const outline, Ulong *const outxpos) {
   ASSERT(line);
   while (1) {
     /* We are at the end of the line. */
@@ -4426,8 +4438,8 @@ char *get_next_char(linestruct *line, Ulong xpos, linestruct **const outline, Ul
 
 /* Returns `TRUE` when the previous char before the current `line,xpos` is one of `mathces`, this retrieves the
  * true previous char, skipping over all blanks and zero-width chars, and then compares that char to `matches`. */
-bool is_previous_char_one_of(linestruct *const line, Ulong xpos,
-  const char *const restrict matches, linestruct **const outline, Ulong *const outxpos)
+bool is_previous_char_one_of(LINE const line, Ulong xpos,
+  const char *const restrict matches, LINE *const outline, Ulong *const outxpos)
 {
   ASSERT(matches);
   ASSERT(*matches);
@@ -4439,8 +4451,8 @@ bool is_previous_char_one_of(linestruct *const line, Ulong xpos,
 
 /* Returns `TRUE` when the next char at or after the current `line,xpos` is one of `matches`, this retrieves the
  * true next char, skipping over all blanks and zero-width chars, and then compares that char to `marches`. */
-bool is_next_char_one_of(linestruct *const line, Ulong xpos,
-  const char *const restrict matches, linestruct **const outline, Ulong *const outxpos)
+bool is_next_char_one_of(LINE const line, Ulong xpos,
+  const char *const restrict matches, LINE *const outline, Ulong *const outxpos)
 {
   ASSERT(matches);
   ASSERT(*matches);
@@ -4450,8 +4462,8 @@ bool is_next_char_one_of(linestruct *const line, Ulong xpos,
 
 /* ----------------------------- Get previous char match ----------------------------- */
 
-char *get_previous_char_match(linestruct *line, Ulong xpos, const char *const restrict matches,
-  bool allow_literals, linestruct **const outline, Ulong *const outxpos)
+char *get_previous_char_match(LINE line, Ulong xpos, const char *const restrict matches,
+  bool allow_literals, LINE *const outline, Ulong *const outxpos)
 {
   ASSERT(line);
   char *data;
@@ -4500,9 +4512,9 @@ char *get_previous_char_match(linestruct *line, Ulong xpos, const char *const re
 /* ----------------------------- Tab helper ----------------------------- */
 
 /* Improve the experience of the tabulator. */
-bool tab_helper(openfilestruct *const file) {
+bool tab_helper(OPENFILE const file) {
   ASSERT(file);
-  linestruct *line;
+  LINE  line;
   Ulong indent;
   Ulong cur_indent;
   Ulong full_length;
@@ -4587,7 +4599,7 @@ char *lower_case_word(const char *const restrict word) {/*  */
 /* ----------------------------- Mark whole file ----------------------------- */
 
 /* Set the `mark` at the very start of `file` and `current` at the very end. */
-void mark_whole_file_for(openfilestruct *const file) {
+void mark_whole_file_for(OPENFILE const file) {
   ASSERT(file);
   file->mark      = file->filetop;
   file->mark_x    = 0;

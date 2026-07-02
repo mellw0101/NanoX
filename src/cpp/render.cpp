@@ -1043,7 +1043,7 @@ void apply_syntax_to_line(const int inrow, const char *inconverted, linestruct *
         continue;
       }
       int color;
-      if (lookup_coloropt(node->str, node->len, &color)) {
+      if (nxcfg_lookup_coloropt(node->str, node->len, &color)) {
         mv_add_nstr_color(midwin, inrow, get_start_col(in_line, node), node->str, node->len, color);
       }
       free_node(node);

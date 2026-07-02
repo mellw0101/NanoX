@@ -133,14 +133,14 @@ void get_homedir(void) {
  *  2. From file start.
  *  3. From file end.
  * Chooses shortest path to target line. */
-linestruct *line_from_number_for(openfilestruct *const file, long number) {
+LINE line_from_number_for(OPENFILE const file, long number) {
   ASSERT(file->current);
   ASSERT(file->filetop);
   ASSERT(file->filebot);
   /* Always assert that number is a valid number in the context of the open file. */
   ALWAYS_ASSERT(number >= file->filetop->lineno && number <= file->filebot->lineno);
   /* Set the starting line to the cursor line of the currently active file in editor. */
-  linestruct *line = file->current;
+  LINE line = file->current;
   /* Get the distance from the start and end line as well as from the cursor. */
   long dist_from_current = labs(line->lineno - number);
   long dist_from_end     = (file->filebot->lineno - number);
@@ -162,7 +162,7 @@ linestruct *line_from_number_for(openfilestruct *const file, long number) {
 }
 
 /* Returns a `linestruct` pointer from the currently open file, while also ensuring context correct operation. */
-linestruct *line_from_number(long number) {
+LINE line_from_number(long number) {
   return line_from_number_for(CTX_OF, number);
 }
 
@@ -216,7 +216,7 @@ Ulong get_page_start(Ulong column, int cols) {
 }
 
 /* Return the placewewant associated with `file->current_x`, i.e. the zero-based column position of the cursor. */
-Ulong xplustabs_for(openfilestruct *const file) {
+Ulong xplustabs_for(OPENFILE const file) {
   return wideness(file->current->data, file->current_x);
 }
 
@@ -225,7 +225,8 @@ Ulong xplustabs(void) {
   return xplustabs_for(CTX_OF);
 }
 
-/* A strnlen() with tabs and multicolumn characters factored in: how many columns wide are the first maxlen bytes of text? */
+/* A strnlen() with tabs and multicolumn characters factored
+ * in: how many columns wide are the first maxlen bytes of text? */
 Ulong wideness(const char *text, Ulong maxlen) {
   Ulong width = 0;
   if (!maxlen) {
@@ -263,7 +264,7 @@ Ulong breadth(const char *text) {
 /* ----------------------------- Number of characters in ----------------------------- */
 
 /* Count the number of characters from begin to end, and return it. */
-Ulong number_of_characters_in(const linestruct *const begin, const linestruct *const end) {
+Ulong number_of_characters_in(CLINE const begin, CLINE const end) {
   ASSERT(begin);
   ASSERT(end);
   Ulong count = 0;
@@ -280,9 +281,9 @@ Ulong number_of_characters_in(const linestruct *const begin, const linestruct *c
 /* ----------------------------- Magicline ----------------------------- */
 
 /* Append a new magic line to the end of `file`. */
-void new_magicline_for(openfilestruct *const file) {
+void new_magicline_for(OPENFILE const file) {
   ASSERT(file);
-  file->filebot->next = make_new_node(file->filebot);
+  file->filebot->next       = make_new_node(file->filebot);
   file->filebot->next->data = COPY_OF("");
   DLIST_ADV_NEXT(file->filebot);
   ++file->totsize;
@@ -294,7 +295,7 @@ void new_magicline(void) {
 }
 
 /* Remove the magic line from the end of `file`, if there is one and it isn't the only line in `file`. */
-void remove_magicline_for(openfilestruct *const file) {
+void remove_magicline_for(OPENFILE const file) {
   ASSERT(file);
   if (!*file->filebot->data && file->filebot != file->filetop) {
     if (file->current == file->filebot) {
@@ -315,9 +316,10 @@ void remove_magicline(void) {
 /* ----------------------------- Mark is before cursor ----------------------------- */
 
 /* Return 'TRUE' when the mark is before or at the cursor, and FALSE otherwise. */
-bool mark_is_before_cursor_for(openfilestruct *const file) {
+bool mark_is_before_cursor_for(OPENFILE const file) {
   ASSERT(file);
-  return (file->mark->lineno < file->current->lineno || (file->mark == file->current && file->mark_x <= file->current_x));
+  return (file->mark->lineno < file->current->lineno
+  || (file->mark == file->current && file->mark_x <= file->current_x));
 }
 
 /* Return 'TRUE' when the mark is before or at the cursor, and FALSE otherwise. */
@@ -328,9 +330,7 @@ bool mark_is_before_cursor(void) {
 /* ----------------------------- Get region ----------------------------- */
 
 /* Return in (top, top_x) and (bot, bot_x) the start and end "coordinates" of the marked region. */
-void get_region_for(openfilestruct *const file,
-  linestruct **const top, Ulong *const top_x, linestruct **const bot, Ulong *const bot_x)
-{
+void get_region_for(OPENFILE const file, LINE *const top, Ulong *const top_x, LINE *const bot, Ulong *const bot_x) {
   ASSERT(file);
   ASSERT(top || top_x || bot || bot_x);
   if (mark_is_before_cursor_for(file)) {
@@ -348,7 +348,7 @@ void get_region_for(openfilestruct *const file,
 }
 
 /* Return in (top, top_x) and (bot, bot_x) the start and end "coordinates" of the marked region. */
-void get_region(linestruct **const top, Ulong *const top_x, linestruct **const bot, Ulong *const bot_x) {
+void get_region(LINE *const top, Ulong *const top_x, LINE *const bot, Ulong *const bot_x) {
   get_region_for(CTX_OF, top, top_x, bot, bot_x);
 }
 
@@ -356,21 +356,21 @@ void get_region(linestruct **const top, Ulong *const top_x, linestruct **const b
 
 /* Get the set of lines to work on -- either just the current line, or the first to last lines of the marked
  * region.  When the cursor (or mark) is at the start of the last line of the region, exclude that line. */
-void get_range_for(openfilestruct *const file, linestruct **const top, linestruct **const bot) {
+void get_range_for(OPENFILE const file, LINE *const top, LINE *const bot) {
   ASSERT(file);
   ASSERT(top);
   ASSERT(bot);
   Ulong top_x;
   Ulong bot_x;
   /* No mark is set. */
-  if (!openfile->mark) {
-    (*top) = openfile->current;
-    (*bot) = openfile->current;
+  if (!file->mark) {
+    *top = file->current;
+    *bot = file->current;
   }
   else {
     get_region_for(file, top, &top_x, bot, &bot_x);
     if (bot_x == 0 && bot != top && !also_the_last) {
-      (*bot) = (*bot)->prev;
+      DLIST_ADV_PREV(*bot);
     }
     else {
       also_the_last = TRUE;
@@ -380,7 +380,7 @@ void get_range_for(openfilestruct *const file, linestruct **const top, linestruc
 
 /* Get the set of lines to work on -- either just the current line, or the first to last lines of the marked
  * region.  When the cursor (or mark) is at the start of the last line of the region, exclude that line. */
-void get_range(linestruct **const top, linestruct **const bot) {
+void get_range(LINE *const top, LINE *const bot) {
   get_range_for(CTX_OF, top, bot);
 }
 
@@ -393,8 +393,8 @@ bool parse_line_column(const char *string, long *const line, long *const column)
   ASSERT(line);
   ASSERT(column);
   const char *comma;
-  char *firstpart;
-  bool retval;
+  char       *firstpart;
+  bool        retval;
   while (*string == ' ') {
     ++string;
   }
@@ -428,10 +428,10 @@ Ulong tabstop_length(const char *const restrict string, Ulong index) {
 /* Returns an allocated string of spaces that completes the current tab stop in `file->current->data`,
  * up to one `tabsize` in length.  The number of spaces is calculated based on `file->current_x` so
  * that when injecting the string into `file->current->data` we end up at the next tab boundary. */
-char *tab_space_string_for(openfilestruct *const file, Ulong *length) {
+char *tab_space_string_for(OPENFILE const file, Ulong *length) {
   ASSERT(file);
   ASSERT(length);
-  (*length) = (tabsize - (xplustabs_for(file) % tabsize));
+  *length = (tabsize - (xplustabs_for(file) % tabsize));
   return fmtstr("%*s", (int)(*length), " ");
 }
 
@@ -457,7 +457,7 @@ char *construct_full_tab_string(Ulong *length) {
 /* ----------------------------- Set placewewant ----------------------------- */
 
 /* Set `file->placewewant` to the visualy correct column based on `file->current_x` in `file->current->data`. */
-void set_pww_for(openfilestruct *const file) {
+void set_pww_for(OPENFILE const file) {
   ASSERT(file);
   file->placewewant = xplustabs_for(file);
 }
@@ -472,7 +472,7 @@ void set_pww(void) {
 
 /* Correctly sets `file->current_x` to the end of `file->current->data`
  * and correctly sets `file->placewewant` to ensure visual correctness. */
-void set_cursor_to_eol_for(openfilestruct *const file) {
+void set_cursor_to_eol_for(OPENFILE const file) {
   ASSERT(file);
   file->current_x = strlen(file->current->data);
   set_pww_for(file);
@@ -487,18 +487,20 @@ void set_cursor_to_eol(void) {
 /* ----------------------------- Set mark ----------------------------- */
 
 /* Set the mark at specific line and column for `file`. */
-void set_mark_for(openfilestruct *const file, long lineno, Ulong x) {
+void set_mark_for(OPENFILE const file, long lineno, Ulong x) {
   ASSERT(file);
   file->mark   = line_from_number_for(file, lineno);
   file->mark_x = x;
 }
 
-/* Set the mark at specific line and column for the currently open file.  Note that this is `context-safe`, and works in both the `gui` and `tui`. */
+/* Set the mark at specific line and column for the currently open file.
+ * Note that this is `context-safe`, and works in both the `gui` and `tui`. */
 void set_mark(long lineno, Ulong x) {
   set_mark_for(CTX_OF, lineno, x);
 }
 
-/* Returns an allocated string containing the the indent of string plus one tabs worth of spaces at most, depending on how far away from the next tabstop. */
+/* Returns an allocated string containing the the indent of string plus one
+ * tabs worth of spaces at most, depending on how far away from the next tabstop. */
 char *indent_plus_tab(const char *const restrict string) {
   ASSERT(string);
   char *ret;

@@ -46,12 +46,12 @@ struct EditorTopBar {
   /* State flags. */
   Uint             xflags;
   vertex_buffer_t *buffer;
-  Editor          *editor;
-  Element         *element;
+  EDITOR           editor;
+  ELEMENT          element;
   struct {
-    Element *clicked;
-    Menu    *button_menu;
-    Menu    *topbar_menu;
+    ELEMENT clicked;
+    MENU    button_menu;
+    MENU    topbar_menu;
   } context;
 };
 
@@ -126,12 +126,12 @@ static void etb_delete_entries(ETB etb) {
 
 /* ----------------------------- Etb create button ----------------------------- */
 
-static void etb_create_button(ETB etb, openfilestruct *const f, float *const pos_x, float *const pos_y) {
+static void etb_create_button(ETB etb, OPENFILE const f, float *const pos_x, float *const pos_y) {
   ASSERT_ETB(etb);
   ASSERT(f);
   ASSERT(pos_x);
   ASSERT(pos_y);
-  Element *button;
+  ELEMENT button;
   /* If `f` has a set name, then use it.  Otherwise, use the placeholder `Nameless`. */
   const char *lable = (*f->filename ? f->filename : "Nameless");
   button = element_create(
@@ -172,8 +172,7 @@ static void etb_refresh_entries(ETB etb) {
     CLIST_ITER(etb->editor->startfile, f,
       etb_create_button(etb, f, &x, &y);
     );
-    etb->xflags &= ~ETB_REFRESH_ENTRIES;
-    etb->xflags |= ETB_REFRESH_TEXT;
+    etb->xflags = ((etb->xflags & ~ETB_REFRESH_ENTRIES) | ETB_REFRESH_TEXT);
   }
 }
 
@@ -194,7 +193,7 @@ static void etb_draw_entries(ETB etb) {
 static void etb_button_context_menu_accept(ETB etb, const char *const restrict entry_string, int index) {
   ASSERT_ETB(etb);
   ASSERT(entry_string);
-  openfilestruct *file;
+  OPENFILE file;
   /* Ensure this only perfoms any action when the clicked element is a button of the topbar. */
   if (etb->context.clicked && etb->context.clicked->dt == ELEMENT_DATA_FILE && etb->context.clicked->parent
   && etb->element == etb->context.clicked->parent && etb->context.clicked->parent->dt == ELEMENT_DATA_EDITOR)
@@ -251,7 +250,7 @@ static void etb_context_menu_accept(ETB etb, const char *const restrict entry_st
 static void etb_context_menu_debug_accept(ETB etb, const char *const restrict entry_string, int _UNUSED index) {
   ASSERT_ETB(etb);
   ASSERT(entry_string);
-  unix_socket_debug("%s\n", entry_string);
+  FCIO_LOG_INFO("%s", entry_string);
   etb->context.clicked = NULL;
 }
 
@@ -305,14 +304,14 @@ static void etb_context_menu_free(ETB etb) {
 
 /* ----------------------------- etb_button_sinks_array ----------------------------- */
 
-static float *etb_button_sinks_array(ETB etb, openfilestruct *ignore, Ulong *const outlen) {
+static float *etb_button_sinks_array(ETB etb, OPENFILE ignore, Ulong *const outlen) {
   ASSERT_ETB(etb);
   ASSERT(outlen);
   ASSERT(ignore);
   Ulong  max = editor_number_of_open_files(etb->editor);
   Ulong  idx = 0;
   float *arr = xmalloc(sizeof(float) * max);
-  Element *last = NULL;
+  ELEMENT last = NULL;
   ELEMENT_CHILDREN_ITER(etb->element, i, button,
     if (button->dt == ELEMENT_DATA_FILE) {
       /* We are at the last button. */
@@ -341,11 +340,11 @@ static float *etb_button_sinks_array(ETB etb, openfilestruct *ignore, Ulong *con
 
 /* ----------------------------- Etb create ----------------------------- */
 
-ETB etb_create(Editor *const editor) {
+ETB etb_create(EDITOR const editor) {
   ASSERT(uifont);
   ASSERT(editor);
   ASSERT(editor->main);
-  ETB etb = xmalloc(sizeof *etb);
+  ETB etb = xmalloc(sizeof(*etb));
   /* State flags. */
   etb->xflags  = ETB_XFLAGS_DEFAULT;
   etb->buffer  = vertex_buffer_new(FONT_VERTBUF);
@@ -412,7 +411,7 @@ void etb_entries_refresh_needed(ETB etb) {
 
 /* ----------------------------- Etb show context menu ----------------------------- */
 
-void etb_show_context_menu(ETB etb, Element *const from_element, bool show) {
+void etb_show_context_menu(ETB etb, ELEMENT const from_element, bool show) {
   ASSERT_ETB(etb);
   /* Null passed. */
   if (!from_element) {
@@ -453,7 +452,7 @@ void etb_show_context_menu(ETB etb, Element *const from_element, bool show) {
 /* ----------------------------- Etb element is main ----------------------------- */
 
 /* Return's `TRUE` when `e` is the main element of `etb`. */
-bool etb_element_is_main(ETB etb, Element *const e) {
+bool etb_element_is_main(ETB etb, ELEMENT const e) {
   ASSERT_ETB(etb);
   ASSERT(e);
   return (etb->element == e);
@@ -462,14 +461,14 @@ bool etb_element_is_main(ETB etb, Element *const e) {
 /* ----------------------------- Etb owns element ----------------------------- */
 
 /* Return's `TRUE` when `e` is the main element of `etb` or related to the main element of `etb`. */
-bool etb_owns_element(ETB etb, Element *const e) {
+bool etb_owns_element(ETB etb, ELEMENT const e) {
   ASSERT_ETB(etb);
   return element_is_ancestor(e, etb->element);
 }
 
 /* ----------------------------- etb_tab_routine_mouse_button_left_dn ----------------------------- */
 
-void etb_tab_routine_mouse_button_left_dn(ETB etb, Element *const e) {
+void etb_tab_routine_mouse_button_left_dn(ETB etb, ELEMENT const e) {
   ASSERT_ETB(etb);
   ASSERT(e);
   ASSERT(e->dp_file);
@@ -485,7 +484,7 @@ void etb_tab_routine_mouse_button_left_dn(ETB etb, Element *const e) {
 
 /* ----------------------------- etb_tab_routine_mouse_pos ----------------------------- */
 
-void etb_tab_routine_mouse_held_left(ETB etb, Element *e, float x, float y) {
+void etb_tab_routine_mouse_held_left(ETB etb, ELEMENT e, float x, float y) {
   ASSERT_ETB(etb);
   ASSERT(e);
   ASSERT(e->dp_file);
@@ -496,9 +495,9 @@ void etb_tab_routine_mouse_held_left(ETB etb, Element *e, float x, float y) {
   float closest;
   float value;
   if (len && y >= etb->element->y && y < (etb->element->y + etb->element->height)) {
-    closest = FABSF(arr[0] - x);
+    closest = fabsf(arr[0] - x);
     for (Ulong i=1; i<len; ++i) {
-      if ((value = FABSF(arr[i] - x)) < closest) {
+      if ((value = fabsf(arr[i] - x)) < closest) {
         index = i;
         closest = value;
       }
@@ -508,7 +507,7 @@ void etb_tab_routine_mouse_held_left(ETB etb, Element *e, float x, float y) {
     }
   }
   element_move(e, fx, y);
-  FREE(arr);
+  free(arr);
   etb->xflags |= ETB_REFRESH_TEXT;
   refresh_needed = TRUE;
 }

@@ -100,6 +100,10 @@ static const struct { const char *const restrict name; menu_type menu; } menu_na
   {         "all", (MMOST | MBROWSER | MHELP | MYESNO) }
 };
 
+static bool left_mouse_button_held = FALSE;
+static bool was_double_click       = FALSE;
+static bool was_triple_click       = FALSE;
+
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
@@ -135,14 +139,16 @@ static void disable_mouse_support(void) {
   if (IN_CURSES_CTX) {
     mousemask(0, NULL);
     mouseinterval(oldinterval);
+    printf(ESC_CODE_MOUSE_MOVEMENT_EVENTS(FALSE));
   }
 }
 
 /* Enable mouse support for `curses-mode`. */
 static void enable_mouse_support(void) {
   if (IN_CURSES_CTX) {
-    mousemask(ALL_MOUSE_EVENTS, NULL);
+    mousemask((ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION), NULL);
     oldinterval = mouseinterval(50);
+    printf(ESC_CODE_MOUSE_MOVEMENT_EVENTS(TRUE));
   }
 }
 
@@ -181,7 +187,7 @@ static void enable_mouse_support(void) {
 
 /* Save `file` under the given name (or `nanox.<pid>` when nameless) with
  * suffix `.save`.  If needed, the name is further suffixed to be unique. */
-static void emergency_save_for(openfilestruct *const file, const char *const restrict name) {
+static void emergency_save_for(OPENFILE const file, const char *const restrict name) {
   ASSERT(file);
   ASSERT(name);
   char *plain  = (*name ? copy_of(name) : fmtstr("nanox.%u", getpid()));
@@ -260,8 +266,8 @@ static void print_opt(const char *const restrict sflag,
 static void die_gui(void) {
   Editor *first_editor = openeditor;
   Editor *open_editor  = first_editor;
-  openfilestruct *first_file;
-  openfilestruct *open_file;
+  OPENFILE first_file;
+  OPENFILE open_file;
   /* Go through all editors. */
   while (open_editor) {
     /* Start from the currently open buffer in the current editor. */
@@ -297,35 +303,46 @@ static void die_gui(void) {
 
 /* Save all modified buffers.  Note that this should only ever be used when in `curses-mode`. */
 static void die_curses(void) {
-  openfilestruct *first_file = openfile;
-  openfilestruct *open_file  = first_file;
   /* Go through all files. */
-  while (open_file) {
+  CLIST_ITER(openfile, file,
     /* If the current buffer has a lock-file, remove it. */
-    if (open_file->lock_filename) {
-      delete_lockfile(open_file->lock_filename);
+    if (file->lock_filename) {
+      delete_lockfile(file->lock_filename);
     }
     /* When not in restricted mode, and the current buffer has been modified, we perform an emergency save. */
-    if (!ISSET(RESTRICTED) && open_file->modified) {
-      emergency_save_for(open_file, open_file->filename);
+    if (!ISSET(RESTRICTED) && file->modified) {
+      emergency_save_for(file, file->filename);
     } 
-    /* Move to the next file in the circulare list. */
-    CLIST_ADV_NEXT(open_file);
-    /* If we have reached the first file, we stop here. */
-    if (open_file == first_file) {
-      break;
-    }
-  }
+  );
+  // OPENFILE first_file = openfile;
+  // OPENFILE open_file  = first_file;
+  // /* Go through all files. */
+  // while (open_file) {
+  //   /* If the current buffer has a lock-file, remove it. */
+  //   if (open_file->lock_filename) {
+  //     delete_lockfile(open_file->lock_filename);
+  //   }
+  //   /* When not in restricted mode, and the current buffer has been modified, we perform an emergency save. */
+  //   if (!ISSET(RESTRICTED) && open_file->modified) {
+  //     emergency_save_for(open_file, open_file->filename);
+  //   } 
+  //   /* Move to the next file in the circulare list. */
+  //   CLIST_ADV_NEXT(open_file);
+  //   /* If we have reached the first file, we stop here. */
+  //   if (open_file == first_file) {
+  //     break;
+  //   }
+  // }
 }
 
 /* ----------------------------- Suck up input and paste it ----------------------------- */
 
 /* Read in all waiting input bytes and paste them into the buffer in one go. */
 /* static */ void suck_up_input_and_paste_it(void) {
-  linestruct *was_cutbuffer;
-  linestruct *line;
+  LINE  was_cutbuffer;
+  LINE  line;
   Ulong index;
-  int input;
+  int   input;
   /* Only perform any action when in `curses-mode`. */
   if (IN_CURSES_CTX) {
     was_cutbuffer = cutbuffer;
@@ -396,6 +413,219 @@ static void die_curses(void) {
   return TRUE;
 }
 
+/* ----------------------------- Toggle this ----------------------------- */
+
+/* Invert the given global `flag` and adjust things for its new value. */
+/* static */ void toggle_this(int flag) {
+  const char *msg;
+  bool enabled = !ISSET(flag);
+  TOGGLE(flag);
+  focusing = FALSE;
+  switch (flag) {
+    case ZERO: {
+      if (IN_CURSES_CTX) {
+        window_init();
+        draw_all_subwindows();
+      }
+      return;
+    }
+    case NO_HELP: {
+      if (IN_CURSES_CTX) {
+        if (LINES < (ISSET(ZERO) ? 3 : (ISSET(MINIBAR) ? 4 : 5))) {
+          statusline(AHEM, _("Too tiny"));
+          TOGGLE(flag);
+          return;
+        }
+        window_init();
+        draw_all_subwindows();
+      }
+      break;
+    }
+    case CONSTANT_SHOW: {
+      if (IN_CURSES_CTX) {
+        if (LINES == 1) {
+          statusline(AHEM, _("Too tiny"));
+          TOGGLE(flag);
+        }
+        else if (ISSET(ZERO)) {
+          SET(CONSTANT_SHOW);
+          toggle_this(ZERO);
+        }
+        else if (!ISSET(MINIBAR)) {
+          wipe_statusbar();
+        }
+      }
+      return;
+    }
+    case SOFTWRAP: {
+      if (IN_CURSES_CTX) {
+        if (!ISSET(SOFTWRAP)) {
+          TUI_OF->firstcolumn = 0;
+        }
+        refresh_needed = TRUE;
+      }
+    } _FALLTHROUGH;
+    case AUTOINDENT:
+    case BREAK_LONG_LINES: {
+      if (IN_CURSES_CTX) {
+        if (ISSET(MINIBAR) && !ISSET(ZERO) && ISSET(STATEFLAGS)) {
+          return;
+        }
+        if (ISSET(STATEFLAGS)) {
+          titlebar(NULL);
+        }
+      }
+      break;
+    }
+    case WHITESPACE_DISPLAY: {
+      if (IN_CURSES_CTX) {
+        titlebar(NULL);
+        refresh_needed = TRUE;
+      }
+      break;
+    }
+    case NO_SYNTAX: {
+      TOGGLE(EXPERIMENTAL_FAST_LIVE_SYNTAX);
+      refresh_needed = TRUE;
+      break;
+    }
+    case TABS_TO_SPACES: {
+      if (IN_CURSES_CTX && TUI_OF->syntax && TUI_OF->syntax->tabstring) {
+        statusline(AHEM, _("Current syntax determine Tab"));
+        TOGGLE(flag);
+        return;
+      }
+      break;
+    }
+    case USE_MOUSE: {
+      if (IN_CURSES_CTX) {
+        mouse_init();
+      }
+      break;
+    }
+  }
+  if (flag == NO_HELP || flag == LINE_NUMBERS || flag == WHITESPACE_DISPLAY) {
+    if (!IN_CURSES_CTX || ISSET(MINIBAR) || ISSET(ZERO) || LINES == 1) {
+      return;
+    }
+    if (ISSET(STATEFLAGS)) {
+      titlebar(NULL);
+    }
+  }
+  if (flag == NO_HELP || flag == NO_SYNTAX) {
+    enabled = !enabled;
+  }
+  switch (flag) {
+    case CONSTANT_SHOW: {
+      msg = "Constant cursor position display";
+      break;
+    }
+    case NO_HELP: {
+      msg = "Help mode";
+      break;
+    }
+    case AUTOINDENT: {
+      msg = "Auto indent";
+      break;
+    }
+    case USE_MOUSE: {
+      msg = "Mouse support";
+      break;
+    }
+    case CUT_FROM_CURSOR: {
+      msg = "Cut to end";
+      break;
+    }
+    case NO_SYNTAX: {
+      msg = "Real-Time experimental syntax";
+      break;
+    }
+    case SMART_HOME: {
+      msg = "Smart home key";
+      break;
+    }
+    case WHITESPACE_DISPLAY: {
+      msg = "Whitespace display";
+      break;
+    }
+    case TABS_TO_SPACES: {
+      msg = "Conversion of typed tabs to spaces";
+      break;
+    }
+    case SOFTWRAP: {
+      msg = "Soft wrapping of overlong lines";
+      break;
+    }
+    case LINE_NUMBERS: {
+      msg = "Line numbering";
+      break;
+    }
+    case BREAK_LONG_LINES: {
+      msg = "Hard wrapping of overlong lines";
+      break;
+    }
+    case ZERO: {
+      msg = "Hidden interface";
+      break;
+    }
+    default: {
+      msg = "Ehm...";
+    }
+  }
+  statusline(REMARK, "%s %s", _(msg), (enabled ? _("enabled") : _("disabled")));
+}
+
+/* ----------------------------- Stdout log callback ----------------------------- */
+
+static void stdout_log_callback(FCIO_LOG_MSG msg) {
+  printf(FCIO_LOG_MSG_FMT_ARGS_COLOR(msg));
+}
+
+/* ----------------------------- Do mouse ----------------------------- */
+
+static bool update_mouse_flags(int *const mx, int *const my) {
+  ASSERT(mx);
+  ASSERT(my);
+  MEVENT event;
+  if (getmouse(&event) == ERR) {
+    return ERR;
+  }
+  if (wenclose(midwin, event.y, event.x)) {
+    *mx = (event.x - margin);
+    *my = event.y;
+    if (event.bstate & BUTTON1_CLICKED) {
+      left_mouse_button_held = TRUE;
+      was_double_click = FALSE;
+      was_triple_click = FALSE;
+    }
+    else if (event.bstate & BUTTON1_RELEASED) {
+      left_mouse_button_held = FALSE;
+    }
+    else if (event.bstate & BUTTON1_DOUBLE_CLICKED) {
+      FCIO_LOG_INFO("Double click");
+      left_mouse_button_held = TRUE;
+      was_double_click = TRUE;
+    }
+    else if (event.bstate & BUTTON1_TRIPLE_CLICKED) {
+      FCIO_LOG_INFO("Triple click");
+      left_mouse_button_held = TRUE;
+      was_triple_click = TRUE;
+    }
+    else if (BUTTON_DOUBLE_CLICK(event.bstate, 1))
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/* static */ int do_mouse_curses(void) {
+  int col;
+  int row;
+  if (update_mouse_flags(&col, &row)) {
+
+  }
+  return 2;
+}
+
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
@@ -403,7 +633,7 @@ static void die_curses(void) {
 /* ----------------------------- Make new node ----------------------------- */
 
 /* Create a new linestruct node.  Note that we do NOT set 'prevnode->next'. */
-linestruct *make_new_node(linestruct *prevnode)  {
+LINE make_new_node(LINE prevnode)  {
   linestruct *newnode = xmalloc(sizeof(*newnode));
   newnode->prev       = prevnode;
   newnode->next       = NULL;
@@ -437,8 +667,8 @@ linestruct *make_new_node(linestruct *prevnode)  {
 /* ----------------------------- Splice node ----------------------------- */
 
 /* Splice a new node into an existing linked list of linestructs for
- * `file`, or `NULL` when lines are not related to an `openfilestruct *`. */
-void splice_node_for(openfilestruct *const file, linestruct *const after, linestruct *const node) {
+ * `file`, or `NULL` when lines are not related to an `OPENFILE `. */
+void splice_node_for(OPENFILE const file, LINE const after, LINE const node) {
   ASSERT(after);
   ASSERT(node);
   DLIST_INSERT_AFTER(after, node);
@@ -449,7 +679,7 @@ void splice_node_for(openfilestruct *const file, linestruct *const after, linest
 }
 
 /* Splice a new node into an existing linked list of linestructs. */
-void splice_node(linestruct *const after, linestruct *const node) {
+void splice_node(LINE const after, LINE const node) {
   splice_node_for(CTX_OF, after, node);
 }
 
@@ -457,7 +687,7 @@ void splice_node(linestruct *const after, linestruct *const node) {
 
 /* Free the data structures in the given node, that is part of `file`.  TODO: Make sure always moving the edittop
  * up is wise, as what happens when its the top of the file then its `NULL` when we could just move it down. */
-void delete_node_for(openfilestruct *const file, linestruct *const node) {
+void delete_node_for(OPENFILE const file, LINE const node) {
   ASSERT(node);
   /* Make this function safe for lines not tied to a file. */
   if (file) {
@@ -478,14 +708,14 @@ void delete_node_for(openfilestruct *const file, linestruct *const node) {
 }
 
 /* Free the data structures in the given node. */
-void delete_node(linestruct *const line) {
+void delete_node(LINE const line) {
   delete_node_for(CTX_OF, line);
 }
 
 /* ----------------------------- Unlink node ----------------------------- */
 
 /* Disconnect a node from a linked list of linestructs and delete it. */
-void unlink_node_for(CTX_ARG_OF, linestruct *const node) {
+void unlink_node_for(OPENFILE const file, LINE const node) {
   ASSERT(node);
   DLIST_UNLINK(node);
   /* Update filebot when removing a node at the end of file. */
@@ -496,14 +726,14 @@ void unlink_node_for(CTX_ARG_OF, linestruct *const node) {
 }
 
 /* Disconnect a node from a linked list of linestructs and delete it. */
-void unlink_node(linestruct *const node) {
+void unlink_node(LINE const node) {
   unlink_node_for(CTX_OF, node);
 }
 
 /* ----------------------------- Free lines ----------------------------- */
 
 /* Free an entire linked list of linestructs. */
-void free_lines_for(openfilestruct *const file, linestruct *src) {
+void free_lines_for(OPENFILE const file, LINE src) {
   /* Make this function a `no-op` function passed `NULL` list head. */
   if (!src) {
     return;
@@ -516,14 +746,14 @@ void free_lines_for(openfilestruct *const file, linestruct *src) {
 }
 
 /* Free an entire linked list of linestructs. */
-void free_lines(linestruct *const head) {
+void free_lines(LINE const head) {
   free_lines_for(CTX_OF, head);
 }
 
 /* ----------------------------- Copy node ----------------------------- */
 
 /* Make a copy of a linestruct node. */
-linestruct *copy_node(const linestruct *const src) {
+LINE copy_node(CLINE const src) {
   ASSERT(src);
   linestruct *dst = xmalloc(sizeof(*dst));
   dst->data       = copy_of(src->data);
@@ -537,13 +767,13 @@ linestruct *copy_node(const linestruct *const src) {
 
 /* Duplicate an entire linked list of linestructs, and assign the
  * head to `*top` and when the caller wants the tail to `*bot`. */
-void copy_buffer_top_bot(const linestruct *src, linestruct **const top, linestruct **const bot) {
+void copy_buffer_top_bot(CLINE src, LINE *const top, LINE *const bot) {
   ASSERT(src);
   ASSERT(top);
-  linestruct *item;
-  (*top)       = copy_node(src);
+  LINE item;
+  *top         = copy_node(src);
   (*top)->prev = NULL;
-  item         = (*top);
+  item         = *top;
   DLIST_ADV_NEXT(src);
   while (src) {
     item->next       = copy_node(src);
@@ -558,7 +788,7 @@ void copy_buffer_top_bot(const linestruct *src, linestruct **const top, linestru
 /* ----------------------------- Copy buffer ----------------------------- */
 
 /* Duplicate an entire linked list of linestructs. */
-linestruct *copy_buffer(const linestruct *src) {
+LINE copy_buffer(CLINE src) {
   linestruct *head;
   linestruct *item;
   head       = copy_node(src);
@@ -578,12 +808,11 @@ linestruct *copy_buffer(const linestruct *src) {
 /* ----------------------------- Renumber from ----------------------------- */
 
 /* Renumber the lines in a buffer, from the given line onwards. */
-void renumber_from(linestruct *line) {
+void renumber_from(LINE line) {
   long number = (!line->prev ? 0 : line->prev->lineno);
   while (line) {
     line->lineno = ++number;
     DLIST_ADV_NEXT(line);
-    // line = line->next;
   }
 }
 
@@ -642,7 +871,7 @@ void disable_extended_io(void) {
 
 /* ----------------------------- Confirm margin ----------------------------- */
 
-void confirm_margin_for(openfilestruct *const file, int *const cols) {
+void confirm_margin_for(OPENFILE const file, int *const cols) {
   ASSERT(file);
   ASSERT(cols);
   bool keep_focus;
@@ -1020,7 +1249,7 @@ void handle_crash(int _UNUSED_IN_DEBUG signal) {
 /* Insert the given `burst` of `count` bytes into `file`. */
 void inject_into_buffer(CTX_ARGS, char *burst, Ulong count) {
   ASSERT(file);
-  linestruct *line   = file->current;
+  LINE  line         = file->current;
   Ulong datalen      = strlen(line->data);
   Ulong original_row = 0;
   Ulong old_amount   = 0;
@@ -1147,7 +1376,7 @@ void unbound_key(int code) {
 
 /* Close `*open`, freeing its memory.  Note that this is a context-less
  * function, meaning it needs the given context's buffer pointers. */
-void close_and_go_for(openfilestruct **const start, openfilestruct **const open, int cols) {
+void close_and_go_for(OPENFILE *const start, OPENFILE *const open, int cols) {
   ASSERT(start);
   ASSERT(open);
   ASSERT(*start);
@@ -1377,3 +1606,10 @@ void finish(void) {
   exit(0);
 }
 
+/* ----------------------------- Set log callbacks ----------------------------- */
+
+void set_log_callbacks(void) {
+  if (ISSET(USING_GUI)) {
+    fcio_log_add_callback(stdout_log_callback);
+  }
+}

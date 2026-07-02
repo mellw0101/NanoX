@@ -422,7 +422,9 @@ void syntax_check_file(openfilestruct *file) {
   if (ISSET(EXPERIMENTAL_FAST_LIVE_SYNTAX) && *file->filename) {
     file_ext = ext(file->filename);
     if (file_ext && *(++file_ext)) {
-      if (strcmp(file_ext, "cpp") == 0 || strcmp(file_ext, "c") == 0 || strcmp(file_ext, "cc") == 0 || strcmp(file_ext, "h") == 0 || strcmp(file_ext, "hpp") == 0) {
+      if (strcmp(file_ext, "cpp") == 0 || strcmp(file_ext, "c") == 0
+      || strcmp(file_ext, "cc") == 0 || strcmp(file_ext, "h") == 0 || strcmp(file_ext, "hpp") == 0)
+      {
         set_c_cpp_synx(file);
       }
       /* AT&T asm syntax. */

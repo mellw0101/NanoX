@@ -53,7 +53,7 @@ void prepare_palette_for(openfilestruct *const file) {
   if (IN_CURSES_CTX) {
     number = NUMBER_OF_ELEMENTS;
     /* For each unique pair number, tell ncurses to combination of colors. */
-    for (colortype *ink=file->syntax->color; ink; ink=ink->next) {
+    DLIST_FOR_NEXT(file->syntax->color, ink) {
       if (ink->pairnum > number) {
         init_pair(ink->pairnum, ink->fg, ink->bg);
         number = ink->pairnum;
@@ -69,15 +69,14 @@ void prepare_palette(void) {
 }
 
 /* Determine whether the matches of multiline regexes are still the same, and if not, schedule a screen refresh, so things will be repainted. */
-void check_the_multis_for(openfilestruct *const file, linestruct *const line) {
+void check_the_multis_for(OPENFILE const file, LINE const line) {
   ASSERT(file);
   ASSERT(line);
-  const colortype *ink;
   regmatch_t startmatch;
   regmatch_t endmatch;
-  bool  astart;
-  bool  anend;
-  char *afterstart;
+  bool       astart;
+  bool       anend;
+  char      *afterstart;
   /* If there is no syntax or no multiline regex, there is nothing to do. */
   if (!IN_CURSES_CTX || !file->syntax || !file->syntax->multiscore) {
     return;
@@ -86,7 +85,7 @@ void check_the_multis_for(openfilestruct *const file, linestruct *const line) {
     refresh_needed = TRUE;
     return;
   }
-  for (ink=file->syntax->color; ink; ink=ink->next) {
+  DLIST_FOR_NEXT(file->syntax->color, ink) {
     /* If it's not a multiline regex, skip. */
     if (!ink->end) {
       continue;
@@ -107,7 +106,9 @@ void check_the_multis_for(openfilestruct *const file, linestruct *const line) {
       }
     }
     else if (line->multidata[ink->id] == JUSTONTHIS) {
-      if (astart && anend && regexec(ink->start, line->data + startmatch.rm_eo + endmatch.rm_eo, 1, &startmatch, 0) != 0) {
+      if (astart && anend
+      && regexec(ink->start, (line->data + startmatch.rm_eo + endmatch.rm_eo), 1, &startmatch, 0) != 0)
+      {
         continue;
       }
     }
@@ -129,7 +130,7 @@ void check_the_multis_for(openfilestruct *const file, linestruct *const line) {
 }
 
 /* Determine whether the matches of multiline regexes are still the same, and if not, schedule a screen refresh, so things will be repainted. */
-void check_the_multis(linestruct *const line) {
+void check_the_multis(LINE const line) {
   check_the_multis_for(CTX_OF, line);
 }
 
@@ -243,9 +244,10 @@ void set_interface_colorpairs(void) {
   }
 }
 
-/* Assign a pair number to each of the foreground/background color combinations in the given syntax, giving identical combinations the same number. */
+/* Assign a pair number to each of the foreground/background color
+ * combinations in the given syntax, giving identical combinations the same number. */
 void set_syntax_colorpairs(syntaxtype *const sntx) {
-  short number;
+  short      number;
   colortype *older;
   if (!IN_CURSES_CTX) {
     return;
@@ -269,8 +271,9 @@ void set_syntax_colorpairs(syntaxtype *const sntx) {
   }
 }
 
-/* Find a syntax that applies to `file`, based upon filename or buffer content, and load and prime this syntax when needed. */
-void find_and_prime_applicable_syntax_for(openfilestruct *const file) {
+/* Find a syntax that applies to `file`, based upon filename
+ * or buffer content, and load and prime this syntax when needed. */
+void find_and_prime_applicable_syntax_for(OPENFILE const file) {
   ASSERT(file);
   syntaxtype *sntx = NULL;
   char       *fullname;
@@ -374,25 +377,31 @@ void find_and_prime_applicable_syntax(void) {
 /* Precalculate the multi-line start and end regex info so we can speed up rendering (with any hope at all...). */
 void precalc_multicolorinfo_for(openfilestruct *const file) {
   ASSERT(file);
-  const colortype *ink;
-  regmatch_t startmatch, endmatch;
-  linestruct *line, *tailline;
+  // const colortype *ink;
+  regmatch_t startmatch;
+  regmatch_t endmatch;
+  LINE       line;
+  LINE       tailline;
+  int        index;
   if (!IN_CURSES_CTX || ISSET(NO_SYNTAX) || !file->syntax || !file->syntax->multiscore) {
     return;
   }
   /* For each line, allocate cache space for the multiline-regex info. */
-  for (line = file->filetop; line; line = line->next) {
+  // for (line = file->filetop; line; line = line->next)
+  DLIST_ND_FOR_NEXT(file->filetop, line) {
     if (!line->multidata) {
       line->multidata = xmalloc(file->syntax->multiscore * sizeof(short));
     }
   }
-  for (ink=file->syntax->color; ink; ink=ink->next) {
+  // for (ink=file->syntax->color; ink; ink=ink->next)
+  DLIST_FOR_NEXT(file->syntax->color, ink) {
     /* If this is not a multi-line regex, skip it. */
     if (!ink->end) {
       continue;
     }
-    for (line=file->filetop; line; line=line->next) {
-      int index = 0;
+    // for (line=file->filetop; line; line=line->next)
+    DLIST_ND_FOR_NEXT(file->filetop, line) {
+      index = 0;
       /* Assume nothing applies until proven otherwise below. */
       line->multidata[ink->id] = NOTHING;
       /* When the line contains a start match, look for an end, and if found, mark all the lines that are affected. */
@@ -416,11 +425,13 @@ void precalc_multicolorinfo_for(openfilestruct *const file) {
         /* Look for an end match on later lines. */
         tailline = line->next;
         while (tailline && regexec(ink->end, tailline->data, 1, &endmatch, 0) != 0) {
-          tailline = tailline->next;
+          DLIST_ADV_NEXT(tailline);
+          // tailline = tailline->next;
         }
         line->multidata[ink->id] = STARTSHERE;
         /* Note that this also advances the line in the main loop. */
-        for (line = line->next; line != tailline; line = line->next) {
+        // for (line = line->next; line != tailline; line = line->next)
+        DLIST_ND_FOR_NEXT_END(line->next, tailline, line) {
           line->multidata[ink->id] = WHOLELINE;
         }
         if (!tailline) {

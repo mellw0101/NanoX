@@ -50,10 +50,10 @@ typedef struct {
   Uint xflags;
   vertex_buffer_t *buf;
   
-  Element *element;
-  Element *marked;
+  ELEMENT element;
+  ELEMENT marked;
 
-  Menu *menu;
+  MENU menu;
   CVec *completions;
 
   /* The current mode we are in. */
@@ -61,8 +61,8 @@ typedef struct {
 
   /* Data used for actions. */
   union {
-    void *raw;
-    openfilestruct *file;
+    void    *raw;
+    OPENFILE file;
   } data;
 } PromptMenu;
 
@@ -206,7 +206,7 @@ static inline void promptmenu_get_x_width(float *const x, float *const width) {
   ASSERT(x);
   ASSERT(width);
   float winwidth = gl_window_width();
-  *width = FMINF(winwidth, PROMPTMENU_DEFAULT_WIDTH);
+  *width = fminf(winwidth, PROMPTMENU_DEFAULT_WIDTH);
   *x = ((winwidth / 2) - (*width / 2));
 }
 
@@ -237,7 +237,7 @@ static inline void promptmenu_should_accept_completion(void) {
 static void promptmenu_routine_marked_update(void) {
   ASSERT_PM;
   float x;
-  Ulong len = STRLEN(answer);
+  Ulong len = strlen(answer);
   if (st_marked && st_marked_x != typing_x && st_marked_x <= len) {
     pm->marked->xflags &= ~ELEMENT_HIDDEN;
     /* Mark before cursor. */
@@ -438,7 +438,7 @@ void promptmenu_routine_mouse_click_left(float x) {
   typing_x = font_index_from_pos(
     uifont,
     answer,
-    STRLEN(answer),
+    strlen(answer),
     x,
     (pm->element->x + font_breadth(uifont, prompt) + font_breadth(uifont, " "))
   );
@@ -490,7 +490,7 @@ void promptmenu_routine_enter(void) {
       if (*answer) {
         /* The answer is a directory. */
         if (dir_exists(answer)) {
-          typing_x = STRLEN(answer);
+          typing_x = strlen(answer);
           if (answer[typing_x - 1] != '/') {
             answer = xnstrncat(answer, typing_x++, S__LEN("/"));
           }
@@ -505,8 +505,8 @@ void promptmenu_routine_enter(void) {
         }
         else {
           pwd    = getpwd();
-          pwdlen = STRLEN(pwd);
-          if (STRNCMP(answer, pwd, pwdlen) == 0 && file_exists(answer + pwdlen + 1)) {
+          pwdlen = strlen(pwd);
+          if (strncmp(answer, pwd, pwdlen) == 0 && file_exists(answer + pwdlen + 1)) {
             editor_open_buffer(answer + pwdlen + 1);
           }
           else {
@@ -535,7 +535,7 @@ void promptmenu_routine_enter(void) {
         free(full_path);
         break;
       }
-      log_INFO_0("%s", full_path);
+      FCIO_LOG_INFO("%s", full_path);
       dir = measured_copy(full_path, ((slash - full_path) + 1));
       free(full_path);
       writable_dir = check_writable_directory(dir);
@@ -549,16 +549,16 @@ void promptmenu_routine_enter(void) {
         free(writable_dir);
         /* The given filename does not yet exist. */
         if (!file_exists(answer)) {
-          log_INFO_0("Writing out name-less file as %s before closing", answer);
+          FCIO_LOG_INFO("Writing out name-less file as %s before closing", answer);
           pm->data.file->filename = xstrcpy(pm->data.file->filename, answer);
           if (write_it_out_for(pm->data.file, FALSE, FALSE) == 2) {
-            log_ERR_FA("Failed to write file %s to disk", answer);
+            die("Failed to write file %s to disk\n", answer);
           }
           editor_close_a_open_buffer(pm->data.file);
           promptmenu_close();
         }
         else {
-          log_INFO_0("Prompting for confirmation to overwrite the file: '%s'", answer);
+          FCIO_LOG_INFO("Prompting for confirmation to overwrite the file: '%s'", answer);
           pm->xflags |= PROMPTMENU_KEEP_ANSWER;
           promptmenu_ask(PROMPTMENU_TYPE_YN_FILE_SAVE_OVERWRITE);
         }
@@ -683,7 +683,7 @@ void promptmenu_ask(PromptMenuType type) {
       prompt = xstrncpy(prompt, S__LEN("Save buffer: "));
       if (*GUI_OF->filename) {
         answer   = xstrcpy(answer, GUI_OF->filename);
-        typing_x = STRLEN(answer);
+        typing_x = strlen(answer);
       }
       break;
     }

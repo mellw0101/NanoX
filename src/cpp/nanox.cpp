@@ -764,99 +764,94 @@
 // }
 
 /* Invert the given global flag and adjust things for its new value. */
-static void toggle_this(const int flag) {
-  bool enabled = !ISSET(flag);
-  TOGGLE(flag);
-  focusing = FALSE;
-  switch (flag) {
-    case ZERO: {
-      window_init();
-      draw_all_subwindows();
-      return;
-    }
-    case NO_HELP: {
-      if (LINES < (ISSET(ZERO) ? 3 : (ISSET(MINIBAR) ? 4 : 5))) {
-        statusline(AHEM, _("Too tiny"));
-        TOGGLE(flag);
-        return;
-      }
-      if (ISSET(NO_NCURSES)) {
-        window_init();
-      }
-      else {
-        window_init();
-      }
-      draw_all_subwindows();
-      break;
-    }
-    case CONSTANT_SHOW: {
-      if (LINES == 1) {
-        statusline(AHEM, _("Too tiny"));
-        TOGGLE(flag);
-      }
-      else if (ISSET(ZERO)) {
-        SET(CONSTANT_SHOW);
-        toggle_this(ZERO);
-      }
-      else if (!ISSET(MINIBAR)) {
-        wipe_statusbar();
-      }
-      return;
-    }
-    case SOFTWRAP: {
-      if (!ISSET(SOFTWRAP)) {
-        openfile->firstcolumn = 0;
-      }
-      refresh_needed = TRUE;
-      break;
-    }
-    case WHITESPACE_DISPLAY: {
-      titlebar(NULL);
-      refresh_needed = TRUE;
-      break;
-    }
-    case NO_SYNTAX: {
-      // precalc_multicolorinfo();
-      TOGGLE(EXPERIMENTAL_FAST_LIVE_SYNTAX);
-      refresh_needed = TRUE;
-      break;
-    }
-    case TABS_TO_SPACES: {
-      if (openfile->syntax && openfile->syntax->tabstring) {
-        statusline(AHEM, _("Current syntax determines Tab"));
-        TOGGLE(flag);
-        return;
-      }
-      break;
-    }
-    case USE_MOUSE: {
-      mouse_init();
-      break;
-    }
-  }
-  if (flag == AUTOINDENT || flag == BREAK_LONG_LINES || flag == SOFTWRAP) {
-    if (ISSET(MINIBAR) && !ISSET(ZERO) && ISSET(STATEFLAGS)) {
-      return;
-    }
-    if ISSET (STATEFLAGS) {
-      titlebar(NULL);
-    }
-  }
-  if (flag == NO_HELP || flag == LINE_NUMBERS || flag == WHITESPACE_DISPLAY) {
-    if (ISSET(MINIBAR) || ISSET(ZERO) || LINES == 1) {
-      return;
-    }
-  }
-  if (flag == NO_HELP || flag == NO_SYNTAX) {
-    enabled = !enabled;
-  }
-  if (flag == NO_SYNTAX) {
-    statusline(REMARK, "%s %s", _("Real-Time experimental syntax"), (enabled ? _("enabled") : _("disabled")));
-  }
-  else {
-    statusline(REMARK, "%s %s", _(epithet_of_flag(flag)), (enabled ? _("enabled") : _("disabled")));
-  }
-}
+// static void toggle_this(const int flag) {
+//   bool enabled = !ISSET(flag);
+//   TOGGLE(flag);
+//   focusing = FALSE;
+//   switch (flag) {
+//     case ZERO: {
+//       window_init();
+//       draw_all_subwindows();
+//       return;
+//     }
+//     case NO_HELP: {
+//       if (LINES < (ISSET(ZERO) ? 3 : (ISSET(MINIBAR) ? 4 : 5))) {
+//         statusline(AHEM, _("Too tiny"));
+//         TOGGLE(flag);
+//         return;
+//       }
+//       window_init();
+//       draw_all_subwindows();
+//       break;
+//     }
+//     case CONSTANT_SHOW: {
+//       if (LINES == 1) {
+//         statusline(AHEM, _("Too tiny"));
+//         TOGGLE(flag);
+//       }
+//       else if (ISSET(ZERO)) {
+//         SET(CONSTANT_SHOW);
+//         toggle_this(ZERO);
+//       }
+//       else if (!ISSET(MINIBAR)) {
+//         wipe_statusbar();
+//       }
+//       return;
+//     }
+//     case SOFTWRAP: {
+//       if (!ISSET(SOFTWRAP)) {
+//         openfile->firstcolumn = 0;
+//       }
+//       refresh_needed = TRUE;
+//       break;
+//     }
+//     case WHITESPACE_DISPLAY: {
+//       titlebar(NULL);
+//       refresh_needed = TRUE;
+//       break;
+//     }
+//     case NO_SYNTAX: {
+//       // precalc_multicolorinfo();
+//       TOGGLE(EXPERIMENTAL_FAST_LIVE_SYNTAX);
+//       refresh_needed = TRUE;
+//       break;
+//     }
+//     case TABS_TO_SPACES: {
+//       if (openfile->syntax && openfile->syntax->tabstring) {
+//         statusline(AHEM, _("Current syntax determines Tab"));
+//         TOGGLE(flag);
+//         return;
+//       }
+//       break;
+//     }
+//     case USE_MOUSE: {
+//       mouse_init();
+//       break;
+//     }
+//   }
+//   if (flag == AUTOINDENT || flag == BREAK_LONG_LINES || flag == SOFTWRAP) {
+//     if (ISSET(MINIBAR) && !ISSET(ZERO) && ISSET(STATEFLAGS)) {
+//       return;
+//     }
+//     if (ISSET(STATEFLAGS)) {
+//       titlebar(NULL);
+//     }
+//   }
+//   if (flag == NO_HELP || flag == LINE_NUMBERS || flag == WHITESPACE_DISPLAY) {
+//     if (ISSET(MINIBAR) || ISSET(ZERO) || LINES == 1) {
+//       return;
+//     }
+//   }
+//   if (flag == NO_HELP || flag == NO_SYNTAX) {
+//     enabled = !enabled;
+//   }
+//   if (flag == NO_SYNTAX) {
+//     statusline(REMARK, "%s %s", _("Real-Time experimental syntax"), (enabled ? _("enabled") : _("disabled")));
+//   }
+//   else {
+//     statusline(REMARK, "%s %s", _(epithet_of_flag(flag)), (enabled ? _("enabled") : _("disabled")));
+//   }
+// }
 
 /* Disable extended input and output processing in our terminal settings. */
 // static void disable_extended_io(void) _NOTHROW {
@@ -1012,11 +1007,15 @@ static void toggle_this(const int flag) {
 // }
 
 /* Handle a mouse click on the edit window or the shortcut list. */
+_UNUSED
 static int do_mouse(void) {
-  linestruct *was_current = openfile->current;
-  long row_count;
-  Ulong leftedge, was_x=openfile->current_x;
-  int click_row, click_col, retval=get_mouseinput(&click_row, &click_col, TRUE);
+  LINE  was_current = openfile->current;
+  long  row_count;
+  Ulong leftedge;
+  Ulong was_x = openfile->current_x;
+  int   click_row;
+  int   click_col;
+  int   retval = get_mouseinput(&click_row, &click_col, TRUE);
   /* If the click is wrong or already handled, we're done. */
   if (retval) {
     return retval;
@@ -1178,17 +1177,16 @@ bool changes_something(functionptrtype f) {
 
 /* Read in a keystroke, and execute its command or insert it into the buffer. */
 static void process_a_keystroke(void) {
-  unix_socket_debug("%s\n", __func__);
-  /* The keystroke we read in, this can be a char or a shortcut. */
-  int input;
+  static bool give_a_hint = TRUE;
   /* The buffer to hold the actual chars. */
   static char *puddle = NULL;
   /* The size of the buffer, doubles when needed. */
   static Ulong capacity = 12;
   /* The current length of the buffer. */
   static Ulong depth = 0;
-  linestruct  *was_mark = openfile->mark;
-  static bool  give_a_hint = TRUE;
+  /* The keystroke we read in, this can be a char or a shortcut. */
+  int  input;
+  LINE was_mark = openfile->mark;
   const keystruct *shortcut;
   functionptrtype  function;
   /* Read in a keystroke, and show the cursor while waiting. */
@@ -1200,13 +1198,16 @@ static void process_a_keystroke(void) {
   }
   /* When the input is a mouse click, handle it. */
   if (input == KEY_MOUSE) {
-    /* If the user clicked on a shortcut, read in the key code that it was converted into.  Else the click has been handled or was invalid. */
-    if (do_mouse() == 1) {
-      input = get_kbinput(midwin, BLIND);
-    }
-    else {
-      return;
-    }
+    /* If the user clicked on a shortcut, read in the key code that it
+     * was converted into.  Else the click has been handled or was invalid. */
+    // if (do_mouse_curses() == 1) {
+    //   input = get_kbinput(midwin, BLIND);
+    // }
+    // else {
+    //   return;
+    // }
+    tui_curses_mouse_handle_events();
+    return;
   }
   /* Check for a shortcut in the main list. */
   shortcut = get_shortcut(input);
@@ -1246,7 +1247,9 @@ static void process_a_keystroke(void) {
       /* If a enclose char is pressed without a having a marked region, we simply enclose in place. */
       else if (is_enclose_char(input)) {
         /* If quote or double quote was just enclosed in place just move once to the right. */
-        if ((input == '"' && last_key_was_bracket && last_bracket_char == '"') || (input == '\'' && last_key_was_bracket && last_bracket_char == '\'')) {
+        if ((input == '"'  && last_key_was_bracket && last_bracket_char == '"')
+        ||  (input == '\'' && last_key_was_bracket && last_bracket_char == '\''))
+        {
           do_right();
           last_key_was_bracket = FALSE;
           last_bracket_char = '\0';
@@ -1289,7 +1292,8 @@ static void process_a_keystroke(void) {
             openfile->undotop->xflags |= SHOULD_NOT_KEEP_MARK;
             openfile->mark = NULL;
             keep_mark = FALSE;
-            /* This flag ensures that if backspace is the next key that is pressed it will erase both of the enclose char`s. */
+            /* This flag ensures that if backspace is the next key
+             * that is pressed it will erase both of the enclose char`s. */
             last_key_was_bracket = TRUE;
             last_bracket_char = (char)input;
             return;
@@ -1299,10 +1303,10 @@ static void process_a_keystroke(void) {
       puddle[depth++]      = (char)input;
       last_key_was_bracket = FALSE;
       last_bracket_char    = '\0';
-
     }
   }
-  /* If there are gathered bytes and we have a command or no other key codes are waiting, it's time to insert these bytes into the edit buffer. */
+  /* If there are gathered bytes and we have a command or no other key
+   * codes are waiting, it's time to insert these bytes into the edit buffer. */
   if (depth > 0 && (function || !waiting_keycodes())) {
     puddle[depth] = '\0';
     inject(puddle, depth);
@@ -1323,7 +1327,9 @@ static void process_a_keystroke(void) {
     print_view_warning();
     return;
   }
-  if (input == '\b' && give_a_hint && !openfile->current_x && openfile->current == openfile->filetop && !ISSET(NO_HELP)) {
+  if (input == '\b' && give_a_hint && !openfile->current_x
+  && openfile->current == openfile->filetop && !ISSET(NO_HELP))
+  {
     statusbar_all(_("^W = Ctrl+W    M-W = Alt+W"));
     give_a_hint = FALSE;
   }
@@ -1350,8 +1356,8 @@ static void process_a_keystroke(void) {
     }
     return;
   }
-  linestruct *was_current = openfile->current;
-  Ulong       was_x       = openfile->current_x;
+  LINE  was_current = openfile->current;
+  Ulong was_x       = openfile->current_x;
   /* If Shifted movement occurs, set the mark. */
   if (shift_held && !openfile->mark) {
     openfile->mark     = openfile->current;
@@ -1361,7 +1367,9 @@ static void process_a_keystroke(void) {
   /* Execute the function of the shortcut. */
   function();
   /* When the marked region changes without Shift being held, discard a soft mark. And when the set of lines changes, reset the "last line too" flag. */
-  if (openfile->mark && openfile->softmark && !shift_held && (openfile->current != was_current || openfile->current_x != was_x || wanted_to_move(function)) && !keep_mark) {
+  if (openfile->mark && openfile->softmark && !shift_held
+  && (openfile->current != was_current || openfile->current_x != was_x || wanted_to_move(function)) && !keep_mark)
+  {
     openfile->mark = NULL;
     refresh_needed = TRUE;
   }
@@ -1657,6 +1665,7 @@ int main(int argc, char **argv) {
   proccess_cli_arguments(&argc, argv);
   fcio_log_init();
   unix_socket_connect(UNIX_DOMAIN_SOCKET_PATH);
+  set_log_callbacks();
   event_init();
   file_listener = file_listener_create();
   // init_cfg();
@@ -1963,7 +1972,8 @@ int main(int argc, char **argv) {
         ++optind;
       }
       else {
-        /* When there is nothing after the "+", understand it as go-to-EOF, otherwise parse and store the given number(s). */
+        /* When there is nothing after the "+", understand it as
+         * go-to-EOF, otherwise parse and store the given number(s). */
         if (!argv[optind++][1]) {
           givenline = -1;
         }
@@ -1972,7 +1982,8 @@ int main(int argc, char **argv) {
         }
       }
     }
-    /* If the filename is a dash, read from standard input; otherwise, open the file; skip positioning the cursor if either failed. */
+    /* If the filename is a dash, read from standard input; otherwise,
+     * open the file; skip positioning the cursor if either failed. */
     if (strcmp(argv[optind], "-") == 0) {
       ++optind;
       if (!scoop_stdin()) {

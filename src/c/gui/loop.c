@@ -25,9 +25,9 @@ static void gl_loop_init_glew(void) {
   glewExperimental = TRUE;
   /* If we could not init glew, terminate directly. */
   if ((err = glewInit()) != 0) {
-    log_ERR_FA("GLEW: ERROR: %s", glewGetErrorString(err));
+    die("GLEW: ERROR: %s\n", glewGetErrorString(err));
   }
-  log_INFO_0("Using GLEW %s", glewGetString(GLEW_VERSION));
+  FCIO_LOG_INFO("Using GLEW %s", glewGetString(GLEW_VERSION));
   glDisable(GL_DEPTH_TEST);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_TEXTURE_2D);
@@ -45,7 +45,8 @@ static void gl_loop_init(void) {
   suggestmenu_create();
   promptmenu_create();
   statusbar_init();
-  /* Create the first editor by taking ownership of the already made openfilestruct in main.cpp.  This will be changed later. */
+  /* Create the first editor by taking ownership of the already
+   * made openfilestruct in main.cpp.  This will be changed later. */
   editor_create(FALSE);
   /* Ensure we poll for the correct frame-rate. */
   frame_set_poll();

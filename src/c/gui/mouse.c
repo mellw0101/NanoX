@@ -267,7 +267,7 @@ void gl_mouse_flag_clear_all(void) {
 void gl_mouse_routine_button_dn(Uchar button, Ushort _UNUSED mod, float x, float y) {
   Ulong st;
   Ulong end;
-  Element *e = gl_mouse_element_clicked = element_grid_get(x, y);
+  ELEMENT e = gl_mouse_element_clicked = element_grid_get(x, y);
   if (!e) {
     return;
   }
@@ -329,7 +329,7 @@ void gl_mouse_routine_button_dn(Uchar button, Ushort _UNUSED mod, float x, float
       /* On a tripple click, select the entire line. */
       else if (gl_mouse_flag_is_set(MOUSE_PRESS_WAS_TRIPPLE)) {
         GUI_OF->mark_x = 0;
-        GUI_OF->current_x = STRLEN(GUI_OF->current->data);
+        GUI_OF->current_x = strlen(GUI_OF->current->data);
       }
       refresh_needed = TRUE;
     }
@@ -374,7 +374,7 @@ void gl_mouse_routine_button_dn(Uchar button, Ushort _UNUSED mod, float x, float
 /* ----------------------------- Mouse gui button up ----------------------------- */
 
 void gl_mouse_routine_button_up(Uchar button, Ushort _UNUSED mod, float x, float y) {
-  Element *e = gl_mouse_element_clicked;
+  ELEMENT e = gl_mouse_element_clicked;
   if (button == SDL_BUTTON_LEFT && e) {
     /* If the clicked element was the editors text element,
      * then remove the mark if there has been no movement. */
@@ -393,7 +393,7 @@ void gl_mouse_routine_button_up(Uchar button, Ushort _UNUSED mod, float x, float
     else if (e->dt == ELEMENT_DATA_FILE && e->parent && e->parent->dt == ELEMENT_DATA_EDITOR
     && etb_element_is_main(e->parent->dp_editor->tb, e->parent))
     {
-      log_INFO_0("Editor-Topbar-Button released");
+      FCIO_LOG_INFO("Editor-Topbar-Button released");
       if (e) {
         element_free(e);
         etb_text_refresh_needed(e->parent->dp_editor->tb);
@@ -409,24 +409,25 @@ void gl_mouse_routine_button_up(Uchar button, Ushort _UNUSED mod, float x, float
 void gl_mouse_routine_position(float x, float y) {
   Ulong st;
   Ulong end;
-  Element *clicked = gl_mouse_element_clicked;
-  Element *entered = gl_mouse_element_entered;
-  Element *hovered;
+  ELEMENT clicked = gl_mouse_element_clicked;
+  ELEMENT entered = gl_mouse_element_entered;
+  ELEMENT hovered;
   if (MOUSE_ISSET(MOUSE_BUTTON_HELD_LEFT)) {
     if (clicked) {
       if (clicked->dt == ELEMENT_DATA_SB) {
         scrollbar_mouse_pos_routine(clicked->dp_sb, clicked, last_mouse_ypos, y);
         refresh_needed = TRUE;
       }
+      /* Editor-Text */
       else if (clicked->dt == ELEMENT_DATA_EDITOR && clicked == clicked->dp_editor->text) {
         /* If the clicked element is ever not the text element of the currently open editor, we terminate directly. */
         if (clicked->dp_editor != openeditor) {
-          log_ERR_FA("The clicked text element is not the text element of the currently open editor");
+          die("The clicked text element is not the text element of the currently open editor\n");
         }
         editor_get_text_line_index(clicked->dp_editor, x, y, &GUI_OF->current, &GUI_OF->current_x);
         if (MOUSE_ISSET(MOUSE_PRESS_WAS_TRIPPLE)) {
           st  = 0;
-          end = STRLEN(GUI_OF->mark->data);
+          end = strlen(GUI_OF->mark->data);
           if (GUI_OF->mark == GUI_OF->current) {
             GUI_OF->mark_x    = st;
             GUI_OF->current_x = end;

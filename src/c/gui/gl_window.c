@@ -350,7 +350,13 @@ void gl_window_poll_events(void) {
         break;
       }
       case SDL_EVENT_MOUSE_WHEEL: {
-        gl_mouse_routine_scroll(ev.wheel.mouse_x, ev.wheel.mouse_y, ev.wheel.integer_x, ev.wheel.integer_y, ev.wheel.direction);
+        gl_mouse_routine_scroll(
+          ev.wheel.mouse_x,
+          ev.wheel.mouse_y,
+          ev.wheel.integer_x,
+          ev.wheel.integer_y,
+          ev.wheel.direction
+        );
         break;
       }
     }

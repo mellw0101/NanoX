@@ -1816,8 +1816,8 @@ char *get_verbatim_kbinput(WINDOW *const frame, Ulong *const count) {
 int get_mouseinput(int *const my, int *const mx, bool allow_shortcuts) {
   ASSERT(my);
   ASSERT(mx);
-  bool in_middle;
-  bool in_footer;
+  bool   in_middle;
+  bool   in_footer;
   MEVENT event;
   const keystruct *shortcut;
   /* The width of each shortcut item, except the last two. */
@@ -1892,6 +1892,9 @@ int get_mouseinput(int *const my, int *const mx, bool allow_shortcuts) {
       /* Clicks outside of the bottom window are handled elsewhere. */
       return 0;
     }
+  }
+  else if (event.bstate & REPORT_MOUSE_POSITION) {
+    FCIO_LOG_INFO("REPORT_MOUSE_POSITION: %d, %d", *mx, *my);
   }
 # if NCURSES_MOUSE_VERSION >= 2
   /* Handle "presses" of the fourth and fifth mouse buttons (upward and downward rolls of the mouse wheel). */
@@ -2024,7 +2027,7 @@ Ulong leftedge_for(int cols, Ulong column, linestruct *const line) {
 /* Try to move up nrows softwrapped chunks from the given line and the given column (leftedge).
  * After moving, leftedge will be set to the starting column of the current chunk.  Return the
  * number of chunks we couldn't move up, which will be zero if we completely succeeded. */
-int go_back_chunks_for(openfilestruct *const file, int cols, int nrows, linestruct **const line, Ulong *const leftedge) {
+int go_back_chunks_for(OPENFILE const file, int cols, int nrows, LINE *const line, Ulong *const leftedge) {
   int i;
   Ulong chunk;
   if (ISSET(SOFTWRAP)) {
@@ -2057,7 +2060,7 @@ int go_back_chunks_for(openfilestruct *const file, int cols, int nrows, linestru
 /* Try to move up nrows softwrapped chunks from the given line and the given column (leftedge).
  * After moving, leftedge will be set to the starting column of the current chunk.  Return the
  * number of chunks we couldn't move up, which will be zero if we completely succeeded. */
-int go_back_chunks(int nrows, linestruct **const line, Ulong *const leftedge) {
+int go_back_chunks(int nrows, LINE *const line, Ulong *const leftedge) {
   if (IN_GUI_CTX) {
     return go_back_chunks_for(GUI_OF, GUI_COLS, nrows, line, leftedge);
   }
@@ -2357,7 +2360,7 @@ bool less_than_a_screenful(Ulong was_lineno, Ulong was_leftedge) {
 /* When in softwrap mode, and the given column is on or after the breakpoint of a softwrapped
  * chunk, shift it back to the last column before the breakpoint.  The given column is relative
  * to the given leftedge in current.  The returned column is relative to the start of the text. */
-Ulong actual_last_column_for(openfilestruct *const file, int cols, Ulong leftedge, Ulong column) {
+Ulong actual_last_column_for(OPENFILE const file, int cols, Ulong leftedge, Ulong column) {
   ASSERT(file);
   bool  kickoff, last_chunk;
   Ulong end_col;
@@ -2392,7 +2395,7 @@ Ulong actual_last_column(Ulong leftedge, Ulong column) {
 /* ----------------------------- Current is above screen ----------------------------- */
 
 /* Return TRUE if current[current_x] is before the viewport. */
-bool current_is_above_screen_for(openfilestruct *const file) {
+bool current_is_above_screen_for(OPENFILE const file) {
   ASSERT(file);
   if (ISSET(SOFTWRAP)) {
     return (file->current->lineno < file->edittop->lineno || (file->current->lineno == file->edittop->lineno && xplustabs_for(file) < file->firstcolumn));
@@ -2482,7 +2485,7 @@ void adjust_viewport(update_type manner) {
 
 /* Redetermine `cursor_row` from the position of current relative to
  * edittop, and put the cursor in the edit window at (cursor_row, "current_x"). */
-void place_the_cursor_for(openfilestruct *const file) {
+void place_the_cursor_for(OPENFILE const file) {
   ASSERT(file);
   Ulong column;
   if (IN_GUI_CTX) {
@@ -2517,7 +2520,7 @@ Ulong waiting_keycodes(void) {
 /* ----------------------------- Edit scroll ----------------------------- */
 
 /* Scroll the edit window one row in the given direction, and draw the relevant content on the resultant blank row. */
-void edit_scroll_for(openfilestruct *const file, bool direction) {
+void edit_scroll_for(OPENFILE const file, bool direction) {
   ASSERT(file);
   linestruct *line;
   Ulong leftedge;
@@ -2578,12 +2581,12 @@ void edit_scroll(bool direction) {
 /* ----------------------------- Edit redraw ----------------------------- */
 
 /* Update any lines between old_current and current that need to be updated.  Use this if we've moved without changing any text. */
-void edit_redraw_for(CTX_ARGS, linestruct *const old_current, update_type manner) {
+void edit_redraw_for(CTX_ARGS, LINE const old_current, update_type manner) {
   ASSERT(file);
   ASSERT(old_current);
-  linestruct *line;
+  LINE  line;
   Ulong was_pww = file->placewewant;
-  set_pww_for(file);
+  SET_PWW(file);
   /* If the current line is offscreen, scroll until it's onscreen. */
   if (current_is_offscreen_for(STACK_CTX)) {
     adjust_viewport_for(STACK_CTX, (ISSET(JUMPY_SCROLLING) ? CENTERING : manner));
@@ -2602,20 +2605,22 @@ void edit_redraw_for(CTX_ARGS, linestruct *const old_current, update_type manner
       line = ((line->lineno > file->current->lineno) ? line->prev : line->next);
     }
   }
-  else {
-    /* Otherwise, update old_current only if it differs from current and was horizontally scrolled. */
-    if (old_current != file->current && get_page_start(was_pww, cols) > 0) {
-      update_line_curses_for(file, old_current, 0);
-    }
+  /* Otherwise, update old_current only if it differs from current and was horizontally scrolled. */
+  else if (old_current != file->current && get_page_start(was_pww, cols) > 0) {
+    update_line_curses_for(file, old_current, 0);
   }
-  /* Update current if the mark is on or it has changed "page", or if it differs from old_current and needs to be horizontally scrolled. */
-  if (line_needs_update_for(file, cols, was_pww, file->placewewant) || (old_current != file->current && get_page_start(file->placewewant, cols) > 0)) {
+  /* Update current if the mark is on or it has changed "page", or if
+   * it differs from old_current and needs to be horizontally scrolled. */
+  if (line_needs_update_for(file, cols, was_pww, file->placewewant)
+  || (old_current != file->current && get_page_start(file->placewewant, cols) > 0))
+  {
     update_line_curses_for(file, file->current, file->current_x);
   }
 }
 
-/* Update any lines between old_current and current that need to be updated.  Use this if we've moved without changing any text. */
-void edit_redraw(linestruct *const old_current, update_type manner) {
+/* Update any lines between old_current and current that need to
+ * be updated.  Use this if we've moved without changing any text. */
+void edit_redraw(LINE const old_current, update_type manner) {
   CTX_CALL_WARGS(edit_redraw_for, old_current, manner);
 }
 
@@ -2652,7 +2657,6 @@ void edit_refresh_for(CTX_ARGS) {
       row += update_line_curses_for(file, line, ((line == file->current) ? file->current_x : 0));
       DLIST_ADV_NEXT(line);
     }
-    unix_socket_debug("\nDEBUG\n\n");
     while (row < rows) {
       blank_row_curses(midwin, row);
       /* If full linenumber bar is enabled, then draw it. */
@@ -3152,13 +3156,13 @@ void statusbar_all(const char *const restrict msg) {
 /* Display on the status bar details about the current cursor position in `file`. */
 void report_cursor_position_for(openfilestruct *const file) {
   ASSERT(file);
-  int linepct;
-  int colpct;
-  int charpct;
+  int   linepct;
+  int   colpct;
+  int   charpct;
   Ulong fullwidth = (breadth(file->current->data) + 1);
-  Ulong column = (xplustabs_for(file) + 1);
+  Ulong column    = (xplustabs_for(file) + 1);
   Ulong sum;
-  char saved_byte = file->current->data[file->current_x];
+  char  saved_byte = file->current->data[file->current_x];
   file->current->data[file->current_x] = '\0';
   /* Determine the size of the file up to the cursor. */
   sum = number_of_characters_in(file->filetop, file->current);
@@ -3167,8 +3171,12 @@ void report_cursor_position_for(openfilestruct *const file) {
   linepct = (100 * file->current->lineno / file->filebot->lineno);
   colpct  = (100 * column / fullwidth);
   charpct = ((file->totsize == 0) ? 0 : (100 * sum / file->totsize));
-  statusline(INFO, _("line %*zd/%zd (%2d%%), col %2zu/%2zu (%3d%%), char %*zu/%zu (%2d%%)"), digits(file->filebot->lineno),
-    file->current->lineno, file->filebot->lineno, linepct, column, fullwidth, colpct, digits(file->totsize), sum, file->totsize, charpct);
+  statusline(
+    INFO,
+    _("line %*zd/%zd (%2d%%), col %2zu/%2zu (%3d%%), char %*zu/%zu (%2d%%)"),
+    digits(file->filebot->lineno), file->current->lineno, file->filebot->lineno,
+    linepct, column, fullwidth, colpct, digits(file->totsize), sum, file->totsize, charpct
+  );
 }
 
 /* Display on the status bar details about the current cursor
@@ -3391,7 +3399,9 @@ void warn_and_briefly_pause_curses(const char *const restrict message) {
 }
 
 /* Draw the marked region of `row`. */
-void draw_row_marked_region_for_curses(openfilestruct *const file, int row, const char *const restrict converted, linestruct *const line, Ulong from_col) {
+void draw_row_marked_region_for_curses(openfilestruct *const file, int row,
+  const char *const restrict converted, linestruct *const line, Ulong from_col)
+{
   ASSERT(file);
   /* The lines where the marked region begins and ends. */
   linestruct *top;
@@ -3437,14 +3447,18 @@ void draw_row_marked_region_for_curses(openfilestruct *const file, int row, cons
 }
 
 /* Draw the marked region of `row`. */
-void draw_row_marked_region_curses(int row, const char *const restrict converted, linestruct *const line, Ulong from_col) {
+void draw_row_marked_region_curses(
+  int row, const char *const restrict converted, linestruct *const line, Ulong from_col)
+{
   draw_row_marked_region_for_curses(TUI_OF, row, converted, line, from_col);
 }
 
 /* Draw the given text on the given row of the edit window.  line is the line to be drawn, and
  * converted is the actual string to be written with tabs and control characters replaced by strings
  * of regular characters.  'from_col' is the column number of the first character of this "page". */
-void draw_row_curses_for(openfilestruct *const file, int row, const char *const restrict converted, linestruct *const line, Ulong from_col) {
+void draw_row_curses_for(openfilestruct *const file, int row,
+  const char *const restrict converted, linestruct *const line, Ulong from_col)
+{
   ASSERT(file);
   render_line_text(row, converted, line, from_col);
   if (ISSET(EXPERIMENTAL_FAST_LIVE_SYNTAX)) {
@@ -3502,9 +3516,9 @@ void draw_row_curses_for(openfilestruct *const file, int row, const char *const 
             continue;
           }
           if (match.rm_so > (int)from_x) {
-            start_col = wideness(line->data, match.rm_so) - from_col;
+            start_col = (wideness(line->data, match.rm_so) - from_col);
           }
-          thetext  = converted + actual_x(converted, start_col);
+          thetext  = (converted + actual_x(converted, start_col));
           paintlen = actual_x(thetext, wideness(line->data, match.rm_eo) - from_col - start_col);
           midwin_mv_add_nstr_wattr(row, (margin + start_col), thetext, paintlen, varnish->attributes);
         }
@@ -3517,7 +3531,9 @@ void draw_row_curses_for(openfilestruct *const file, int row, const char *const 
       }
       else {
         /* If there is an unterminated start match before the current line, we need to look for an end match first. */
-        if (start_line && (start_line->multidata[varnish->id] == WHOLELINE || start_line->multidata[varnish->id] == STARTSHERE)) {
+        if (start_line && (start_line->multidata[varnish->id] == WHOLELINE
+        || start_line->multidata[varnish->id] == STARTSHERE))
+        {
           /* If there is no end on this line, paint whole line, and be done. */
           if (regexec(varnish->end, line->data, 1, &endmatch, 0) == REG_NOMATCH) {
             midwin_mv_add_nstr_wattr(row, margin, converted, -1, varnish->attributes);
@@ -3534,22 +3550,24 @@ void draw_row_curses_for(openfilestruct *const file, int row, const char *const 
       }
       /* Second step: look for starts on this line, but begin looking only after an end match, if there is one. */
       index = (paintlen == 0) ? 0 : endmatch.rm_eo;
-      while (index < PAINT_LIMIT && regexec(varnish->start, line->data + index, 1, &startmatch, (index == 0) ? 0 : REG_NOTBOL) == 0) {
+      while (index < PAINT_LIMIT
+      && regexec(varnish->start, line->data + index, 1, &startmatch, (index == 0) ? 0 : REG_NOTBOL) == 0)
+      {
         /* Make the match relative to the beginning of the line. */
         startmatch.rm_so += index;
         startmatch.rm_eo += index;
         if (startmatch.rm_so > (int)from_x) {
-          start_col = wideness(line->data, startmatch.rm_so) - from_col;
+          start_col = (wideness(line->data, startmatch.rm_so) - from_col);
         }
-        thetext = converted + actual_x(converted, start_col);
-        if (regexec(varnish->end, line->data + startmatch.rm_eo, 1, &endmatch, (startmatch.rm_eo == 0) ? 0 : REG_NOTBOL) == 0) {
+        thetext = (converted + actual_x(converted, start_col));
+        if (regexec(varnish->end, (line->data + startmatch.rm_eo), 1, &endmatch, ((startmatch.rm_eo == 0) ? 0 : REG_NOTBOL)) == 0) {
           /* Make the match relative to the beginning of the line. */
           endmatch.rm_so += startmatch.rm_eo;
           endmatch.rm_eo += startmatch.rm_eo;
           /* Only paint the match if it is visible on screen and it is more than zero characters long. */
           if (endmatch.rm_eo > (int)from_x && endmatch.rm_eo > startmatch.rm_so) {
             paintlen = actual_x(thetext, wideness(line->data, endmatch.rm_eo) - from_col - start_col);
-            midwin_mv_add_nstr_wattr(row, margin + start_col, thetext, paintlen, varnish->attributes);
+            midwin_mv_add_nstr_wattr(row, (margin + start_col), thetext, paintlen, varnish->attributes);
             line->multidata[varnish->id] = JUSTONTHIS;
           }
           index = endmatch.rm_eo;
@@ -3563,13 +3581,15 @@ void draw_row_curses_for(openfilestruct *const file, int row, const char *const 
           continue;
         }
         /* Paint the rest of the line, and we're done. */
-        midwin_mv_add_nstr_wattr(row, margin + start_col, thetext, -1, varnish->attributes);
+        midwin_mv_add_nstr_wattr(row, (margin + start_col), thetext, -1, varnish->attributes);
         line->multidata[varnish->id] = STARTSHERE;
         break;
       }
     }
   }
-  if (stripe_column > (long)from_col && !inhelp && (!sequel_column || stripe_column <= (long)sequel_column) && stripe_column <= (long)(from_col + editwincols)) {
+  if (stripe_column > (long)from_col && !inhelp && (!sequel_column
+  || stripe_column <= (long)sequel_column) && stripe_column <= (long)(from_col + editwincols))
+  {
     long  target_column = (stripe_column - from_col - 1);
     Ulong target_x      = actual_x(converted, target_column);
     char  striped_char[MAXCHARLEN];

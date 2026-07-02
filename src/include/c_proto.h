@@ -279,8 +279,8 @@ char       *realloc_strncpy(char *dest, const char *const restrict src, Ulong le
 char       *realloc_strcpy(char *dest, const char *const restrict src) __THROW _NODISCARD _RETURNS_NONNULL _NONNULL(1, 2);
 void        get_homedir(void);
 /* ----------------------------- Line from number ----------------------------- */
-linestruct *line_from_number_for(openfilestruct *const file, long number);
-linestruct *line_from_number(long number);
+LINE        line_from_number_for(OPENFILE const file, long number);
+LINE        line_from_number(long number);
 void        free_chararray(char **array, Ulong len);
 void        recode_NUL_to_LF(char *string, Ulong length);
 Ulong       recode_LF_to_NUL(char *string);
@@ -301,11 +301,11 @@ void remove_magicline(void);
 bool mark_is_before_cursor_for(openfilestruct *const file);
 bool mark_is_before_cursor(void) _NODISCARD;
 /* ----------------------------- Get region ----------------------------- */
-void get_region_for(openfilestruct *const file, linestruct **const top, Ulong *const top_x, linestruct **const bot, Ulong *const bot_x);
-void get_region(linestruct **const top, Ulong *const top_x, linestruct **const bot, Ulong *const bot_x);
+void get_region_for(OPENFILE const file, LINE *const top, Ulong *const top_x, LINE *const bot, Ulong *const bot_x);
+void get_region(LINE *const top, Ulong *const top_x, LINE *const bot, Ulong *const bot_x);
 /* ----------------------------- Get range ----------------------------- */
-void  get_range_for(openfilestruct *const file, linestruct **const top, linestruct **const bot);
-void  get_range(linestruct **const top, linestruct **const bot);
+void get_range_for(openfilestruct *const file, linestruct **const top, linestruct **const bot);
+void get_range(linestruct **const top, linestruct **const bot);
 /* ----------------------------- Parse line column ----------------------------- */
 bool  parse_line_column(const char *string, long *const line, long *const column);
 Ulong tabstop_length(const char *const restrict string, Ulong index);
@@ -319,7 +319,7 @@ void set_pww(void);
 void set_cursor_to_eol_for(openfilestruct *const file);
 void set_cursor_to_eol(void);
 /* ----------------------------- Set mark ----------------------------- */
-void set_mark_for(openfilestruct *const file, long lineno, Ulong x);
+void set_mark_for(OPENFILE const file, long lineno, Ulong x);
 void set_mark(long lineno, Ulong x);
 
 char *indent_plus_tab(const char *const restrict string);
@@ -1225,8 +1225,8 @@ void  set_blankdelay_to_one(void);
 Ulong waiting_keycodes(void);
 void  edit_scroll_for(openfilestruct *const file, bool direction);
 void  edit_scroll(bool direction);
-void  edit_redraw_for(CTX_ARGS, linestruct *const old_current, update_type manner);
-void  edit_redraw(linestruct *const old_current, update_type manner);
+void  edit_redraw_for(CTX_ARGS, LINE const old_current, update_type manner);
+void  edit_redraw(LINE const old_current, update_type manner);
 void  edit_refresh_for(CTX_ARGS);
 void  edit_refresh(void);
 void  titlebar(const char *path);
@@ -1662,15 +1662,15 @@ void etb_text_refresh_needed(ETB etb);
 /* ----------------------------- Etb entries refresh needed ----------------------------- */
 void etb_entries_refresh_needed(ETB etb);
 /* ----------------------------- Etb show context menu ----------------------------- */
-void etb_show_context_menu(ETB etb, Element *const from_element, bool show);
+void etb_show_context_menu(ETB etb, ELEMENT const from_element, bool show);
 /* ----------------------------- Etb element is main ----------------------------- */
-bool etb_element_is_main(ETB etb, Element *const e);
+bool etb_element_is_main(ETB etb, ELEMENT const e);
 /* ----------------------------- Etb owns element ----------------------------- */
-bool etb_owns_element(ETB etb, Element *const e);
+bool etb_owns_element(ETB etb, ELEMENT const e);
 /* ----------------------------- Etb tab routine set active ----------------------------- */
-void etb_tab_routine_mouse_button_left_dn(ETB etb, Element *const e);
+void etb_tab_routine_mouse_button_left_dn(ETB etb, ELEMENT const e);
 /* ----------------------------- etb_tab_routine_mouse_pos ----------------------------- */
-void etb_tab_routine_mouse_held_left(ETB etb, Element *e, float x, float y);
+void etb_tab_routine_mouse_held_left(ETB etb, ELEMENT e, float x, float y);
 
 
 /* ---------------------------------------------------------- gui/editor/editor.c ---------------------------------------------------------- */
@@ -1881,6 +1881,13 @@ void event_enqueue_on_main_thread(EVENT_CB callback, void *arg);
 
 void nxcfg_init(void);
 void nxcfg_free(void);
+bool nxcfg_lookup_coloropt(const char *color, int len, int *color_opt);
+
+
+/* ---------------------------------------------------------- tui/curses/mouse.c ---------------------------------------------------------- */
+
+
+void tui_curses_mouse_handle_events(void);
 
 
 /* ---------------------------------------------------------- nanox.c ---------------------------------------------------------- */
@@ -1898,28 +1905,32 @@ void nxcfg_free(void);
 
 /* static */ bool scoop_stdin(void);
 
+/* static */ void toggle_this(int flag);
+
+/* static */ int do_mouse_curses(void);
+
 /* ----------------------------- Make new node ----------------------------- */
-linestruct *make_new_node(linestruct *prevnode);
+LINE make_new_node(LINE prevnode);
 /* ----------------------------- Splice node ----------------------------- */
-void splice_node_for(openfilestruct *const file, linestruct *const after, linestruct *const node);
-void splice_node(linestruct *const after, linestruct *const node);
+void splice_node_for(OPENFILE const file, LINE const after, LINE const node);
+void splice_node(LINE const after, LINE const node);
 /* ----------------------------- Delete node ----------------------------- */
-void delete_node_for(openfilestruct *const file, linestruct *const node);
-void delete_node(linestruct *const line);
+void delete_node_for(OPENFILE const file, LINE const node);
+void delete_node(LINE const line);
 /* ----------------------------- Unlink node ----------------------------- */
-void unlink_node_for(openfilestruct *const file, linestruct *const node);
-void unlink_node(linestruct *const node);
+void unlink_node_for(OPENFILE const file, LINE const node);
+void unlink_node(LINE const node);
 /* ----------------------------- Free lines ----------------------------- */
-void free_lines_for(openfilestruct *const file, linestruct *src);
-void free_lines(linestruct *const head);
+void free_lines_for(OPENFILE const file, LINE src);
+void free_lines(LINE const head);
 /* ----------------------------- Copy node ----------------------------- */
-linestruct *copy_node(const linestruct *const src) _NODISCARD _RETURNS_NONNULL _NONNULL(1);
+LINE copy_node(CLINE const src) _NODISCARD _RETURNS_NONNULL _NONNULL(1);
 /* ----------------------------- Copy buffer top bot ----------------------------- */
-void copy_buffer_top_bot(const linestruct *src, linestruct **const top, linestruct **const bot);
+void copy_buffer_top_bot(CLINE src, LINE *const top, LINE *const bot);
 /* ----------------------------- Copy buffer ----------------------------- */
-linestruct *copy_buffer(const linestruct *src);
+LINE copy_buffer(CLINE src);
 /* ----------------------------- Renumber from ----------------------------- */
-void renumber_from(linestruct *line);
+void renumber_from(LINE line);
 /* ----------------------------- Print view warning ----------------------------- */
 void print_view_warning(void);
 /* ----------------------------- In restricted mode ----------------------------- */
@@ -1931,7 +1942,7 @@ void enable_flow_control(void);
 /* ----------------------------- Disable extended io ----------------------------- */
 void disable_extended_io(void);
 /* ----------------------------- Confirm margin ----------------------------- */
-void confirm_margin_for(openfilestruct *const file, int *const cols);
+void confirm_margin_for(OPENFILE const file, int *const cols);
 void confirm_margin(void);
 /* ----------------------------- Disable kb interrupt ----------------------------- */
 void disable_kb_interrupt(void);
@@ -1971,7 +1982,7 @@ void inject(char *burst, Ulong count);
 /* ----------------------------- Unbound key ----------------------------- */
 void unbound_key(int code);
 /* ----------------------------- Close and go ----------------------------- */
-void close_and_go_for(openfilestruct **const start, openfilestruct **const open, int cols);
+void close_and_go_for(OPENFILE *const start, OPENFILE *const open, int cols);
 void close_and_go(void);
 /* ----------------------------- Die ----------------------------- */
 void die(const char *const restrict format, ...) _NO_RETURN _PRINTFLIKE(1, 2);
@@ -1987,6 +1998,8 @@ const char *menu_to_name(Uint menu);
 void suggest_ctrlT_ctrlZ(void);
 /* ----------------------------- Finish ----------------------------- */
 void finish(void) _NO_RETURN;
+/* ----------------------------- Set log callbacks ----------------------------- */
+void set_log_callbacks(void);
 
 
 /* ---------------------------------------------------------- Defined in C++ ---------------------------------------------------------- */

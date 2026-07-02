@@ -40,6 +40,28 @@ static char             *configdir  = NULL;
 static configfilestruct *configfile = NULL;
 static HASHMAP           colors     = NULL;
 
+/* Lookup-table for available color opt`s. */
+static const coloroption coloropt_lookup_table[] = {
+  { S__LEN("red"),            FG_VS_CODE_RED            },
+  { S__LEN("green"),          FG_VS_CODE_GREEN          },
+  { S__LEN("yellow"),         FG_VS_CODE_YELLOW         },
+  { S__LEN("blue"),           FG_VS_CODE_BLUE           },
+  { S__LEN("magenta"),        FG_VS_CODE_MAGENTA        },
+  { S__LEN("cyan"),           FG_VS_CODE_CYAN           },
+  { S__LEN("white"),          FG_VS_CODE_WHITE          },
+  { S__LEN("bright-red"),     FG_VS_CODE_BRIGHT_RED     },
+  { S__LEN("bright-green"),   FG_VS_CODE_BRIGHT_GREEN   },
+  { S__LEN("bright-yellow"),  FG_VS_CODE_BRIGHT_YELLOW  },
+  { S__LEN("bright-blue"),    FG_VS_CODE_BRIGHT_BLUE    },
+  { S__LEN("bright-magenta"), FG_VS_CODE_BRIGHT_MAGENTA },
+  { S__LEN("bright-cyan"),    FG_VS_CODE_BRIGHT_CYAN    },
+  { S__LEN("grey"),           FG_SUGGEST_GRAY           },
+  { S__LEN("bg-red"),         BG_VS_CODE_RED            },
+  { S__LEN("bg-blue"),        BG_VS_CODE_BLUE           },
+  { S__LEN("bg-green"),       BG_VS_CODE_GREEN          },
+  { S__LEN("bg-grey"),        BG_GREY_80                },
+};
+
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
@@ -144,7 +166,7 @@ static bool nxcfg_get_color_option(char *data, const char *option, Ulong option_
       return TRUE;
     }
     FCIO_LOG(
-      INFO,
+      WARN,
       "Invalid value '%.*s' for option '%.*s'",
       (int)(end - optval), optval, (int)(option_len - 1), option
     );
@@ -252,7 +274,7 @@ static void nxcfg_init_configfile(void) {
   configfile->filepath = concatpath(configdir, COLORFILE_NAME);
   /* We must load before we set the file listener for the file. */
   nxcfg_load();
-  FCIO_LOG(INFO, "Loaded nxcfg");
+  FCIO_LOG_INFO("\033[32mLoaded nxcfg.\033[0m");
   file_listener_add_file(file_listener, configfile->filepath, nxcfg_configfile_listener, NULL, IN_CLOSE_WRITE);
 }
 
@@ -261,7 +283,6 @@ static void nxcfg_init_configfile(void) {
 
 
 void nxcfg_init(void) {
-  // config = xmalloc(sizeof(*config));
   nxcfg_init_configdir();
   if (configdir) {
     nxcfg_init_configfile();
@@ -273,6 +294,17 @@ void nxcfg_free(void) {
     free(configdir);
     free(configfile->filepath);
     free(configfile);
-    // free(config);
   }
+}
+
+bool nxcfg_lookup_coloropt(const char *color, int len, int *color_opt) {
+  for (Ulong i=0; i<ARRAY_SIZE(coloropt_lookup_table); ++i) {
+    if (len == coloropt_lookup_table[i].name_len
+    && strncmp(color, coloropt_lookup_table[i].name, len) == 0)
+    {
+      *color_opt = coloropt_lookup_table[i].color_index;
+      return TRUE;
+    }
+  }
+  return FALSE;
 }

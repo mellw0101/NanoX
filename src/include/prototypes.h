@@ -1024,7 +1024,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
 /* ---------------------------------------------------------- cfg.cpp ---------------------------------------------------------- */
 
 
-bool lookup_coloropt(const char *color, int len, int *color_opt) _NOTHROW;
+// bool lookup_coloropt(const char *color, int len, int *color_opt) _NOTHROW;
 // void init_cfg(void);
 // void cleanup_cfg(void) _NOTHROW;
 
